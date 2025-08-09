@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>User Login - TradexInvest</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <style>
+    /* (styles kept similar to your earlier design) */
+    body { font-family: Arial, sans-serif; padding: 20px; background-color: whitesmoke; }
+    h2 { color: #333; }
+    form { max-width: 400px; margin: 20px 0; }
+    input { width: 100%; padding: 10px; margin-top: 10px; box-sizing: border-box; }
+    button { padding: 10px 20px; margin-top: 15px; background-color: #007BFF; color: white; border: none; cursor: pointer; }
+    #dashboardSection { display: none; margin-top: 30px; }
+    #profileInfo { display: none; align-items: center; gap: 10px; margin-bottom: 20px; }
+    #profilePhoto { width: 60px; height: 60px; border-radius: 50%; }
+    #authLinks { margin-bottom: 20px; }
+    .stat { margin-bottom: 10px; }
+    /* Modal styles for Terms & 2FA */
+    .overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+    .modal { background: white; padding: 20px; width: 500px; border-radius: 8px; text-align: left; max-height: 80vh; display: flex; flex-direction: column; }
+    #termsContent { overflow-y: auto; flex-grow: 1; border: 1px solid #ddd; padding: 10px; margin-bottom: 15px; }
+    .btn-row { display:flex; justify-content:space-between; gap:10px; }
+    .btn-green { background: green; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; }
+    .btn-red { background: red; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; }
+    .small-muted { font-size: 13px; color: #666; margin-top:8px; }
+  </style>
+</head>
+<body>
+
+  <div id="authLinks">
+    <h2>Welcome to TradeXInvest</h2>
+    <button id="loginButton" >User Login</button>
+  </div>
+
+  <form id="loginForm" style="display: none;">
+    <h3>Login to Your Account</h3>
+    <input type="email" name="email" placeholder="Enter Email" required />
+    <input type="password" name="password" placeholder="Enter Password" required />
+    <button type="submit">Login</button>
+  </form>
+
+ <!-- Terms & Conditions Popup -->
+<div id="termsPopup" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:1000;">
+  <div style="background:#fff; width:80%; max-width:700px; padding:20px; border-radius:8px; max-height:90vh; overflow-y:auto;">
+    <h2 style="text-align:center; margin-bottom:15px;">Terms & Conditions</h2>
+    <p>Welcome to TradexInvest. By using our services, you agree to the following terms:</p>
+    
+    <h3>1. Security Features</h3>
+    <ul>
+      <li><strong>Two-Factor Authentication (2FA):</strong> We provide 2FA for additional security. It is strongly recommended to enable it for your account.</li>
+      <li><strong>Cold Storage:</strong> The majority of user digital assets are stored in cold storage to protect against online threats.</li>
+      <li><strong>Encryption:</strong> All sensitive user data is encrypted both in transit and at rest.</li>
+    </ul>
+
+    <h3>2. Fee Structure</h3>
+    <ul>
+      <li>Deposit Fee: <strong>0%</strong></li>
+      <li>Withdrawal Fee: <strong>1.5%</strong> of the transaction amount</li>
+      <li>Trading Fee: <strong>0.25%</strong> per executed trade</li>
+      <li>Other network or blockchain fees may apply where relevant.</li>
+    </ul>
+
+    <h3>3. Risk Disclosure</h3>
+    <p>Investing in digital assets involves high risk, including the potential loss of your entire investment. Prices are volatile and may be affected by external factors such as market trends, regulations, or technological changes. Past performance is not indicative of future results. You are solely responsible for your investment decisions.</p>
+
+    <h3>4. User Agreement</h3>
+    <p>By continuing, you acknowledge that you have read, understood, and agree to these Terms & Conditions. You also agree to our Privacy Policy and any updates that may occur.</p>
+
+    <div style="text-align:center; margin-top:20px;">
+      <button id="agreeBtn" style="background:#28a745; color:white; border:none; padding:10px 20px; margin-right:10px; border-radius:5px;">I Agree</button>
+      <button id="declineBtn" style="background:#dc3545; color:white; border:none; padding:10px 20px; border-radius:5px;">Decline</button>
+    </div>
+  </div>
+</div>
+
+ <!-- 2FA Popup -->
+<div id="twoFAPopup" style="display:none;">
+  <div id="termsOverlay">
+    <div id="termsModal">
+      <h2>Two-Factor Authentication</h2>
+      <p>Please enter the 6-digit code from your Google Authenticator app.</p>
+      <input type="text" id="twoFACode" placeholder="Enter 2FA Code" maxlength="6" />
+      <div id="termsButtons">
+        <button id="verify2FABtn">Verify</button>
+        <button id="cancel2FABtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  <section id="dashboardSection" style="display:none;">
+    <div id="profileInfo">
+      <img id="profilePhoto" src="" alt="Profile Photo" />
+      <h3 id="userName">User Name</h3>
+    </div>
+
+    <div>
+      <div class="stat">Investment Amount: <strong id="investmentAmount">--</strong></div>
+      <div class="stat">Profit: <strong id="profit">--</strong></div>
+      <div class="stat">Total Interest: <strong id="totalInterest">--</strong></div>
+    </div>
+
+    <button onclick="logout()">Logout</button>
+  </section>
+
+  <script>
+   
+   document.getElementById('loginButton').addEventListener('click', () => {
+    document.getElementById('authLinks').style.display = 'none';
+    document.getElementById('loginForm').style.display = 'block';
+  }); 
+const API_BASE = 'http://localhost:5000/api/auth';
+let pendingLogin = { tempToken: null, user: null };
+
+// Main flow controller
+function initFlow() {
+  const storedToken = localStorage.getItem('authToken');
+  const storedUser = localStorage.getItem('user');
+  const termsAccepted = localStorage.getItem('termsAccepted') === 'true';
+
+  if (storedToken && storedUser) {
+    try {
+      const user = JSON.parse(storedUser);
+      if (!termsAccepted) {
+        pendingLogin.user = user;
+        openTerms();
+      } else {
+        showDashboard(user);
+      }
+      return;
+    } catch { /* corrupted localStorage */ logout(); }
+  }
+
+  // If mid-login and terms are done, show 2FA
+  if (pendingLogin.tempToken && termsAccepted) {
+    openTwoFA();
+    return;
+  }
+
+  // Otherwise show login form
+  document.getElementById('loginForm').style.display = 'block';
+}
+
+// Login handler
+document.getElementById('loginForm')?.addEventListener('submit', async function (e) {
+  e.preventDefault();
+  const email = this.email.value.trim();
+  const password = this.password.value;
+
+  try {
+    const res = await fetch(`${API_BASE}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+    if (!res.ok) return alert(data.message || 'Login failed');
+
+    // Only allow role=user
+    if (data.user?.role !== 'user') {
+      alert('Unauthorized account role');
+      return;
+    }
+
+    if (data.twoFARequired) {
+      pendingLogin.tempToken = data.tempToken;
+      pendingLogin.user = data.user;
+      if (localStorage.getItem('termsAccepted') === 'true') {
+        openTwoFA();
+      } else {
+        openTerms();
+      }
+      return;
+    }
+
+    // Direct login without 2FA
+    if (data.token) {
+      localStorage.setItem('authToken', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      showDashboard(data.user);
+      return;
+    }
+
+    alert('Unexpected login response');
+  } catch (err) {
+    console.error(err);
+    alert('Network or server error during login');
+  }
+});
+
+// Terms
+document.getElementById('agreeBtn').addEventListener('click', () => {
+  localStorage.setItem('termsAccepted', 'true');
+  closeTerms();
+  if (pendingLogin.tempToken) {
+    openTwoFA();
+  } else if (pendingLogin.user) {
+    showDashboard(pendingLogin.user);
+  } else {
+    initFlow();
+  }
+});
+document.getElementById('declineBtn').addEventListener('click', () => {
+  alert('You must agree to the Terms & Conditions to continue.');
+  logout();
+});
+
+// 2FA
+document.getElementById('verify2FA').addEventListener('click', async () => {
+  const code = document.getElementById('twoFACode').value.trim();
+  if (!/^\d{6}$/.test(code)) return alert('Enter the 6-digit code');
+
+  try {
+    const res = await fetch(`${API_BASE}/2fa/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tempToken: pendingLogin.tempToken, token: code })
+    });
+    const data = await res.json();
+    if (!res.ok) return alert(data.message || '2FA verification failed');
+
+    if (data.token && data.user) {
+      localStorage.setItem('authToken', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      closeTwoFA();
+      showDashboard(data.user);
+    } else {
+      alert('Invalid server response after 2FA');
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Network or server error verifying 2FA');
+  }
+});
+document.getElementById('cancel2FA').addEventListener('click', logout);
+
+// Helpers
+function openTerms() { document.getElementById('termsPopup').style.display = 'flex'; }
+function closeTerms() { document.getElementById('termsPopup').style.display = 'none'; }
+function openTwoFA() { document.getElementById('twoFAPopup').style.display = 'flex'; }
+function closeTwoFA() {
+  document.getElementById('twoFAPopup').style.display = 'none';
+  document.getElementById('twoFACode').value = '';
+  pendingLogin = { tempToken: null, user: null };
+}
+function showDashboard(user) {
+  document.getElementById('authLinks').style.display = 'none';
+  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('dashboardSection').style.display = 'block';
+  document.getElementById('profileInfo').style.display = 'flex';
+  document.getElementById('userName').textContent = user.fullName || user.email || 'User';
+  document.getElementById('profilePhoto').src = user.profilePhoto?.startsWith('http')
+    ? user.profilePhoto
+    : user.profilePhoto
+      ? `http://localhost:5000${user.profilePhoto}`
+      : 'default.png';
+}
+function logout() {
+  localStorage.removeItem('user');
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('termsAccepted');
+  pendingLogin = { tempToken: null, user: null };
+  location.reload();
+}
+
+// Start
+document.addEventListener('DOMContentLoaded', initFlow);
+</script>
+
+
+  
+</body>
+</html>
+
+   

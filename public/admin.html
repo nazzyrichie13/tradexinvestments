@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Login - TradexInvest</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Admin Login Form -->
+  <div id="adminLoginForm" class="container">
+    <h2>Admin Login</h2>
+    <form id="adminLoginFormElement">
+      <input type="email" name="email" placeholder="Admin Email" required>
+      <input type="password" name="password" placeholder="Password" required>
+      <button type="submit">Login</button>
+    </form>
+  </div>
+
+  <!-- Admin Dashboard -->
+  <div id="adminDashboard" class="container" style="display: none;">
+    <h2>Admin Panel</h2>
+    <div id="userList">Loading users...</div>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

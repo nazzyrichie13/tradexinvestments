@@ -1,0 +1,11 @@
+{
+  "plugins": ["import"],
+  "rules": {
+    "import/no-unresolved": "error",
+    "import/no-duplicates": "error",
+    "import/no-cycle": "error",
+    "import/extensions": ["error", "ignorePackages", { "js": "never" }],
+    "import/no-named-as-default-member": "warn",
+    "import/no-named-as-default": "warn"
+  }
+}

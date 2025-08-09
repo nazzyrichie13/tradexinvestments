@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>About Us - TradexInvest</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="nav">
+    <div class="logo">TradexInvest</div>
+    <div class="lowerNAV" onclick="toggleMobileNav()">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <span style="width: 30px; height: 4px; background-color: black;"></span>
+        <span style="width: 30px; height: 4px; background-color: black;"></span>
+        <span style="width: 30px; height: 4px; background-color: black;"></span>
+      </div>
+    </div>
+  </div>
+  <ul class="mobile-menu" id="mobileMenu">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="about.html">About Us</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+
+  <section class="hero-section">
+    <div class="hero-content">
+      <h1>About TradexInvest</h1>
+      <p>We help everyday people grow wealth confidently through digital investments powered by security, performance, and trust.</p>
+    </div>
+   
+   
+  </section>
+   <div>
+      <img src="images/img9.jpg" alt="img">
+    </div>
+  <section class="hero-section">
+     <div class="hero-content">
+      <h1>Our History</h1>
+       <p>
+        In 2015 TradeX was founded by George Wilson and Ardash Singh as Co-Founder . In 2016, the company changed its legal name from TradeX Digital & Crypto Investment Company. At the same time, the California State Department of Financial Services granted TradeX a limited-purpose trust charter, making it one of companies in the U.S. that are approved and regulated to offer crypto products and services.
+The company received $65 million in a funding round in May 2018. In September 2018, TradeX launched the TradeX Standard stablecoin as one of the industry’s first regulated stablecoins. TradeX introduced X Gold, the first regulated gold-backed digital token in September 2019.
+In October 2019, the U.S. Securities and Exchange Commission issued a no-action letter allowing TradeX to pilot a blockchain-based settlement service for U.S. equities, with the service launching in February 2020. In July 2020, TradeX launched its crypto brokerage.
+In September 2022, Switzerland-based Trading company Shapeshift Announced its Partnership with TradeX to develop a crypto trading ecosystem. On 20 October 2022, Shapeshift launched crypto trading function to its forex trading platform in partnership with TradeX. The partnership will allow the U.S.-based clients of Shapeshift to trade cryptocurrencies on TradeX’ Crypto Exchange from the Shapeshift mobile app.
+In June 2025, TradeX launched TradeX Labs, a startup incubated within the company to help institutions integrate decentralized finance (DeFi) and on-chain products into their platforms.
+       </p>
+    </div>
+  </section>
+  <div>
+    <img src="images/bank img.jpg" alt="img">
+  </div>
+
+  <section class="why-section">
+    <h2>Our Mission & Vision</h2>
+    <div class="why-container">
+      <div class="why-box">
+        <h3>Mission</h3>
+        <p>To empower individuals globally to build wealth through secure, user-friendly, and high-performing investment services.</p>
+      </div>
+      <div class="why-box">
+        <h3>Vision</h3>
+        <p>To become the most trusted digital investment platform in Africa and beyond.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="features-section">
+    <h2>Why Investors Choose Us</h2>
+    <div class="features-container">
+      <div class="feature-box">
+        <i class="fas fa-lock"></i>
+        <h3>Top Security</h3>
+        <p>SSL encryption, 2FA, and wallet safety guaranteed.</p>
+      </div>
+      <div class="feature-box">
+        <i class="fas fa-hand-holding-usd"></i>
+        <h3>Flexible Plans</h3>
+        <p>Plans tailored to beginners and professionals alike.</p>
+      </div>
+      <div class="feature-box">
+        <i class="fas fa-star"></i>
+        <h3>Customer Focused</h3>
+        <p>We put your growth and satisfaction first — always.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-section">
+    <h2>Ready to Start Investing?</h2>
+    <p>Create your free account and begin your journey with TradexInvest today.</p>
+    <a href="signup.html" class="cta-btn">Get Started</a>
+    <a href="security.html">Security & Protection</a>
+  </section>
+
+  <script>
+    function toggleMobileNav() {
+      const menu = document.getElementById('mobileMenu');
+      menu.classList.toggle('show');
+    }
+  </script>
+</body>
+</html>

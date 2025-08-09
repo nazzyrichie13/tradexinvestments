@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TradeXinvest</title>
+  <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+</head>
+<style>
+  .testimonials-section {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    font-family: Arial, sans-serif;
+  }
+  .testimonials-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    justify-content: center;
+  }
+  .testimonial-box {
+    background: #f9f9f9;
+    border-radius: 8px;
+    padding: 1.5rem;
+    flex: 1 1 280px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    position: relative;
+  }
+  .testimonial-box p {
+    font-size: 1.1rem;
+    color: #555;
+    margin: 1rem 0 0.8rem;
+  }
+  .testimonial-box h4 {
+    color: #555;
+    font-weight: 600;
+    margin: 0;
+  }
+  .stars {
+    font-size: 1.3rem;
+    color: #f5a623; /* gold star color */
+    user-select: none;
+  }
+  .stars span {
+    letter-spacing: 2px;
+  }
+</style>
+<body>
+      <div class="lowerNAV" onclick="toggleMobileNav()">
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <span style="width: 30px; height: 4px; background-color: black;"></span>
+      <span style="width: 30px; height: 4px; background-color: black;"></span>
+      <span style="width: 30px; height: 4px; background-color: black;"></span>
+    </div>
+  </div>
+</div>
+
+<ul class="mobile-menu" id="mobileMenu">
+  <li><a href="index.html">Home</a></li>
+  <li><a href="about.html">About Us</a></li>
+  <li><a href="contact.html">Contact</a></li>
+</ul>
+  <div class="nav">
+    <p class="logo">TradeXInvest</p>
+    <div id="authLinks" style="display: flex; align-items: center; font-size: 18px; font-weight: 600;">
+      <a href="signup.html" style="color: black; text-decoration: none; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;white-space: nowrap;">Sign up</a> /
+       <a href="login-user.html" style="color: black; text-decoration: none; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;white-space: nowrap;">Login</a> 
+      
+    </div>
+    <div id="profileInfo" class="navbar" style="display: none;">
+      <div class="profile">
+        <img id="profilePhoto" src="" alt="Profile" class="avatar" />
+        <span id="userName"></span>
+        <button onclick="logout()" style="margin-left: 10px;">Logout</button>
+      </div>
+    </div>
+  </div>
+  
+
+
+
+  <!-- Login form popup -->
+  <div id="loginForm" class="container" style="display: none;">
+    <h2>Login</h2>
+    <form id="loginFormElement">
+      <input type="email" name="email" placeholder="Email" required>
+      <input type="password" name="password" placeholder="Password" required>
+      <button type="submit">Login</button>
+    </form>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="container" id="dashboardSection" style="display: none;">
+    <h2>Your Investment Summary</h2>
+    <p><strong>Investment:</strong> $<span id="investmentAmount">0</span></p>
+    <p><strong>Profit:</strong> $<span id="profit">0</span></p>
+    <p><strong>Total Interest:</strong> $<span id="totalInterest">0</span></p>
+    <button onclick="toggleWithdrawForm()" class="withdraw-btn">💸 Withdraw Funds</button>
+
+  <div id="withdrawForm" class="withdraw-form hidden">
+    <h3>Select Withdrawal Method</h3>
+    <form id="submitWithdrawal">
+      <label>Amount ($):</label>
+      <input type="number" name="amount" required />
+
+      <label>Withdrawal Method:</label>
+      <select name="method" required>
+        <option value="">-- Select --</option>
+        <option value="paypal">PayPal</option>
+        <option value="cashapp">CashApp</option>
+        <option value="bank">Bank Transfer</option>
+        <option value="crypto">Cryptocurrency</option>
+        <option value="wise">Wise (TransferWise)</option>
+      </select>
+
+      <label>Recipient Details:</label>
+      <input type="text" name="recipient" placeholder="Email / Wallet / Account No." required />
+
+      <button type="submit">Submit Withdrawal</button>
+    </form>
+  </div>
+  </div>
+  <div id="welcomeNote" class="welcomeNote">
+<img src="images/photo 5.avif" alt="img">
+<img src="images/stock 1.webp" alt="img">
+<img src="images/photo 7.avif" alt="img">
+<img src="images/photo-1749741326969-e1676b3bce43.avif" alt="img">
+  </div>
+  <div id="qoutes" class="qoutes">
+    <p>WELCOME TO TRADEX</p>
+    <P>"Do not save what is left after spending, but spend what is left after saving."</P>
+    <p>"An investment in knowledge pays the best interest." </p>
+    <p>"Successful investing is about managing risk, not avoiding it."</p>
+  </div>
+  <section id="features" class="features-section">
+  <h2>Our Features</h2>
+  <div class="features-container">
+    <div class="feature-box">
+      <i class="fa fa-shield-alt"></i>
+      <h3>Secure Platform</h3>
+      <p>We use top-level security to keep your data and transactions safe at all times.</p>
+    </div>
+    <div class="feature-box">
+      <i class="fa fa-chart-line"></i>
+      <h3>Live Investment Tracking</h3>
+      <p>View real-time updates of your investment, profit, and total interest on your dashboard.</p>
+    </div>
+    <div class="feature-box">
+      <i class="fa fa-hand-holding-usd"></i>
+      <h3>Flexible Investment Plans</h3>
+      <p>Choose from a variety of plans that suit your goals and budget with high returns.</p>
+    </div>
+    <div class="feature-box">
+      <i class="fa fa-headset"></i>
+      <h3>24/7 Support</h3>
+      <p>Our dedicated support team is always here to help you through live chat or email.</p>
+    </div>
+  </div>
+</section>
+<div class="live-counter">
+  <h3>Total Interest Growing:</h3>
+  <p>$<span id="interestCounter">0.00</span></p>
+</div>
+<div class="countdown-box">
+  <h3>Next Payout In:</h3>
+  <p id="payoutCountdown">Loading...</p>
+</div>
+<section id="whyChooseUs" class="why-section">
+  <h2>Why Choose TradeXInvest</h2>
+  <div class="why-container">
+    <div class="why-box">
+      <i class="fa fa-users"></i>
+      <h3>Trusted by Thousands</h3>
+      <p>Over 10,000 investors trust us with their money, and our reviews speak for themselves.</p>
+    </div>
+    <div class="why-box">
+      <i class="fa fa-bolt"></i>
+      <h3>Fast & Easy</h3>
+      <p>Sign up and start investing in just minutes. User-friendly and accessible from any device.</p>
+    </div>
+    <div class="why-box">
+      <i class="fa fa-award"></i>
+      <h3>Proven Results</h3>
+      <p>We’ve consistently delivered strong returns for our investors with transparent performance.</p>
+    </div>
+  </div>
+</section>
+<section class="hero-section">
+  <div class="hero-content">
+    <h1>Invest Smart with TradeXInvest</h1>
+    <p>Your trusted platform to grow wealth with secure and high-yield investment plans.</p>
+    <div class="hero-buttons">
+      <a href="sign up.html" class="btn-primary">Get Started</a>
+      <a href="#features" class="btn-secondary">Learn More</a>
+    </div>
+  </div>
+  <div class="hero-image">
+    <img src="images/photo 5.webp" alt="Investment Image">
+  </div>
+</section>
+
+<section id="testimonials" class="testimonials-section">
+  <h2>What Our Investors Say......</h2>
+  <div class="testimonials-container">
+    <div class="testimonial-box">
+      <div class="stars" aria-label="Rating: 5 out of 5 stars">
+        <span>⭐️⭐️⭐️⭐️⭐️</span>
+      </div>
+      <p>"TradeXInvest helped me grow my savings steadily. The dashboard is simple, and the support team is amazing!"</p>
+      <h4>— Sarah U., Australia</h4>
+    </div>
+    <div class="testimonial-box">
+      <div class="stars" aria-label="Rating: 4.5 out of 5 stars">
+        <span>⭐️⭐️⭐️⭐️⭐️</span>
+      </div>
+      <p>"I was skeptical at first, but now I’m earning consistent interest on my investment. I recommend it 100%!"</p>
+      <h4>— James Eudardo., Brazil</h4>
+    </div>
+    <div class="testimonial-box">
+      <div class="stars" aria-label="Rating: 4 out of 5 stars">
+        <span>⭐️⭐️⭐️⭐️⭐️</span>
+      </div>
+      <p>"What I love is the transparency. I see my profits in real time and the withdrawals are smooth."</p>
+      <h4>— Anita O., New Jersey</h4>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <h2>Ready to Grow Your Wealth?</h2>
+  <p>Join thousands of investors earning passive income with TradeXInvest.</p>
+  <a href="sign up.html" class="cta-btn">Get Started Now</a>
+</section>
+<div id="chatWidget" class="chat-widget">
+  <div class="chat-header">💬 Chat With Us</div>
+  <div class="chat-body" id="chatBody">
+    <div class="message admin">Hi TradeX 👋, want help choosing the best plan?</div>
+  </div>
+  <form id="chatForm">
+    <input type="text" id="chatInput" placeholder="Type your message..." autocomplete="off" />
+    <button type="submit">Send</button>
+  </form>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-content">
+    <h2>TradeXInvest</h2>
+    <p>Secure and smart investment platform to grow your wealth.</p>
+
+    <!-- 🔗 Contact Info -->
+    <div class="contact-info">
+      <p><i class="fas fa-envelope"></i> <a href="mailto:support@tradexinvest.com">support@tradexinvest.com</a></p>
+      <p><i class="fas fa-phone"></i> <a href="+13137768220">+13137768220</a></p>
+      <p><i class="fas fa-paper-plane"></i> <a href="contact.html">Send Us a Message</a></p>
+    </div>
+
+    <!-- 🔗 Social Media -->
+    <div class="social-icons">
+      <a href="https://signal.me/#eu/B0bK1TWO1rDFGcCqWeraUIdHqG29QV04qxhVbyN4zxW5N3TXSEtPwY6Dcy9JaDGm" target="_blank" class="icon facebook"><i class="fab fa-facebook-f"></i></a>
+      <a href="https://wa.me/+13137768220" target="_blank" class="icon whatsapp"><i class="fab fa-whatsapp"></i></a>
+      <a href="https://twitter.com" target="_blank" class="icon twitter"><i class="fab fa-x-twitter"></i></a>
+      <a href="https://instagram.com" target="_blank" class="icon instagram"><i class="fab fa-instagram"></i></a>
+    </div>
+    <div> <a href="security.html">Security & Protection</a></div>
+
+    <p class="copyright">
+      &copy; 2025 TradeXInvest. All rights reserved.
+    </p>
+  </div>
+</footer>
+
+
+
+
+
+
+
+  
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+  <script src="/tradexinvest-backend/public/js/script.jsm"></script>
+  <script>
+    
+    
+  const images = document.querySelectorAll('#welcomeNote img');
+  const quotes = document.querySelectorAll('#qoutes p');
+
+  let currentIndex = 0;
+
+  function showSlide(index) {
+    images.forEach((img, i) => {
+      img.classList.remove('active');
+      if (i === index) img.classList.add('active');
+    });
+
+    quotes.forEach((quote, i) => {
+      quote.classList.remove('active');
+      if (i === index) quote.classList.add('active');
+    });
+  }
+
+  // Initial show
+  showSlide(currentIndex);
+
+  // Change every 4 seconds
+  setInterval(() => {
+    currentIndex = (currentIndex + 1) % images.length;
+    showSlide(currentIndex);
+  }, 4000);
+
+ let counter = 10534.75; // Starting value
+  const display = document.getElementById("interestCounter");
+
+  setInterval(() => {
+    counter += Math.random() * 0.3;
+    display.textContent = counter.toFixed(2);
+  }, 2000); // Every 2 second
+    const countdownEl = document.getElementById("payoutCountdown");
+  const nextPayoutDate = new Date();
+  nextPayoutDate.setHours(nextPayoutDate.getHours() + 48); // 48 hours from now
+
+  function updateCountdown() {
+    const now = new Date().getTime();
+    const distance = nextPayoutDate - now;
+
+    if (distance < 0) {
+      countdownEl.textContent = "Processing...";
+      return;
+    }
+
+    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const mins = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    const secs = Math.floor((distance % (1000 * 60)) / 1000);
+
+    countdownEl.textContent = `${hours}h ${mins}m ${secs}s`;
+  }
+
+  setInterval(updateCountdown, 1000);
+  updateCountdown();
+
+
+  const socket = io("http://localhost:5000"); // Replace with your backend URL when live
+
+  const chatBody = document.getElementById("chatBody");
+  const chatForm = document.getElementById("chatForm");
+  const chatInput = document.getElementById("chatInput");
+
+  // Display chat history
+  socket.on("chatHistory", (messages) => {
+    messages.forEach(msg => appendMessage(msg.sender, msg.message));
+  });
+
+  // Handle new messages
+  socket.on("newMessage", (msg) => {
+    appendMessage(msg.sender, msg.message);
+  });
+
+  chatForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    const message = chatInput.value.trim();
+    if (!message) return;
+
+    socket.emit("sendMessage", {
+      sender: "user", // or "admin" if admin is sending
+      message
+    });
+
+    chatInput.value = "";
+  });
+
+  function appendMessage(sender, message) {
+    const msgDiv = document.createElement("div");
+    msgDiv.className = `message ${sender}`;
+    msgDiv.textContent = message;
+    chatBody.appendChild(msgDiv);
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+  
+function toggleWithdrawForm() {
+  const form = document.getElementById("withdrawForm");
+  form.classList.toggle("hidden");
+}
+
+function openChatPopup() {
+  const chatWidget = document.getElementById("chatWidget");
+  if (chatWidget) chatWidget.classList.remove("hidden");
+}
+
+document.getElementById("submitWithdrawal").addEventListener("submit", function(e) {
+  e.preventDefault();
+
+  // Show error alert
+  alert("⚠️ Withdrawals are currently unavailable. Please contact admin.");
+
+  // Open chat popup
+  openChatPopup();
+
+  // Send auto message via Socket.IO
+  const chatInput = document.getElementById("chatInput");
+  const senderId = localStorage.getItem("senderId"); // Or get from your login data
+  const senderName = localStorage.getItem("name");
+  const senderEmail = localStorage.getItem("email");
+
+  const autoMessage = "Hi Admin, I need help with a withdrawal request.";
+
+  // Display locally
+  const msgDiv = document.createElement("div");
+  msgDiv.className = "message user";
+  msgDiv.textContent = autoMessage;
+  document.getElementById("chatBody").appendChild(msgDiv);
+
+  // Send to server via socket
+  socket.emit("sendMessage", {
+    senderId: senderId,
+    name: senderName,
+    email: senderEmail,
+    senderType: "user",
+    message: autoMessage
+  });
+
+  // Optional: scroll to bottom
+  const chatBody = document.getElementById("chatBody");
+  chatBody.scrollTop = chatBody.scrollHeight;
+});
+function toggleMobileNav() {
+  const menu = document.getElementById('mobileMenu');
+  menu.classList.toggle('show');
+} 
+
+
+
+  </script>
+</body>
+</html> 

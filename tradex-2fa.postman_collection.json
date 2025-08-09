@@ -1,0 +1,68 @@
+{
+  "info": {
+    "name": "Tradex 2FA API",
+    "_postman_id": "tradex-2fa-collection",
+    "description": "Postman collection for testing Tradex backend with 2FA flow",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Register",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"fullName\": \"Test User\"\n}"
+        },
+        "url": { "raw": "http://localhost:5000/api/auth/register", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "auth", "register"] }
+      }
+    },
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+        },
+        "url": { "raw": "http://localhost:5000/api/auth/login", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "auth", "login"] }
+      }
+    },
+    {
+      "name": "Setup 2FA",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"test@example.com\"\n}"
+        },
+        "url": { "raw": "http://localhost:5000/api/2fa/setup-2fa", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "2fa", "setup-2fa"] }
+      }
+    },
+    {
+      "name": "Verify 2FA",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"test@example.com\",\n  \"token\": \"123456\"\n}"
+        },
+        "url": { "raw": "http://localhost:5000/api/2fa/verify-2fa", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "2fa", "verify-2fa"] }
+      }
+    },
+    {
+      "name": "Protected Route",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" }
+        ],
+        "url": { "raw": "http://localhost:5000/api/protected", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "protected"] }
+      }
+    }
+  ]
+}

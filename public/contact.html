@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Contact Us - TradeXInvest</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <div class="nav">
+    <div class="logo">TradeXInvest</div>
+    <div class="lowerNAV" onclick="toggleMobileNav()">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <span style="width: 30px; height: 4px; background-color: black;"></span>
+        <span style="width: 30px; height: 4px; background-color: black;"></span>
+        <span style="width: 30px; height: 4px; background-color: black;"></span>
+      </div>
+    </div>
+  </div>
+  <ul class="mobile-menu" id="mobileMenu">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="about.html">About Us</a></li>
+    <li><a href="contact.html">Contact </a></li>
+  </ul>
+
+  <section class="container">
+    <h2 style="text-align:center; color:#0077cc;">Contact Us</h2>
+    <form id="contactForm">
+      <input type="text" name="name" placeholder="Your Full Name" required />
+      <input type="email" name="email" placeholder="Your Email Address" required />
+      <textarea name="message" rows="6" placeholder="Write your message here..." required></textarea>
+      <button type="submit">Send Message</button>
+    </form>
+    <p style="margin-top: 15px; text-align: center;">Or reach us directly:</p>
+    <div class="contact-info" style="text-align:center;">
+      <p><i class="fas fa-envelope"></i> support@tradexinvest.com</p>
+      <p><i class="fas fa-phone"></i> +13137768220</p>
+      <p><i class="fab fa-whatsapp"></i> <a href="https://wa.me/+13137768220" target="_blank">Chat on WhatsApp</a></p>
+    </div>
+    <div> <a href="security.html">Security & Protection</a></div>
+  </section>
+
+  <script>
+    function toggleMobileNav() {
+      const menu = document.getElementById('mobileMenu');
+      menu.classList.toggle('show');
+    };
+
+    document.getElementById('contactForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  const name = this.name.value.trim();
+  const email = this.email.value.trim();
+  const message = this.message.value.trim();
+
+  if (!name || !email || !message) {
+    alert('Please fill in all fields.');
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/contact', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name, email, message })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      alert(data.message);
+      this.reset();
+    } else {
+      alert(`Error: ${data.message}`);
+    }
+  } catch (err) {
+    alert('Failed to send message. Please try again later.');
+    console.error(err);
+  }
+});
+
+  </script>
+</body>
+</html>

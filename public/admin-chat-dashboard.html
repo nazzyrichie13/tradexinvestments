@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Chat Dashboard - TradexInvest</title>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      height: 100vh;
+      margin: 0;
+      background: #f0f2f5;
+    }
+    .user-list {
+      width: 300px;
+      background: #fff;
+      padding: 20px;
+      overflow-y: auto;
+      border-right: 1px solid #ddd;
+    }
+    .user-item {
+      margin-bottom: 15px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fafafa;
+    }
+    .user-item strong {
+      color: #0077cc;
+    }
+    .user-item button {
+      margin-top: 5px;
+      background: #0077cc;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .chat-box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .chat-header {
+      background: #0077cc;
+      color: white;
+      padding: 15px;
+      font-weight: bold;
+    }
+    .chat-body {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      background: #eef2f7;
+    }
+    .message {
+      max-width: 60%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 8px;
+    }
+    .user {
+      background: #d0f8ce;
+      align-self: flex-start;
+    }
+    .admin {
+      background: #e1f5fe;
+      align-self: flex-end;
+      text-align: right;
+    }
+    .chat-input {
+      display: flex;
+      border-top: 1px solid #ccc;
+    }
+    .chat-input input {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      outline: none;
+    }
+    .chat-input button {
+      background: #0077cc;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="user-list" id="userList"></div>
+  <div class="chat-box">
+    <div class="chat-header" id="chatHeader">Chat with: —</div>
+    <div class="chat-body" id="chatBody"></div>
+    <form class="chat-input" id="chatForm">
+      <input type="text" id="chatInput" placeholder="Type a message..." />
+      <button type="submit">Send</button>
+    </form>
+  </div>
+
+  <script>
+    const socket = io("http://localhost:5000");
+    let currentUserId = null;
+    let currentUserEmail = null;
+    let currentUserPhone = null;
+
+    const userList = document.getElementById("userList");
+    const chatHeader = document.getElementById("chatHeader");
+    const chatBody = document.getElementById("chatBody");
+    const chatForm = document.getElementById("chatForm");
+    const chatInput = document.getElementById("chatInput");
+
+    async function fetchUsers() {
+      const res = await fetch("http://localhost:5000/api/users");
+      const users = await res.json();
+      userList.innerHTML = users.map(user => `
+        <div class="user-item">
+          <strong>${user.name}</strong><br>
+          <small>${user.email}</small><br>
+          <span>Unread: ${user.unreadCount}</span><br>
+          <a href="mailto:${user.email}"><i class="fas fa-envelope"></i></a>
+          <a href="https://wa.me/${user.phone || '2348012345678'}" target="_blank"><i class="fab fa-whatsapp"></i></a><br>
+          <button onclick="openChat('${user.senderId}', '${user.name}', '${user.email}', '${user.phone}')">Open Chat</button>
+        </div>
+      `).join("");
+    }
+
+    function openChat(id, name, email, phone) {
+      currentUserId = id;
+      currentUserEmail = email;
+      currentUserPhone = phone;
+      chatHeader.textContent = `Chat with: ${name}`;
+      chatBody.innerHTML = "";
+      socket.emit("getMessages", id);
+      socket.emit("markAsRead", id);
+    }
+
+    socket.on("chatHistory", (messages) => {
+      chatBody.innerHTML = "";
+      messages.forEach(msg => {
+        const msgDiv = document.createElement("div");
+        msgDiv.className = `message ${msg.senderType}`;
+        msgDiv.textContent = msg.message;
+        chatBody.appendChild(msgDiv);
+      });
+      chatBody.scrollTop = chatBody.scrollHeight;
+    });
+
+    socket.on("newMessage", (msg) => {
+      if (msg.senderId === currentUserId) {
+        const msgDiv = document.createElement("div");
+        msgDiv.className = `message ${msg.senderType}`;
+        msgDiv.textContent = msg.message;
+        chatBody.appendChild(msgDiv);
+        chatBody.scrollTop = chatBody.scrollHeight;
+      } else {
+        fetchUsers();
+      }
+    });
+
+    chatForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (!chatInput.value || !currentUserId) return;
+      socket.emit("sendMessage", {
+        senderId: currentUserId,
+        name: "Admin",
+        email: "admin@tradexinvest.com",
+        senderType: "admin",
+        message: chatInput.value
+      });
+      chatInput.value = "";
+    });
+
+    fetchUsers();
+    setInterval(fetchUsers, 10000); // refresh every 10s
+  </script>
+</body>
+</html>
