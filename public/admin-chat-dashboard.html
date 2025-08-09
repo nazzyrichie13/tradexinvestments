@@ -102,7 +102,7 @@
   </div>
 
   <script>
-    const socket = io("http://localhost:5000");
+    const socket = io("https://tradexinvestments.onrender.com");
     let currentUserId = null;
     let currentUserEmail = null;
     let currentUserPhone = null;
@@ -114,7 +114,7 @@
     const chatInput = document.getElementById("chatInput");
 
     async function fetchUsers() {
-      const res = await fetch("http://localhost:5000/api/users");
+      const res = await fetch("https://tradexinvestments.onrender.com/api/users");
       const users = await res.json();
       userList.innerHTML = users.map(user => `
         <div class="user-item">

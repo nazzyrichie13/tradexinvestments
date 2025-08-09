@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const email = e.target.email.value;
     const password = e.target.password.value;
 
-    const res = await fetch("http://localhost:5000/api/auth/login", {
+    const res = await fetch("https://tradexinvestments.onrender.com/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -29,7 +29,7 @@ function showAdminDashboard() {
   document.getElementById("adminLoginForm").style.display = "none";
   document.getElementById("adminDashboard").style.display = "block";
 
-  fetch("http://localhost:5000/api/admin/users")
+  fetch("https://tradexinvestments.onrender.com/api/admin/users")
     .then((res) => res.json())
     .then((users) => {
       const userListDiv = document.getElementById("userList");
@@ -55,7 +55,7 @@ function updateUser(userId) {
   const profit = document.getElementById(`profit-${userId}`).value;
   const totalInterest = document.getElementById(`interest-${userId}`).value;
 
-  fetch(`http://localhost:5000/api/admin/user/${userId}`, {
+  fetch(`https://tradexinvestments.onrender.com/api/admin/user/${userId}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json"

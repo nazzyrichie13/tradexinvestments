@@ -111,7 +111,8 @@
     document.getElementById('authLinks').style.display = 'none';
     document.getElementById('loginForm').style.display = 'block';
   }); 
-const API_BASE = 'http://localhost:5000/api/auth';
+const API_BASE = 'https://tradexinvestments.onrender.com/api/auth';
+
 let pendingLogin = { tempToken: null, user: null };
 
 // Main flow controller
@@ -255,7 +256,7 @@ function showDashboard(user) {
   document.getElementById('profilePhoto').src = user.profilePhoto?.startsWith('http')
     ? user.profilePhoto
     : user.profilePhoto
-      ? `http://localhost:5000${user.profilePhoto}`
+      ? `https://tradexinvestments.onrender.com${user.profilePhoto}`
       : 'default.png';
 }
 function logout() {

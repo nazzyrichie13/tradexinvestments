@@ -13,18 +13,24 @@ document.addEventListener("DOMContentLoaded", () => {
     const email = this.email.value;
     const password = this.password.value;
 
-    const res = await fetch("http://localhost:5000/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const res = await fetch("https://tradexinvestments.onrender.com/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const data = await res.json();
-    if (res.ok && data.user.role === "user") {
-      localStorage.setItem("user", JSON.stringify(data.user));
-      showDashboard(data.user);
-    } else {
-      alert(data.message || "Login failed");
+      const data = await res.json();
+
+      if (res.ok && data.user.role === "user") {
+        localStorage.setItem("user", JSON.stringify(data.user));
+        showDashboard(data.user);
+      } else {
+        alert(data.message || "Login failed");
+      }
+    } catch (error) {
+      alert("Network error, please try again later.");
+      console.error(error);
     }
   });
 });
@@ -36,17 +42,20 @@ function showDashboard(user) {
   document.getElementById("profileInfo").style.display = "flex";
 
   document.getElementById("userName").textContent = user.fullName;
-  document.getElementById("profilePhoto").src = "http://localhost:5000" + user.profilePhoto;
+  document.getElementById("profilePhoto").src = "https://tradexinvestments.onrender.com" + user.profilePhoto;
 
-  fetch("http://localhost:5000/api/admin/users")
+  fetch("https://tradexinvestments.onrender.com/api/admin/users")
     .then((res) => res.json())
     .then((users) => {
-      const currentUser = users.find((u) => u._id === user.id);
+      const currentUser = users.find((u) => u._id === user._id);  // fixed id property
       if (currentUser) {
         document.getElementById("investmentAmount").textContent = currentUser.investmentAmount;
         document.getElementById("profit").textContent = currentUser.profit;
         document.getElementById("totalInterest").textContent = currentUser.totalInterest;
       }
+    })
+    .catch((error) => {
+      console.error("Error fetching user data:", error);
     });
 }
 
