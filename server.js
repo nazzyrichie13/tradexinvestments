@@ -9,7 +9,8 @@ const { Server } = require("socket.io");
 const rateLimit = require('express-rate-limit');
 
 const Contact = require('./models/contact'); // Your Mongoose model
-const transporter = require('./mailer'); // Your nodemailer transporter setup
+const transporter = require('./utils/mailer');// Your nodemailer transporter setup
+ 
 
 
 // ====== Import Routes ======
