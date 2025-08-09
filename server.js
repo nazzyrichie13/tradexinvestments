@@ -77,11 +77,16 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // ====== Connect to MongoDB ======
+// ====== Connect to MongoDB ======
 mongoose
-  .connect(process.env.MONGO_URI || 'MONGO_URI=mongodb+srv://<db_tradexinvest>:<db_pxktj3KMW1hL5eww>@cluster0.wjk3sjl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(
+    process.env.MONGO_URI ||
+      'mongodb+srv://db_tradexinvest:db_pxktj3KMW1hL5eww@cluster0.wjk3sjl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0',
+    {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    }
+  )
   .then(() => console.log('✅ MongoDB connected'))
   .catch((err) => console.error('❌ MongoDB connection error:', err));
 
