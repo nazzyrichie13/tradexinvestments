@@ -22,6 +22,7 @@ const app = express();
 const server = http.createServer(app); // HTTP + WS
 const io = new Server(server, { cors: { origin: "*" } });
 
+
 const PORT = process.env.PORT || 5000;
 
 // ====== Middleware ======
@@ -164,6 +165,13 @@ app.get("/api/users", async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch users" });
   }
+});
+// Serve frontend static files
+app.use(express.static(path.join(__dirname, 'public')));
+
+// SPA fallback: serve index.html on all non-API routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // ====== Start Server ======
