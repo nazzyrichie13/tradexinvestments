@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require("body-parser");
@@ -6,7 +7,7 @@ const path = require('path');
 const http = require("http");
 const { Server } = require("socket.io");
 const rateLimit = require('express-rate-limit');
-require('dotenv').config();
+
 const Contact = require('./models/contact'); // Your Mongoose model
 const transporter = require('./mailer'); // Your nodemailer transporter setup
 
@@ -75,7 +76,7 @@ app.use(limiter);
 
 // ====== Connect to MongoDB ======
 mongoose
-  .connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/tradex', {
+  .connect(process.env.MONGO_URI || 'MONGO_URI=mongodb+srv://<db_tradexinvest>:<db_pxktj3KMW1hL5eww>@cluster0.wjk3sjl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
