@@ -96,6 +96,11 @@ app.use('/api', uploadRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/public', express.static(path.join(__dirname, 'public')));
 app.get('/api/protected', (req, res) => res.json({ ok: true }));
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 
 // ====== Chat Schema ======
 const chatSchema = new mongoose.Schema({
@@ -167,12 +172,9 @@ app.get("/api/users", async (req, res) => {
   }
 });
 // Serve frontend static files
-app.use(express.static(path.join(__dirname, 'public')));
+
 
 // SPA fallback: serve index.html on all non-API routes
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
 
 // ====== Start Server ======
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
