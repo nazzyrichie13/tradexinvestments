@@ -110,7 +110,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Fallback for SPA routes
-app.get('*', (req, res) => {
+app.get('/:catchAll(.*)', (req, res) => {
+
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
