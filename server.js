@@ -92,7 +92,7 @@ app.get('/', (req, res) => {
   res.send('TradexInvest backend running...');
 });
 
-app.use('/api/auth', require('./routes/auth'));
+// app.use('/api/auth', require('./routes/auth'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api', require('./routes/upload'));
 app.use("/api/contact", require("./routes/contact"));
