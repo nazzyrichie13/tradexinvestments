@@ -8,18 +8,16 @@ const http = require("http");
 const { Server } = require("socket.io");
 const rateLimit = require('express-rate-limit');
 
-const Contact = require('./models/contact'); // Your Mongoose model
-const transporter = require('./utils/mailer');// Your nodemailer transporter setup
- 
-
+const Contact = require('./models/contact'); 
+const transporter = require('./utils/mailer');
 
 // ====== Import Routes ======
-const authRoutes = require('./routes/auth'); // merged auth + 2FA
+const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const uploadRoutes = require('./routes/upload');
 
 const app = express();
-const server = http.createServer(app); // HTTP + WS
+const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 app.set('trust proxy', 1);
@@ -32,12 +30,16 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.use(cors());
 app.use(express.json());
 app.use(bodyParser.json());
 
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+});
+app.use(limiter);
 
-
+// ====== Contact Form ======
 app.post('/api/contact', async (req, res) => {
   try {
     const { name, email, message } = req.body;
@@ -76,16 +78,6 @@ app.post('/api/contact', async (req, res) => {
   }
 });
 
-
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-});
-app.use(limiter);
-
-
-// ====== Connect to MongoDB ======
-// ====== Connect to MongoDB ======
 // ====== Connect to MongoDB ======
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
@@ -94,6 +86,7 @@ mongoose.connect(process.env.MONGO_URI, {
 .then(() => console.log('✅ MongoDB connected'))
 .catch((err) => console.error('❌ MongoDB connection error:', err));
 
+// ====== Routes ======
 // ====== ROUTES ======
 app.get('/', (req, res) => {
   res.send('TradexInvest backend running...');
@@ -105,23 +98,21 @@ app.use('/api', require('./routes/upload'));
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ====== SERVE FRONTEND ======
-// This will serve your HTML/CSS/JS files from the "public" folder
+
+// ====== Serve Frontend ======
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Fallback for SPA routes
-app.get('/:catchAll(.*)', (req, res) => {
-
+// Fallback for SPA routes — FIXED VERSION
+app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
-
 
 // ====== Chat Schema ======
 const chatSchema = new mongoose.Schema({
   senderId: String,
   name: String,
   email: String,
-  senderType: String, // 'user' or 'admin'
+  senderType: String,
   message: String,
   read: { type: Boolean, default: false },
   timestamp: { type: Date, default: Date.now },
@@ -185,7 +176,6 @@ app.get("/api/users", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch users" });
   }
 });
-// 
 
 // ====== Start Server ======
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
