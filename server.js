@@ -6,6 +6,7 @@ const cors = require('cors');
 const path = require('path');
 const http = require("http");
 const { Server } = require("socket.io");
+app.set('trust proxy', 1);
 const rateLimit = require('express-rate-limit');
 
 const Contact = require('./models/contact'); // Your Mongoose model
@@ -26,9 +27,16 @@ const io = new Server(server, { cors: { origin: "*" } });
 const PORT = process.env.PORT || 5000;
 
 // ====== Middleware ======
+pp.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(cors());
 app.use(express.json());
 app.use(bodyParser.json());
+
 
 
 app.post('/api/contact', async (req, res) => {
@@ -80,27 +88,28 @@ app.use(limiter);
 // ====== Connect to MongoDB ======
 // ====== Connect to MongoDB ======
 // ====== Connect to MongoDB ======
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ MongoDB connected'))
-  .catch((err) => console.error('❌ MongoDB connection error:', err));
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log('✅ MongoDB connected'))
+.catch((err) => console.error('❌ MongoDB connection error:', err));
 
-// ====== Routes ======
-// Serve static files from /public
-app.use(express.static(path.join(__dirname, 'public')));
+// ====== ROUTES ======
+app.get('/', (req, res) => {
+  res.send('TradexInvest backend running...');
+});
 
-// API routes
-app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api', uploadRoutes);
-
-// Serve uploads
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api', require('./routes/uploadRoutes'));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Protected route (example)
-app.get('/api/protected', (req, res) => res.json({ ok: true }));
+// ====== SERVE FRONTEND ======
+// This will serve your HTML/CSS/JS files from the "public" folder
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Catch-all: send index.html for any non-API route
+// Fallback for SPA routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -175,10 +184,7 @@ app.get("/api/users", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch users" });
   }
 });
-// Serve frontend static files
-
-
-// SPA fallback: serve index.html on all non-API routes
+// 
 
 // ====== Start Server ======
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
