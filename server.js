@@ -99,9 +99,10 @@ app.get('/', (req, res) => {
   res.send('TradexInvest backend running...');
 });
 
-app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/admin', require('./routes/adminRoutes'));
-app.use('/api', require('./routes/uploadRoutes'));
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api', require('./routes/upload'));
+
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ====== SERVE FRONTEND ======
