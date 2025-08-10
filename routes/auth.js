@@ -39,20 +39,7 @@ router.post("/register", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-const routes = [
-  '/api/users/:id',
-  '/some/route/:', // invalid - missing parameter name after colon
-  'https://git.new/pathToRegexpError', // invalid - full URL instead of path
-];
 
-routes.forEach(route => {
-  try {
-    console.log('Registering route:', route);
-    app.get(route, (req, res) => res.send('ok'));
-  } catch (err) {
-    console.error('Error registering route:', route, err.message);
-  }
-});
 
 
 // ---------------- LOGIN ----------------

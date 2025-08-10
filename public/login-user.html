@@ -248,6 +248,10 @@ function closeTwoFA() {
   pendingLogin = { tempToken: null, user: null };
 }
 function showDashboard(user) {
+  if (!user) {
+    console.error("showDashboard called without a valid user");
+    return;
+  }
   document.getElementById('authLinks').style.display = 'none';
   document.getElementById('loginForm').style.display = 'none';
   document.getElementById('dashboardSection').style.display = 'block';
@@ -259,6 +263,7 @@ function showDashboard(user) {
       ? `https://tradexinvestments.onrender.com${user.profilePhoto}`
       : 'default.png';
 }
+
 function logout() {
   localStorage.removeItem('user');
   localStorage.removeItem('authToken');

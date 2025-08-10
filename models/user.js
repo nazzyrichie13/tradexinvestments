@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
   passwordHash: { type: String, required: true },
   fullName: { type: String },
   profilePhoto: { type: String, default: '' },
-
+   role: { type: String, default: 'user' },
   // 2FA fields
   twoFA: {
     secret: { type: String, default: null }, // store base32 secret
