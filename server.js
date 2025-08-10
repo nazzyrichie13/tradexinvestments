@@ -19,6 +19,7 @@ const uploadRoutes = require('./routes/upload');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
+app.use('/api', require('./routes/upload'));
 
 app.set('trust proxy', 1);
 const PORT = process.env.PORT || 5000;
@@ -92,7 +93,7 @@ app.get('/', (req, res) => {
   res.send('TradexInvest backend running...');
 });
 
-// app.use('/api/auth', require('./routes/auth'));
+app.use('/api/auth', require('./routes/auth'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api', require('./routes/upload'));
 app.use("/api/contact", require("./routes/contact"));
