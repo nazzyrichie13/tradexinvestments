@@ -97,16 +97,8 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api', require('./routes/upload'));
 app.use("/api/contact", require("./routes/contact"));
-const routes = [
-  '/api/users/:id',
-  '/some/route/:',   // <-- this is invalid
-  'https://git.new/pathToRegexpError'  // <-- invalid for Express routes
-];
 
-routes.forEach(route => {
-  console.log('Registering route:', route);
-  app.get(route, handler);
-});
+
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
