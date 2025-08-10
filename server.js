@@ -76,6 +76,7 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+
 // ====== Connect to MongoDB ======
 // ====== Connect to MongoDB ======
 // ====== Connect to MongoDB ======
@@ -85,17 +86,21 @@ mongoose
   .catch((err) => console.error('❌ MongoDB connection error:', err));
 
 // ====== Routes ======
-app.get('/', (req, res) => {
-  res.send('TradexInvest backend running...');
-});
+// Serve static files from /public
+app.use(express.static(path.join(__dirname, 'public')));
 
+// API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', uploadRoutes);
+
+// Serve uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/public', express.static(path.join(__dirname, 'public')));
+
+// Protected route (example)
 app.get('/api/protected', (req, res) => res.json({ ok: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+
+// Catch-all: send index.html for any non-API route
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
