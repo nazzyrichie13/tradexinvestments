@@ -1,5 +1,4 @@
-const transporter = require("../config/mailer");
-
+const transporter = require('./utils/mailer');
 router.post("/", async (req, res) => {
   const { name, email, message } = req.body;
 
