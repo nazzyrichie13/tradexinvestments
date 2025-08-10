@@ -95,6 +95,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api', require('./routes/upload'));
+app.use("/api/contact", require("./routes/contact"));
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
