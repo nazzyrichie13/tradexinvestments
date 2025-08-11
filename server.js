@@ -8,7 +8,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const rateLimit = require('express-rate-limit');
 
-// const Contact = require('./models/contact'); 
+const Contact = require('./models/contact'); 
 const transporter = require('./utils/mailer');
 
 // ====== Import Routes ======
