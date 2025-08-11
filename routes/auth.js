@@ -11,7 +11,7 @@ const authMiddleware = require("../middleware/authMiddleware");
 const router = express.Router();
 
 // ---------------- REGISTER ----------------
-router.post("/register", async (req, res) => {
+router.post("/signup", async (req, res) => {
   try {
     const { email, password, fullName, role } = req.body;
 

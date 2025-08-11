@@ -56,6 +56,7 @@ app.post('/api/contact', async (req, res) => {
     const mailOptions = {
       from: `"Contact Form" <your.email@gmail.com>`,
       to: 'support@tradexinvest.com',
+      replyTo: email,
       subject: `New Contact Message from ${name}`,
       html: `
         <h3>New message from contact form</h3>

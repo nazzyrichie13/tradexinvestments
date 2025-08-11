@@ -1,6 +1,6 @@
 document.getElementById('signupForm').addEventListener('submit', async function(e) {
   e.preventDefault();
-
+console.log("Signup form submitted")
   const formData = new FormData(this);
 
   // Optional: basic password validation before sending
