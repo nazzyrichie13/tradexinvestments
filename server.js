@@ -90,14 +90,14 @@ mongoose.connect(process.env.MONGO_URI, {
 
 // ====== Routes ======
 // ====== ROUTES ======
-// app.get('/', (req, res) => {
-//   res.send('TradexInvest backend running...');
-// });
+app.get('/', (req, res) => {
+  res.send('TradexInvest backend running...');
+});
 
-// app.use('/api/auth', require('./routes/auth'));
-// app.use('/api/admin', require('./routes/admin'));
-// app.use('/api', require('./routes/upload'));
-// app.use("/api/contact", require("./routes/contact"));
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api', require('./routes/upload'));
+app.use("/api/contact", require("./routes/contact"));
 
 
 
