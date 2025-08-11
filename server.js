@@ -8,7 +8,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const rateLimit = require('express-rate-limit');
 
-const Contact = require('./models/contact'); 
+// const Contact = require('./models/contact'); 
 const transporter = require('./utils/mailer');
 
 // ====== Import Routes ======
@@ -108,9 +108,9 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Fallback for SPA routes — FIXED VERSION
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+// app.get('*', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// });
 
 // ====== Chat Schema ======
 const chatSchema = new mongoose.Schema({
