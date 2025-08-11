@@ -12,10 +12,10 @@ const Contact = require('./models/contact');
 const transporter = require('./utils/mailer');
 
 // ====== Import Routes ======
-const authRoutes = require('./routes/auth');
-const adminRoutes = require('./routes/admin');
-const uploadRoutes = require('./routes/upload');
-const contactRoutes = require('./routes/contact');
+// const authRoutes = require('./routes/auth');
+// const adminRoutes = require('./routes/admin');
+// const uploadRoutes = require('./routes/upload');
+// const contactRoutes = require('./routes/contact');
 
 const app = express();
 const server = http.createServer(app);
@@ -90,27 +90,27 @@ mongoose.connect(process.env.MONGO_URI, {
 
 // ====== Routes ======
 // ====== ROUTES ======
-app.get('/', (req, res) => {
-  res.send('TradexInvest backend running...');
-});
+// app.get('/', (req, res) => {
+//   res.send('TradexInvest backend running...');
+// });
 
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/admin', require('./routes/admin'));
-app.use('/api', require('./routes/upload'));
-app.use("/api/contact", require("./routes/contact"));
+// app.use('/api/auth', require('./routes/auth'));
+// app.use('/api/admin', require('./routes/admin'));
+// app.use('/api', require('./routes/upload'));
+// app.use("/api/contact", require("./routes/contact"));
 
 
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
 // ====== Serve Frontend ======
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Fallback for SPA routes — FIXED VERSION
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+// app.get('*', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// });
 
 // ====== Chat Schema ======
 const chatSchema = new mongoose.Schema({
