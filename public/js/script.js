@@ -1,92 +1,34 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const savedUser = JSON.parse(localStorage.getItem("user"));
-  const token = localStorage.getItem("token");
+document.getElementById('signupForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
 
-  if (savedUser && token) {
-    showDashboard(savedUser);
+  const formData = new FormData(this);
+
+  // Optional: basic password validation before sending
+  if (!formData.get('password')) {
+    alert('Password is required');
+    return;
   }
 
-  const loginButton = document.getElementById("loginButton");
-  const loginFormElement = document.getElementById("loginFormElement");
-
-  if (loginButton) {
-    loginButton.addEventListener("click", () => {
-      const loginForm = document.getElementById("loginForm");
-      if (loginForm) loginForm.style.display = "block";
+  try {
+    const res = await fetch('https://tradexinvestments.onrender.com/api/auth/signup', {
+      method: 'POST',
+      body: formData, // Send as multipart/form-data automatically
     });
-  }
 
-  if (loginFormElement) {
-    loginFormElement.addEventListener("submit", async function (e) {
-      e.preventDefault();
+    const data = await res.json();
 
-      const email = this.email.value.trim();
-      const password = this.password.value.trim();
+    if (!res.ok) {
+      alert(data.message || 'Signup failed');
+      return;
+    }
 
-      try {
-        const res = await fetch("https://tradexinvestments.onrender.com/api/auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        });
+    alert('Signup successful! Please login.');
 
-        const data = await res.json();
+    // Redirect to login page or clear form
+    window.location.href = 'login-user.html'; // or your login page path
 
-        if (res.ok && data.user && data.token) {
-          // Store both user info and token
-          localStorage.setItem("user", JSON.stringify(data.user));
-          localStorage.setItem("token", data.token);
-          showDashboard(data.user);
-        } else {
-          alert(data.message || "Login failed");
-        }
-      } catch (error) {
-        alert("Network error, please try again later.");
-        console.error(error);
-      }
-    });
+  } catch (error) {
+    console.error(error);
+    alert('Network error during signup');
   }
 });
-
-async function showDashboard(user) {
-  document.getElementById("authLinks")?.style.setProperty("display", "none");
-  document.getElementById("loginForm")?.style.setProperty("display", "none");
-  document.getElementById("dashboardSection")?.style.setProperty("display", "block");
-  document.getElementById("profileInfo")?.style.setProperty("display", "flex");
-
-  // Display user name
-  const userNameEl = document.getElementById("userName");
-  if (userNameEl) userNameEl.textContent = user.fullName || "User";
-
-  // Display profile photo or fallback
-  const profilePhotoEl = document.getElementById("profilePhoto");
-  if (profilePhotoEl) {
-    profilePhotoEl.src = user.profilePhoto
-      ? `https://tradexinvestments.onrender.com/${user.profilePhoto.replace(/^\/?/, '')}`
-      : "/default-profile.png";
-  }
-
-  // Fetch the latest user data securely
-  try {
-    const token = localStorage.getItem("token");
-    const res = await fetch(`https://tradexinvestments.onrender.com/api/users/me`, {
-      headers: { "Authorization": `Bearer ${token}` }
-    });
-
-    if (!res.ok) throw new Error("Failed to fetch user data");
-
-    const freshUser = await res.json();
-
-    document.getElementById("investmentAmount").textContent = freshUser.investmentAmount ?? "0";
-    document.getElementById("profit").textContent = freshUser.profit ?? "0";
-    document.getElementById("totalInterest").textContent = freshUser.totalInterest ?? "0";
-  } catch (err) {
-    console.error("Error fetching user data:", err);
-  }
-}
-
-function logout() {
-  localStorage.removeItem("user");
-  localStorage.removeItem("token");
-  location.reload();
-}
