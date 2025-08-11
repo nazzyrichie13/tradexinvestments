@@ -5,42 +5,83 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const speakeasy = require("speakeasy");
 const qrcode = require("qrcode");
+const path = require("path");
+const multer = require("multer");
+const fs = require("fs");
 const User = require("../models/user");
 const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
+// --- Multer setup ---
+const uploadDir = path.join(process.cwd(), "uploads");
+// ensure uploads folder exists
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueName = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueName + path.extname(file.originalname));
+  },
+});
+const upload = multer({ storage });
+
 // ---------------- REGISTER ----------------
-router.post("/signup", async (req, res) => {
+router.post("/signup", upload.single("profilePic"), async (req, res) => {
   try {
+    // With multipart/form-data, text fields are on req.body, file on req.file
     const { email, password, fullName, role } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
+      return res
+        .status(400)
+        .json({ message: "Email and password are required" });
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
+      // If you saved uploaded file but user exists, consider deleting the file to avoid orphans.
+      if (req.file) {
+        try { fs.unlinkSync(path.join(uploadDir, req.file.filename)); } catch (e) {}
+      }
       return res.status(400).json({ message: "User already exists" });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+
     const newUser = new User({
       email,
       passwordHash,
       fullName,
-      role: role || "user", // default role
+      role: role || "user",
+      profilePic: req.file ? req.file.filename : null,
     });
     await newUser.save();
 
-    res.json({ message: "User registered successfully" });
+    // generate token so user is effectively logged in after signup
+    const token = jwt.sign(
+      { id: newUser._id, role: newUser.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    // Return safe user object (remove passwordHash)
+    const safeUser = newUser.toObject();
+    delete safeUser.passwordHash;
+
+    return res.status(201).json({ message: "User registered successfully", token, user: safeUser });
   } catch (err) {
     console.error(err);
+    // If multer saved file and an error happened, you may want to remove the uploaded file:
+    if (req.file) {
+      try { fs.unlinkSync(path.join(uploadDir, req.file.filename)); } catch (e) {}
+    }
     res.status(500).json({ message: "Server error" });
   }
 });
-
-
 
 // ---------------- LOGIN ----------------
 router.post("/login", async (req, res) => {
@@ -84,6 +125,7 @@ router.post("/setup-2fa", authMiddleware, async (req, res) => {
       name: `TradexInvest (${user.email})`,
     });
 
+    user.twoFA = user.twoFA || {};
     user.twoFA.secret = secret.base32;
     user.twoFA.enabled = false;
     await user.save();

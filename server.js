@@ -103,7 +103,7 @@ app.use("/api/contact", require("./routes/contact"));
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 // ====== Serve Frontend ======
 app.use(express.static(path.join(__dirname, 'public')));
 

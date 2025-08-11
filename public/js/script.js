@@ -1,9 +1,9 @@
 document.getElementById('signupForm').addEventListener('submit', async function(e) {
   e.preventDefault();
-console.log("Signup form submitted")
+  console.log("Signup form submitted");
+
   const formData = new FormData(this);
 
-  // Optional: basic password validation before sending
   if (!formData.get('password')) {
     alert('Password is required');
     return;
@@ -12,10 +12,15 @@ console.log("Signup form submitted")
   try {
     const res = await fetch('https://tradexinvestments.onrender.com/api/auth/signup', {
       method: 'POST',
-      body: formData, // Send as multipart/form-data automatically
+      body: formData, // keep as multipart/form-data
     });
 
-    const data = await res.json();
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      data = { message: 'Invalid server response' };
+    }
 
     if (!res.ok) {
       alert(data.message || 'Signup failed');
@@ -23,9 +28,7 @@ console.log("Signup form submitted")
     }
 
     alert('Signup successful! Please login.');
-
-    // Redirect to login page or clear form
-    window.location.href = 'login-user.html'; // or your login page path
+    window.location.href = 'login-user.html';
 
   } catch (error) {
     console.error(error);
