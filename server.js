@@ -12,10 +12,10 @@ const Contact = require('./models/contact');
 const transporter = require('./utils/mailer');
 
 // ====== Import Routes ======
-// const authRoutes = require('./routes/auth');
-// const adminRoutes = require('./routes/admin');
-// const uploadRoutes = require('./routes/upload');
-// const contactRoutes = require('./routes/contact');
+const authRoutes = require('./routes/auth');
+const adminRoutes = require('./routes/admin');
+const uploadRoutes = require('./routes/upload');
+const contactRoutes = require('./routes/contact');
 
 const app = express();
 const server = http.createServer(app);
