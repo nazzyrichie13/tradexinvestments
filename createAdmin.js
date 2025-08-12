@@ -1,6 +1,6 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const Admin = require('./Admin');
+const Admin = require('./admin');
 
 async function createAdmin() {
   try {
