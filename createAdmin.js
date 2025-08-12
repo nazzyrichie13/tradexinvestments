@@ -1,6 +1,8 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const Admin = require('./admin');
+const Admin = require('./models/Admin');  // <-- correct path here
+
+// rest of your code ...
 
 async function createAdmin() {
   try {
