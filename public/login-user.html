@@ -39,6 +39,7 @@
     <input type="password" name="password" placeholder="Enter Password" required />
     <button type="submit">Login</button>
   </form>
+  
 
  <!-- Terms & Conditions Popup -->
 <div id="termsPopup" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:1000;">
@@ -74,195 +75,140 @@
   </div>
 </div>
 
- <!-- 2FA Popup -->
-<div id="twoFAPopup" style="display:none;">
-  <div id="termsOverlay">
-    <div id="termsModal">
+<div id="twoFAPopup">
+    <div>
       <h2>Two-Factor Authentication</h2>
       <p>Please enter the 6-digit code from your Google Authenticator app.</p>
-      <input type="text" id="twoFACode" placeholder="Enter 6-digit code">
-       <button id="verify2FA">Verify 2FA</button>
-      <div id="termsButtons">
-        <button id="verify2FABtn">Verify</button>
-        <button id="cancel2FABtn">Cancel</button>
+      <input type="text" id="twoFACode" placeholder="Enter 6-digit code" maxlength="6" />
+      <div style="margin-top:15px;">
+        <button id="verify2FA" style="background:#28a745; color:white; padding:10px 20px; border:none; border-radius:5px;">Verify</button>
+        <button id="cancel2FA" style="background:#dc3545; color:white; padding:10px 20px; border:none; border-radius:5px;">Cancel</button>
       </div>
     </div>
   </div>
-</div>
 
 
   
 
   <script>
-   
-   document.getElementById('loginButton').addEventListener('click', () => {
+  const API_BASE = 'https://tradexinvestments.onrender.com/api/auth';
+  let pendingLogin = { tempToken: null, user: null };
+
+  document.getElementById('loginButton').addEventListener('click', () => {
     document.getElementById('authLinks').style.display = 'none';
     document.getElementById('loginForm').style.display = 'block';
-  }); 
-const API_BASE = 'https://tradexinvestments.onrender.com/api/auth';
+  });
 
-let pendingLogin = { tempToken: null, user: null };
+  document.getElementById('loginForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const email = e.target.email.value.trim();
+    const password = e.target.password.value;
 
-// Main flow controller
-function initFlow() {
-  const storedToken = localStorage.getItem('authToken');
-  const storedUser = localStorage.getItem('user');
-  const termsAccepted = localStorage.getItem('termsAccepted') === 'true';
-
-  if (storedToken && storedUser) {
     try {
-      const user = JSON.parse(storedUser);
-      if (!termsAccepted) {
-        pendingLogin.user = user;
-        openTerms();
-      } else {
-        showDashboard(user);
+      const res = await fetch(`${API_BASE}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) return alert(data.message || 'Login failed');
+
+      if (data.user?.role !== 'user') {
+        alert('Unauthorized account role');
+        return;
       }
-      return;
-    } catch { /* corrupted localStorage */ logout(); }
-  }
 
-  // If mid-login and terms are done, show 2FA
-  if (pendingLogin.tempToken && termsAccepted) {
-    openTwoFA();
-    return;
-  }
-
-  // Otherwise show login form
-  document.getElementById('loginForm').style.display = 'block';
-}
-
-// Login handler
-document.getElementById('loginForm')?.addEventListener('submit', async function (e) {
-  e.preventDefault();
-  const email = this.email.value.trim();
-  const password = this.password.value;
-
-  try {
-    const res = await fetch(`${API_BASE}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-
-    const data = await res.json();
-    if (!res.ok) return alert(data.message || 'Login failed');
-
-    // Only allow role=user
-    if (data.user?.role !== 'user') {
-      alert('Unauthorized account role');
-      return;
-    }
-
-    if (data.twoFARequired) {
-      pendingLogin.tempToken = data.tempToken;
-      pendingLogin.user = data.user;
-      if (localStorage.getItem('termsAccepted') === 'true') {
-        openTwoFA();
-      } else {
-        openTerms();
+      if (data.twoFARequired) {
+        pendingLogin.tempToken = data.tempToken;
+        pendingLogin.user = data.user;
+        if (localStorage.getItem('termsAccepted') === 'true') {
+          openTwoFA();
+        } else {
+          openTerms();
+        }
+        return;
       }
-      return;
+
+      // No 2FA required, direct login
+      if (data.token) {
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('termsAccepted', 'true'); // Assume terms accepted if no 2FA?
+        redirectToDashboard();
+        return;
+      }
+
+      alert('Unexpected login response');
+    } catch (err) {
+      console.error(err);
+      alert('Network or server error during login');
     }
+  });
 
-    // Direct login without 2FA
-    if (data.token) {
-      localStorage.setItem('authToken', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      showDashboard(data.user);
-      return;
+  // Terms popup handlers
+  document.getElementById('agreeBtn').addEventListener('click', () => {
+    localStorage.setItem('termsAccepted', 'true');
+    closeTerms();
+    if (pendingLogin.tempToken) {
+      openTwoFA();
+    } else if (pendingLogin.user) {
+      redirectToDashboard();
     }
+  });
+  document.getElementById('declineBtn').addEventListener('click', () => {
+    alert('You must agree to the Terms & Conditions to continue.');
+    logout();
+  });
 
-    alert('Unexpected login response');
-  } catch (err) {
-    console.error(err);
-    alert('Network or server error during login');
-  }
-});
+  // 2FA handlers
+  document.getElementById('verify2FA').addEventListener('click', async () => {
+    const code = document.getElementById('twoFACode').value.trim();
+    if (!/^\d{6}$/.test(code)) return alert('Enter the 6-digit code');
 
-// Terms
-document.getElementById('agreeBtn').addEventListener('click', () => {
-  localStorage.setItem('termsAccepted', 'true');
-  closeTerms();
-  if (pendingLogin.tempToken) {
-    openTwoFA();
-  } else if (pendingLogin.user) {
-    showDashboard(pendingLogin.user);
-  } else {
-    initFlow();
-  }
-});
-document.getElementById('declineBtn').addEventListener('click', () => {
-  alert('You must agree to the Terms & Conditions to continue.');
-  logout();
-});
+    try {
+      const res = await fetch(`${API_BASE}/2fa/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tempToken: pendingLogin.tempToken, token: code })
+      });
+      const data = await res.json();
+      if (!res.ok) return alert(data.message || '2FA verification failed');
 
-// 2FA
-document.getElementById('verify2FA').addEventListener('click', async () => {
-  const code = document.getElementById('twoFACode').value.trim();
-  if (!/^\d{6}$/.test(code)) return alert('Enter the 6-digit code');
-
-  try {
-    const res = await fetch(`${API_BASE}/2fa/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tempToken: pendingLogin.tempToken, token: code })
-    });
-    const data = await res.json();
-    if (!res.ok) return alert(data.message || '2FA verification failed');
-
-    if (data.token && data.user) {
-      localStorage.setItem('authToken', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      closeTwoFA();
-      showDashboard(data.user);
-    } else {
-      alert('Invalid server response after 2FA');
+      if (data.token && data.user) {
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        closeTwoFA();
+        redirectToDashboard();
+      } else {
+        alert('Invalid server response after 2FA');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network or server error verifying 2FA');
     }
-  } catch (err) {
-    console.error(err);
-    alert('Network or server error verifying 2FA');
+  });
+  document.getElementById('cancel2FA').addEventListener('click', logout);
+
+  // UI helpers
+  function openTerms() { document.getElementById('termsPopup').style.display = 'flex'; }
+  function closeTerms() { document.getElementById('termsPopup').style.display = 'none'; }
+  function openTwoFA() { document.getElementById('twoFAPopup').style.display = 'flex'; }
+  function closeTwoFA() {
+    document.getElementById('twoFAPopup').style.display = 'none';
+    document.getElementById('twoFACode').value = '';
+    pendingLogin = { tempToken: null, user: null };
   }
-});
-document.getElementById('cancel2FA').addEventListener('click', logout);
 
-// Helpers
-function openTerms() { document.getElementById('termsPopup').style.display = 'flex'; }
-function closeTerms() { document.getElementById('termsPopup').style.display = 'none'; }
-function openTwoFA() { document.getElementById('twoFAPopup').style.display = 'flex'; }
-function closeTwoFA() {
-  document.getElementById('twoFAPopup').style.display = 'none';
-  document.getElementById('twoFACode').value = '';
-  pendingLogin = { tempToken: null, user: null };
-}
-function showDashboard(user) {
-  if (!user) {
-    console.error("showDashboard called without a valid user");
-    return;
+  function logout() {
+    localStorage.clear();
+    location.reload();
   }
-  document.getElementById('authLinks').style.display = 'none';
-  document.getElementById('loginForm').style.display = 'none';
-  document.getElementById('dashboardSection').style.display = 'block';
-  document.getElementById('profileInfo').style.display = 'flex';
-  document.getElementById('userName').textContent = user.fullName || user.email || 'User';
-  document.getElementById('profilePhoto').src = user.profilePhoto?.startsWith('http')
-    ? user.profilePhoto
-    : user.profilePhoto
-      ? `https://tradexinvestments.onrender.com${user.profilePhoto}`
-      : 'default.png';
-}
 
-function logout() {
-  localStorage.removeItem('user');
-  localStorage.removeItem('authToken');
-  localStorage.removeItem('termsAccepted');
-  pendingLogin = { tempToken: null, user: null };
-  location.reload();
-}
-
-// Start
-document.addEventListener('DOMContentLoaded', initFlow);
+  function redirectToDashboard() {
+    window.location.href = 'index.html';
+  }
 </script>
+
 
 
   

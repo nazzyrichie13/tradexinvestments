@@ -5,6 +5,13 @@
   <title>Admin Login - TradexInvest</title>
   <link rel="stylesheet" href="style.css">
 </head>
+<style>
+  #adminWithdrawalTable button {
+    margin-right: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+</style>
 <body>
   <!-- Admin Login Form -->
   <div id="adminLoginForm" class="container">
@@ -22,7 +29,98 @@
     <div id="userList">Loading users...</div>
     <button onclick="logout()">Logout</button>
   </div>
+<h2>Withdrawal Requests</h2>
+<table id="adminWithdrawalTable" border="1" style="width: 100%; border-collapse: collapse;">
+  <thead>
+    <tr>
+      <th>User</th>
+      <th>Email</th>
+      <th>Amount ($)</th>
+      <th>Method</th>
+      <th>Recipient</th>
+      <th>Status</th>
+      <th>Requested On</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+<script src="admin.js"></script>
+<script>
+  const adminToken = localStorage.getItem('token'); // Admin auth token
 
-  <script src="admin.js"></script>
+  async function loadAdminRequests() {
+    if (!adminToken) return alert('Please login as admin.');
+
+    try {
+      const res = await fetch('/api/withdrawals/admin/requests', {
+        headers: { 'Authorization': 'Bearer ' + adminToken }
+      });
+      const requests = await res.json();
+
+      const tbody = document.querySelector('#adminWithdrawalTable tbody');
+      tbody.innerHTML = '';
+
+      if (requests.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No withdrawal requests.</td></tr>';
+        return;
+      }
+
+      requests.forEach(req => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${req.userId.fullName || 'N/A'}</td>
+          <td>${req.userId.email || 'N/A'}</td>
+          <td>$${req.amount.toFixed(2)}</td>
+          <td>${req.method}</td>
+          <td>${req.recipientDetails}</td>
+          <td>${req.status || 'pending'}</td>
+          <td>${new Date(req.createdAt).toLocaleString()}</td>
+          <td>
+            ${req.status === 'pending' ? `
+              <button onclick="updateRequestStatus('${req._id}', 'approved')">Approve</button>
+              <button onclick="updateRequestStatus('${req._id}', 'rejected')">Reject</button>
+            ` : 'Processed'}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } catch (error) {
+      alert('Failed to load withdrawal requests.');
+    }
+  }
+
+  async function updateRequestStatus(id, status) {
+    if (!adminToken) return alert('Please login as admin.');
+
+    if (!confirm(`Are you sure to ${status} this withdrawal request?`)) return;
+
+    try {
+      const res = await fetch(`/api/withdrawals/admin/request/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + adminToken
+        },
+        body: JSON.stringify({ status })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message);
+        loadAdminRequests();
+      } else {
+        alert(data.message || 'Failed to update request.');
+      }
+    } catch {
+      alert('Server error.');
+    }
+  }
+
+  loadAdminRequests();
+</script>
+
+
+
+  
 </body>
 </html>

@@ -2,6 +2,10 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 const router = express.Router();
+const WithdrawalRequest = require("../models/withdrawalRequest");
+const User = require("../models/user");
+const transporter = require("../utils/mailer");
+
 
 // Middleware to verify JWT and admin role
 function authenticateAdmin(req, res, next) {
@@ -54,5 +58,105 @@ router.put("/user/:id", authenticateAdmin, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+// List all withdrawal requests
+router.get("/withdrawals", authenticateAdmin, async (req, res) => {
+  try {
+    const requests = await WithdrawalRequest.find()
+      .populate("userId", "email fullName")
+      .sort({ createdAt: -1 });
+    res.json(requests);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Approve withdrawal
+router.put("/withdrawal/:id/approve", authenticateAdmin, async (req, res) => {
+  try {
+    const request = await WithdrawalRequest.findById(req.params.id).populate("userId");
+    if (!request) return res.status(404).json({ message: "Request not found" });
+
+    if (request.status !== "pending") {
+      return res.status(400).json({ message: "Request already processed" });
+    }
+
+    // Deduct amount from user investmentAmount
+    const user = request.userId;
+    user.investmentAmount = Math.max(0, (user.investmentAmount || 0) - request.amount);
+    await user.save();
+
+    request.status = "approved";
+    request.updatedAt = new Date();
+    await request.save();
+
+    // Send email notification to user
+    const mailOptions = {
+      from: `"TradeXInvest" <support@tradexinvest.com>`,
+      to: user.email,
+      subject: "Withdrawal Request Approved",
+      html: `
+        <p>Dear ${user.fullName || user.email},</p>
+        <p>Your withdrawal request of $${request.amount.toFixed(2)} via <strong>${request.method}</strong> has been <strong>approved</strong>.</p>
+        <p>Recipient Details: ${request.recipientDetails}</p>
+        <p>Thank you for investing with TradeXInvest.</p>
+      `,
+    };
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error("Error sending approval email:", error);
+      } else {
+        console.log("Approval email sent:", info.response);
+      }
+    });
+
+    res.json({ message: "Withdrawal approved", request });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Reject withdrawal
+router.put("/withdrawal/:id/reject", authenticateAdmin, async (req, res) => {
+  try {
+    const request = await WithdrawalRequest.findById(req.params.id).populate("userId");
+    if (!request) return res.status(404).json({ message: "Request not found" });
+
+    if (request.status !== "pending") {
+      return res.status(400).json({ message: "Request already processed" });
+    }
+
+    request.status = "rejected";
+    request.updatedAt = new Date();
+    await request.save();
+
+    // Send email notification to user
+    const user = request.userId;
+    const mailOptions = {
+      from: `"TradeXInvest" <support@tradexinvest.com>`,
+      to: user.email,
+      subject: "Withdrawal Request Rejected",
+      html: `
+        <p>Dear ${user.fullName || user.email},</p>
+        <p>Your withdrawal request of $${request.amount.toFixed(2)} via <strong>${request.method}</strong> has been <strong>rejected</strong>.</p>
+        <p>If you have any questions, please contact support.</p>
+      `,
+    };
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error("Error sending rejection email:", error);
+      } else {
+        console.log("Rejection email sent:", info.response);
+      }
+    });
+
+    res.json({ message: "Withdrawal rejected", request });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 
 module.exports = router;
