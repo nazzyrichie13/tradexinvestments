@@ -74,6 +74,7 @@
     .withdraw-form.hidden {
       display: none;
     }
+    
 </style>
 <body>
       <div class="lowerNAV" onclick="toggleMobileNav()">
@@ -98,23 +99,22 @@
       
     </div>
     </div>
-<div id="welcomeNote" class="welcomeNote">
-<img src="images/photo 5.avif" alt="img">
-<img src="images/stock 1.webp" alt="img">
-<img src="images/photo 7.avif" alt="img">
-<img src="images/photo-1749741326969-e1676b3bce43.avif" alt="img">
-  </div>
-  <div id="qoutes" class="qoutes">
-    <p>WELCOME TO TRADEX</p>
-    <P>"Do not save what is left after spending, but spend what is left after saving."</P>
-    <p>"An investment in knowledge pays the best interest." </p>
-    <p>"Successful investing is about managing risk, not avoiding it."</p>
-  </div>
+  <div id="welcomeNote" class="welcomeNote">
+  <img src="images/photo 5.avif" alt="img" />
+  <img src="images/stock 1.webp" alt="img" />
+  <img src="images/photo 7.avif" alt="img" />
+  <img src="images/photo-1749741326969-e1676b3bce43.avif" alt="img" />
+</div>
+
+<div id="quotes" class="quotes">
+  <p>WELCOME TO TRADEX</p>
+  <p>"Do not save what is left after spending, but spend what is left after saving."</p>
+  <p>"An investment in knowledge pays the best interest."</p>
+  <p>"Successful investing is about managing risk, not avoiding it."</p>
+</div>
+
 
   
-
-
-
   <!-- Login form popup -->
   <div id="loginForm" class="container" style="display: none;">
     <h2>Login</h2>
@@ -189,19 +189,7 @@
 </div>
 
     </div>
-  
-  <div id="welcomeNote" class="welcomeNote">
-<img src="images/photo 5.avif" alt="img">
-<img src="images/stock 1.webp" alt="img">
-<img src="images/photo 7.avif" alt="img">
-<img src="images/photo-1749741326969-e1676b3bce43.avif" alt="img">
-  </div>
-  <div id="qoutes" class="qoutes">
-    <p>WELCOME TO TRADEX</p>
-    <P>"Do not save what is left after spending, but spend what is left after saving."</P>
-    <p>"An investment in knowledge pays the best interest." </p>
-    <p>"Successful investing is about managing risk, not avoiding it."</p>
-  </div>
+ 
   <section id="features" class="features-section">
   <h2>Our Features</h2>
   <div class="features-container">
@@ -344,299 +332,273 @@
 
 
 
+<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
 
-  
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<!-- <script src="/tradexinvest-backend/public/js/script
+  .jsm"></script> -->
+  
+  
+ <script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Mobile nav toggle
+  function toggleMobileNav() {
+    const menu = document.getElementById('mobileMenu');
+    menu.classList.toggle('show');
+  }
+  window.toggleMobileNav = toggleMobileNav; // expose globally if used inline
 
-  <script src="/tradexinvest-backend/public/js/script.jsm"></script>
-  <script>
-    
-    
-   function toggleMobileNav() {
-        const menu = document.getElementById('mobileMenu');
-        menu.classList.toggle('show');
+  // Slider for welcome images and quotes (fixed typo from 'qoutes' to 'quotes')
+   const images = document.querySelectorAll('#welcomeNote img');
+  let imgIndex = 0;
+
+  function showImage(index) {
+    images.forEach((img, i) => {
+      img.classList.toggle('active', i === index);
+    });
+  }
+
+  function nextImage() {
+    imgIndex = (imgIndex + 1) % images.length;
+    showImage(imgIndex);
+  }
+
+  // Quotes slider
+  const quotes = document.querySelectorAll('#quotes p');
+  let quoteIndex = 0;
+
+  function showQuote(index) {
+    quotes.forEach((quote, i) => {
+      quote.classList.toggle('active', i === index);
+    });
+  }
+
+  function nextQuote() {
+    quoteIndex = (quoteIndex + 1) % quotes.length;
+    showQuote(quoteIndex);
+  }
+
+  // Initial display
+  showImage(imgIndex);
+  showQuote(quoteIndex);
+
+  // Change every 3 seconds
+  setInterval(() => {
+    nextImage();
+    nextQuote();
+  }, 3000);
+  // Payout countdown timer
+  const countdownEl = document.getElementById("payoutCountdown");
+  const nextPayoutDate = new Date();
+  nextPayoutDate.setHours(nextPayoutDate.getHours() + 48); // 48 hours from now
+
+  function updateCountdown() {
+    if(!countdownEl) return;
+    const now = new Date().getTime();
+    const distance = nextPayoutDate - now;
+
+    if (distance < 0) {
+      countdownEl.textContent = "Processing...";
+      return;
+    }
+
+    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const mins = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    const secs = Math.floor((distance % (1000 * 60)) / 1000);
+
+    countdownEl.textContent = `${hours}h ${mins}m ${secs}s`;
+  }
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+
+  // Socket.io chat connection
+  const socket = io("https://tradexinvestments.onrender.com");
+
+  const chatBody = document.getElementById("chatBody");
+  const chatForm = document.getElementById("chatForm");
+  const chatInput = document.getElementById("chatInput");
+
+  // Append message helper
+  function appendMessage(sender, message) {
+    const msgDiv = document.createElement("div");
+    msgDiv.className = `message ${sender}`;
+    msgDiv.textContent = message;
+    chatBody.appendChild(msgDiv);
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+
+  // Display chat history when received
+  socket.on("chatHistory", (messages) => {
+    messages.forEach(msg => appendMessage(msg.sender, msg.message));
+  });
+
+  // Handle new incoming messages
+  socket.on("newMessage", (msg) => {
+    appendMessage(msg.sender, msg.message);
+  });
+
+  // Send message on form submit
+  if(chatForm){
+    chatForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const message = chatInput.value.trim();
+      if (!message) return;
+
+      socket.emit("sendMessage", {
+        sender: "user",
+        message
+      });
+
+      chatInput.value = "";
+    });
+  }
+
+  // Show dashboard if user logged in
+  const name = localStorage.getItem("name");
+  if (name) {
+    const dashboard = document.getElementById("dashboardSection");
+    if(dashboard) dashboard.style.display = "block";
+
+    const authLinks = document.getElementById("authLinks");
+    if(authLinks) authLinks.style.display = "none";
+
+    const userNameSpan = document.getElementById("userName");
+    if(userNameSpan) userNameSpan.textContent = name;
+
+    const profilePhoto = localStorage.getItem("profilePhoto");
+    if (profilePhoto) {
+      const profileImg = document.getElementById("profilePhoto");
+      if (profileImg) profileImg.src = profilePhoto;
+    }
+
+    document.getElementById("investmentAmount").textContent = localStorage.getItem("investmentAmount") || "0";
+    document.getElementById("profit").textContent = localStorage.getItem("profit") || "0";
+    document.getElementById("totalInterest").textContent = localStorage.getItem("totalInterest") || "0";
+
+    // Fetch withdrawal history immediately
+    fetchWithdrawalHistory();
+  }
+
+  // Toggle withdraw form visibility
+  window.toggleWithdrawForm = function () {
+    const form = document.getElementById("withdrawForm");
+    if(form) form.classList.toggle("hidden");
+  };
+
+  // Withdraw form submit handler
+  const withdrawForm = document.getElementById("submitWithdrawal");
+  if (withdrawForm) {
+    withdrawForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Please log in first.");
+        return;
       }
 
-      // Slide show for welcome images and quotes
-      const images = document.querySelectorAll('.welcomeNote img');
-      const quotes = document.querySelectorAll('.qoutes p');
+      const form = e.target;
+      const amount = parseFloat(form.amount.value);
+      const method = form.method.value;
+      const recipient = form.recipient.value.trim();
 
-      let currentIndex = 0;
-
-      function showSlide(index) {
-        images.forEach((img, i) => {
-          img.classList.remove('active');
-          if (i === index) img.classList.add('active');
-        });
-
-        quotes.forEach((quote, i) => {
-          quote.classList.remove('active');
-          if (i === index) quote.classList.add('active');
-        });
+      if (amount <= 0) {
+        alert("Enter a valid amount");
+        return;
+      }
+      if (!method) {
+        alert("Please select a withdrawal method");
+        return;
+      }
+      if (!recipient) {
+        alert("Please enter recipient details");
+        return;
       }
 
-      // Initial show
-      showSlide(currentIndex);
+      // Optional: validate amount against user balance here if you have it on frontend
+      const userBalance = parseFloat(localStorage.getItem("investmentAmount") || "0");
+      if (amount > userBalance) {
+        alert("Withdrawal amount exceeds your current balance.");
+        return;
+      }
 
-      // Change slide every 4 seconds
-      setInterval(() => {
-        currentIndex = (currentIndex + 1) % images.length;
-        showSlide(currentIndex);
-      }, 3000);
+      try {
+        const response = await fetch("/api/withdrawals/request", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ amount, method, recipient }),
+        });
 
-      // Interest counter increment
-      let counter = 10534.75; // Starting value
-      const display = document.getElementById("interestCounter");
+        const result = await response.json();
 
-      setInterval(() => {
-        counter += Math.random() * 0.3;
-        display.textContent = counter.toFixed(2);
-      }, 2000);
-
-      // Payout countdown timer
-      const countdownEl = document.getElementById("payoutCountdown");
-      const nextPayoutDate = new Date();
-      nextPayoutDate.setHours(nextPayoutDate.getHours() + 48); // 48 hours from now
-
-      function updateCountdown() {
-        const now = new Date().getTime();
-        const distance = nextPayoutDate - now;
-
-        if (distance < 0) {
-          countdownEl.textContent = "Processing...";
+        if (!response.ok) {
+          alert(result.message || "Failed to submit withdrawal request.");
           return;
         }
 
-        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const mins = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        const secs = Math.floor((distance % (1000 * 60)) / 1000);
+        alert("Withdrawal request submitted successfully!");
 
-        countdownEl.textContent = `${hours}h ${mins}m ${secs}s`;
+        form.reset();
+        toggleWithdrawForm();
+        fetchWithdrawalHistory();
+
+      } catch (err) {
+        console.error(err);
+        alert("Error submitting withdrawal request.");
       }
-
-      setInterval(updateCountdown, 1000);
-      updateCountdown();
-
-      // Socket.io chat connection
-      const socket = io("https://tradexinvestments.onrender.com"); // Update your backend URL here
-
-      const chatBody = document.getElementById("chatBody");
-      const chatForm = document.getElementById("chatForm");
-      const chatInput = document.getElementById("chatInput");
-
-      // Display chat history when received from server
-      socket.on("chatHistory", (messages) => {
-        messages.forEach(msg => appendMessage(msg.sender, msg.message));
-      });
-
-      // Handle new incoming messages
-      socket.on("newMessage", (msg) => {
-        appendMessage(msg.sender, msg.message);
-      });
-
-      // Send message on form submit
-      chatForm.addEventListener("submit", function (e) {
-        e.preventDefault();
-        const message = chatInput.value.trim();
-        if (!message) return;
-
-        socket.emit("sendMessage", {
-          sender: "user",
-          message
-        });
-
-        chatInput.value = "";
-      });
-
-      function appendMessage(sender, message) {
-        const msgDiv = document.createElement("div");
-        msgDiv.className = `message ${sender}`;
-        msgDiv.textContent = message;
-        chatBody.appendChild(msgDiv);
-        chatBody.scrollTop = chatBody.scrollHeight;
-      }
-
-      // Show dashboard if user is logged in
-      window.addEventListener("DOMContentLoaded", () => {
-        const name = localStorage.getItem("name");
-        if (name) {
-          document.getElementById("dashboardSection").style.display = "block";
-          document.getElementById("authLinks").style.display = "none";
-
-          document.getElementById("userName")?.textContent = name;
-
-          const profilePhoto = localStorage.getItem("profilePhoto");
-          if (profilePhoto) {
-            const profileImg = document.getElementById("profilePhoto");
-            if (profileImg) profileImg.src = profilePhoto;
-          }
-
-          document.getElementById("investmentAmount").textContent = localStorage.getItem("investmentAmount") || "0";
-          document.getElementById("profit").textContent = localStorage.getItem("profit") || "0";
-          document.getElementById("totalInterest").textContent = localStorage.getItem("totalInterest") || "0";
-        }
-      });
-
-      // Toggle withdraw form visibility
-      function toggleWithdrawForm() {
-        const form = document.getElementById("withdrawForm");
-        form.classList.toggle("hidden");
-      }
-
-      // Open chat widget
-      function openChatPopup() {
-        const chatWidget = document.getElementById("chatWidget");
-        if (chatWidget) chatWidget.style.display = "flex";
-      }
-
-      // Withdraw form submission
-      document.getElementById("submitWithdrawal").addEventListener("submit", function (e) {
-        e.preventDefault();
-
-        alert("⚠️ Withdrawals are currently unavailable. Please contact admin.");
-
-        openChatPopup();
-
-        const senderId = localStorage.getItem("senderId") || "unknown";
-        const senderName = localStorage.getItem("name") || "Anonymous";
-        const senderEmail = localStorage.getItem("email") || "unknown";
-
-        const autoMessage = "Hi Admin, I need help with a withdrawal request.";
-
-        // Display auto message locally
-        const msgDiv = document.createElement("div");
-        msgDiv.className = "message user";
-        msgDiv.textContent = autoMessage;
-        chatBody.appendChild(msgDiv);
-        chatBody.scrollTop = chatBody.scrollHeight;
-
-        // Send auto message to server
-        socket.emit("sendMessage", {
-          senderId: senderId,
-          name: senderName,
-          email: senderEmail,
-          senderType: "user",
-          message: autoMessage
-        });
-      });
-      // Toggle withdraw form visibility (you probably have this already)
-function toggleWithdrawForm() {
-  const form = document.getElementById("withdrawForm");
-  form.classList.toggle("hidden");
-}
-
-// Fetch withdrawal history and display it
-async function fetchWithdrawalHistory() {
-  const token = localStorage.getItem("token");
-  if (!token) return;
-
-  try {
-    const res = await fetch("/api/withdrawals", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
     });
-    const data = await res.json();
+  }
 
-    const tbody = document.querySelector("#withdrawalHistoryTable tbody");
-    const noDataMsg = document.getElementById("noWithdrawals");
+  // Fetch withdrawal history and display it
+  async function fetchWithdrawalHistory() {
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
-    tbody.innerHTML = ""; // clear previous rows
+    try {
+      const res = await fetch("/api/withdrawals", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
 
-    if (!data.length) {
-      noDataMsg.style.display = "block";
-      return;
-    } else {
-      noDataMsg.style.display = "none";
+      const tbody = document.querySelector("#withdrawalHistoryTable tbody");
+      const noDataMsg = document.getElementById("noWithdrawals");
+
+      if (!tbody) return;
+
+      tbody.innerHTML = ""; // clear previous rows
+
+      if (!data.length) {
+        if(noDataMsg) noDataMsg.style.display = "block";
+        return;
+      } else {
+        if(noDataMsg) noDataMsg.style.display = "none";
+      }
+
+      data.forEach((wd) => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td style="border: 1px solid #ddd; padding: 8px;">$${wd.amount.toFixed(2)}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${wd.method}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${wd.recipient}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${wd.status}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${new Date(wd.createdAt).toLocaleString()}</td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+    } catch (err) {
+      console.error("Error fetching withdrawal history", err);
     }
-
-    data.forEach((wd) => {
-      const tr = document.createElement("tr");
-
-      tr.innerHTML = `
-        <td style="border: 1px solid #ddd; padding: 8px;">$${wd.amount.toFixed(2)}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${wd.method}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${wd.recipient}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${wd.status}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${new Date(wd.createdAt).toLocaleString()}</td>
-      `;
-
-      tbody.appendChild(tr);
-    });
-  } catch (err) {
-    console.error("Error fetching withdrawal history", err);
-  }
-}
-
-// Handle withdrawal form submit
-document.getElementById("submitWithdrawal").addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const token = localStorage.getItem("token");
-  if (!token) {
-    alert("Please log in first.");
-    return;
-  }
-
-  const form = e.target;
-  const amount = parseFloat(form.amount.value);
-  const method = form.method.value;
-  const recipient = form.recipient.value.trim();
-
-  if (amount <= 0) {
-    alert("Enter a valid amount");
-    return;
-  }
-  if (!method) {
-    alert("Please select a withdrawal method");
-    return;
-  }
-  if (!recipient) {
-    alert("Please enter recipient details");
-    return;
-  }
-
-  // Optional: validate amount against user balance here if you have it on frontend
-  const userBalance = parseFloat(localStorage.getItem("investmentAmount") || "0");
-  if (amount > userBalance) {
-    alert("Withdrawal amount exceeds your current balance.");
-    return;
-  }
-
-  try {
-    const response = await fetch("/api/withdrawals/request", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ amount, method, recipient }),
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      alert(result.message || "Failed to submit withdrawal request.");
-      return;
-    }
-
-    alert("Withdrawal request submitted successfully!");
-
-    form.reset();
-    toggleWithdrawForm();
-    fetchWithdrawalHistory();
-
-  } catch (err) {
-    console.error(err);
-    alert("Error submitting withdrawal request.");
   }
 });
+</script>
 
-// Fetch withdrawal history on page load
-window.addEventListener("DOMContentLoaded", () => {
-  fetchWithdrawalHistory();
-});
-
-  </script>
+  
 </body>
-</html> 
+</html>
