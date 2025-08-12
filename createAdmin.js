@@ -1,30 +1,29 @@
-require('dotenv').config();
-const mongoose = require('mongoose');
-const Admin = require('./models/Admin');  // <-- correct path here
 
-// rest of your code ...
+    require('dotenv').config();
+const mongoose = require('mongoose');
+const Admin = require('./models/Admin');  // Correct relative path
 
 async function createAdmin() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI, {
-     
-    });
+    console.log('Connecting to MongoDB...');
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('Connected to MongoDB');
 
-    // Change these values to your desired admin credentials
     const email = 'youngnazzy13@gmai.com';
     const password = 'loveisgood100';
 
-    // Check if admin already exists
+    console.log(`Checking if admin with email ${email} exists...`);
     const existingAdmin = await Admin.findOne({ email });
     if (existingAdmin) {
       console.log('Admin user already exists!');
-      return process.exit(0);
+      process.exit(0);
     }
 
-    // Create new admin user
-    const admin = new Admin({ email, password });
+    console.log('Creating new admin user...');
+    const admin = new Admin({ email, password }); // plain password, hashing done in model
     await admin.save();
     console.log('Admin user created successfully!');
+
     process.exit(0);
   } catch (error) {
     console.error('Error creating admin:', error);
