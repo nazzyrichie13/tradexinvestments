@@ -100,13 +100,15 @@ app.use('/api', require('./routes/upload'));
 app.use("/api/contact", require("./routes/contact"));
 app.use("/api/withdrawals", require("./routes/withdrawals"));
 
+app.use(express.static(path.join(__dirname, 'public')));
 
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 // ====== Serve Frontend ======
-app.use(express.static(path.join(__dirname, 'public')));
 
 // Fallback for SPA routes — FIXED VERSION
 // app.get('*', (req, res) => {
