@@ -10,8 +10,8 @@ async function createAdmin() {
     });
 
     // Change these values to your desired admin credentials
-    const email = 'admin@example.com';
-    const password = 'yourStrongPassword123';
+    const email = 'youngnazzy13@gmai.com';
+    const password = 'loveisgood100';
 
     // Check if admin already exists
     const existingAdmin = await Admin.findOne({ email });
