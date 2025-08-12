@@ -1,12 +1,47 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 const User = require("../models/user");
-const router = express.Router();
 const WithdrawalRequest = require("../models/withdrawalRequest");
 const transporter = require("../utils/mailer");
+const router = express.Router();
 
+// =========================
+// Admin Login Route
+// =========================
+router.post("/login", async (req, res) => {
+  const { email, password } = req.body;
 
+  try {
+    // Find admin by email and role
+    const adminUser = await User.findOne({ email, role: "admin" });
+    if (!adminUser) {
+      return res.status(401).json({ message: "Admin not found" });
+    }
+
+    // Validate password
+    const isMatch = await bcrypt.compare(password, adminUser.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    // Create JWT token
+    const token = jwt.sign(
+      { id: adminUser._id, email: adminUser.email, role: adminUser.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.json({ token });
+  } catch (err) {
+    console.error("Admin login error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// =========================
 // Middleware to verify JWT and admin role
+// =========================
 function authenticateAdmin(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -21,12 +56,14 @@ function authenticateAdmin(req, res, next) {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    req.user = decoded; // contains userId, email, role, etc.
+    req.user = decoded;
     next();
   });
 }
 
+// =========================
 // Get all users with role "user"
+// =========================
 router.get("/users", authenticateAdmin, async (req, res) => {
   try {
     const users = await User.find({ role: "user" });
@@ -37,7 +74,9 @@ router.get("/users", authenticateAdmin, async (req, res) => {
   }
 });
 
+// =========================
 // Update a user's investment data
+// =========================
 router.put("/user/:id", authenticateAdmin, async (req, res) => {
   try {
     const { investmentAmount, profit, totalInterest } = req.body;
@@ -57,7 +96,10 @@ router.put("/user/:id", authenticateAdmin, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+// =========================
 // List all withdrawal requests
+// =========================
 router.get("/withdrawals", authenticateAdmin, async (req, res) => {
   try {
     const requests = await WithdrawalRequest.find()
@@ -70,7 +112,9 @@ router.get("/withdrawals", authenticateAdmin, async (req, res) => {
   }
 });
 
+// =========================
 // Approve withdrawal
+// =========================
 router.put("/withdrawal/:id/approve", authenticateAdmin, async (req, res) => {
   try {
     const request = await WithdrawalRequest.findById(req.params.id).populate("userId");
@@ -80,7 +124,7 @@ router.put("/withdrawal/:id/approve", authenticateAdmin, async (req, res) => {
       return res.status(400).json({ message: "Request already processed" });
     }
 
-    // Deduct amount from user investmentAmount
+    // Deduct from user's investmentAmount
     const user = request.userId;
     user.investmentAmount = Math.max(0, (user.investmentAmount || 0) - request.amount);
     await user.save();
@@ -89,7 +133,7 @@ router.put("/withdrawal/:id/approve", authenticateAdmin, async (req, res) => {
     request.updatedAt = new Date();
     await request.save();
 
-    // Send email notification to user
+    // Email user
     const mailOptions = {
       from: `"TradeXInvest" <support@tradexinvest.com>`,
       to: user.email,
@@ -116,7 +160,9 @@ router.put("/withdrawal/:id/approve", authenticateAdmin, async (req, res) => {
   }
 });
 
+// =========================
 // Reject withdrawal
+// =========================
 router.put("/withdrawal/:id/reject", authenticateAdmin, async (req, res) => {
   try {
     const request = await WithdrawalRequest.findById(req.params.id).populate("userId");
@@ -130,7 +176,7 @@ router.put("/withdrawal/:id/reject", authenticateAdmin, async (req, res) => {
     request.updatedAt = new Date();
     await request.save();
 
-    // Send email notification to user
+    // Email user
     const user = request.userId;
     const mailOptions = {
       from: `"TradeXInvest" <support@tradexinvest.com>`,
@@ -156,6 +202,5 @@ router.put("/withdrawal/:id/reject", authenticateAdmin, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-
 
 module.exports = router;
