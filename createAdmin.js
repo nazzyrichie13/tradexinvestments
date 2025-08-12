@@ -7,8 +7,7 @@ const Admin = require('./models/Admin');  // <-- correct path here
 async function createAdmin() {
   try {
     await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+     
     });
 
     // Change these values to your desired admin credentials
