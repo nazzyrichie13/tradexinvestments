@@ -3,7 +3,6 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 const router = express.Router();
 const WithdrawalRequest = require("../models/withdrawalRequest");
-const User = require("../models/user");
 const transporter = require("../utils/mailer");
 
 
