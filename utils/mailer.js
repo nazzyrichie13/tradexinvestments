@@ -27,4 +27,4 @@ export const send2FACode = async (toEmail, code) => {
   });
 };
 
-module.exports = transporter;
+export default transporter;

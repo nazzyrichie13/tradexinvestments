@@ -9,7 +9,8 @@ import bcrypt from "bcryptjs"; // consistent
 import User from "../models/User.js";
 import Admin from "../models/Admin.js";
 import { requireAuth } from "../middleware/authMiddleware.js";
-import { send2FACode } from "../utils/mailer.js"; 
+import transporter from "../utils/mailer.js";
+import { send2FACode } from "../utils/mailer.js";
 const router = express.Router();
 
 
