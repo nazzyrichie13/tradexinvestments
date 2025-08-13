@@ -24,12 +24,13 @@ app.use(cors());
 app.use(express.json());
 
 // ====== Routes (case-sensitive) ======
-import AuthRoutes from './routes/Auth.js';
-import AdminRoutes from './routes/Admin.js';
-import UploadRoutes from './routes/Upload.js';
-import ContactRoutes from './routes/Contact.js';
-import UserRoutes from './routes/User.js';
-import WithdrawalRoutes from './routes/Withdrawals.js';
+import authRoutes from './routes/auth.js';
+import adminRoutes from './routes/admin.js';
+import uploadRoutes from './routes/upload.js';
+import contactRoutes from './routes/contact.js';
+import userRoutes from './routes/user.js';
+import withdrawalRoutes from './routes/withdrawals.js';
+
 
 // Mount routes
 app.use('/api/auth', AuthRoutes);
