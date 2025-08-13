@@ -9,8 +9,7 @@ import qrcode  from "qrcode";
 import path from "path";
 import multer from "multer";
 import fs from "fs";
-import User from "./models/User.js";
-
+import User from '../models/user.js';
 // const authMiddleware = require("../middleware/authMiddleware");
 
 
