@@ -1,33 +1,28 @@
-const express = require("express");
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const User = require("../models/user");
-const WithdrawalRequest = require("../models/withdrawalRequest");
-const transporter = require("../utils/mailer");
+// routes/admin.js
+import express from "express";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
+import Admin from "../models/Admin.js";
+import User from "../models/user.js";
+import WithdrawalRequest from "../models/withdrawalRequest.js";
+import transporter from "../utils/mailer.js";
+
 const router = express.Router();
 
 // =========================
-// Admin Login Route
+// Admin Login
 // =========================
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
-
   try {
-    // Find admin by email and role
-    const adminUser = await User.findOne({ email, role: "admin" });
-    if (!adminUser) {
-      return res.status(401).json({ message: "Admin not found" });
-    }
+    const adminUser = await Admin.findOne({ email });
+    if (!adminUser) return res.status(401).json({ message: "Admin not found" });
 
-    // Validate password
     const isMatch = await bcrypt.compare(password, adminUser.password);
-    if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
+    if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
 
-    // Create JWT token
     const token = jwt.sign(
-      { id: adminUser._id, email: adminUser.email, role: adminUser.role },
+      { id: adminUser._id, email: adminUser.email, role: "admin" },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
@@ -40,21 +35,17 @@ router.post("/login", async (req, res) => {
 });
 
 // =========================
-// Middleware to verify JWT and admin role
+// Middleware: Verify JWT + Admin Role
 // =========================
-function authenticateAdmin(req, res, next) {
+export function authenticateAdmin(req, res, next) {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (!authHeader || !authHeader.startsWith("Bearer "))
     return res.status(401).json({ message: "No token provided" });
-  }
 
   const token = authHeader.split(" ")[1];
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) return res.status(401).json({ message: "Invalid or expired token" });
-
-    if (decoded.role !== "admin") {
-      return res.status(403).json({ message: "Access denied" });
-    }
+    if (decoded.role !== "admin") return res.status(403).json({ message: "Access denied" });
 
     req.user = decoded;
     next();
@@ -62,7 +53,7 @@ function authenticateAdmin(req, res, next) {
 }
 
 // =========================
-// Get all users with role "user"
+// Get all users
 // =========================
 router.get("/users", authenticateAdmin, async (req, res) => {
   try {
@@ -75,7 +66,7 @@ router.get("/users", authenticateAdmin, async (req, res) => {
 });
 
 // =========================
-// Update a user's investment data
+// Update a user's investment
 // =========================
 router.put("/user/:id", authenticateAdmin, async (req, res) => {
   try {
@@ -86,10 +77,7 @@ router.put("/user/:id", authenticateAdmin, async (req, res) => {
       { new: true }
     );
 
-    if (!updatedUser) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
+    if (!updatedUser) return res.status(404).json({ message: "User not found" });
     res.json({ message: "User updated successfully", user: updatedUser });
   } catch (err) {
     console.error(err);
@@ -119,12 +107,8 @@ router.put("/withdrawal/:id/approve", authenticateAdmin, async (req, res) => {
   try {
     const request = await WithdrawalRequest.findById(req.params.id).populate("userId");
     if (!request) return res.status(404).json({ message: "Request not found" });
+    if (request.status !== "pending") return res.status(400).json({ message: "Request already processed" });
 
-    if (request.status !== "pending") {
-      return res.status(400).json({ message: "Request already processed" });
-    }
-
-    // Deduct from user's investmentAmount
     const user = request.userId;
     user.investmentAmount = Math.max(0, (user.investmentAmount || 0) - request.amount);
     await user.save();
@@ -146,11 +130,8 @@ router.put("/withdrawal/:id/approve", authenticateAdmin, async (req, res) => {
       `,
     };
     transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.error("Error sending approval email:", error);
-      } else {
-        console.log("Approval email sent:", info.response);
-      }
+      if (error) console.error("Error sending approval email:", error);
+      else console.log("Approval email sent:", info.response);
     });
 
     res.json({ message: "Withdrawal approved", request });
@@ -167,10 +148,7 @@ router.put("/withdrawal/:id/reject", authenticateAdmin, async (req, res) => {
   try {
     const request = await WithdrawalRequest.findById(req.params.id).populate("userId");
     if (!request) return res.status(404).json({ message: "Request not found" });
-
-    if (request.status !== "pending") {
-      return res.status(400).json({ message: "Request already processed" });
-    }
+    if (request.status !== "pending") return res.status(400).json({ message: "Request already processed" });
 
     request.status = "rejected";
     request.updatedAt = new Date();
@@ -189,11 +167,8 @@ router.put("/withdrawal/:id/reject", authenticateAdmin, async (req, res) => {
       `,
     };
     transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.error("Error sending rejection email:", error);
-      } else {
-        console.log("Rejection email sent:", info.response);
-      }
+      if (error) console.error("Error sending rejection email:", error);
+      else console.log("Rejection email sent:", info.response);
     });
 
     res.json({ message: "Withdrawal rejected", request });
@@ -203,4 +178,4 @@ router.put("/withdrawal/:id/reject", authenticateAdmin, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
