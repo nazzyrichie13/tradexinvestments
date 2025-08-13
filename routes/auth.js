@@ -1,13 +1,17 @@
 // routes/auth.js
 // routes/auth.js
 import express from "express";
+import fs from "fs";
+import path from "path";
+import multer from "multer";
 import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
-import Admin from "../models/Admin.js";
+import bcrypt from "bcryptjs"; // consistent
 import User from "../models/User.js";
+import Admin from "../models/Admin.js";
 import { requireAuth } from "../middleware/authMiddleware.js";
-import transporter from "../utils/mailer.js";
+import { send2FACode } from "../utils/mailer.js"; 
 const router = express.Router();
+
 
 // --- Multer setup ---
 const uploadDir = path.join(process.cwd(), "uploads");
