@@ -1,8 +1,9 @@
+// user.js
 import express from "express";
 import User from "../models/User.js";
 import Investment from "../models/Investment.js";
-import Withdrawal from "../models/Withdrawal.js";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/authMiddleware.js";
+
 
 const router = express.Router();
 /**

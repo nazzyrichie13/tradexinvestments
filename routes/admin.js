@@ -1,12 +1,12 @@
 // routes/admin.js
 import express from "express";
-import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
 import Admin from "../models/Admin.js";
-import User from "../models/User.js";  // only import User once
-import transporter from "../utils/mailer.js"; // adjust path correctly
+import User from "../models/User.js";
+import { requireAuth } from "../middleware/authMiddleware.js";
+import transporter from "../utils/mailer.js";
 
 const router = express.Router();
+
 // =========================
 // Admin Login
 // =========================
