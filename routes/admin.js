@@ -3,9 +3,8 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import Admin from "../models/Admin.js";
-import User from ".Investment.js";
-import transporter from "./utils/mailer.js";
-import User from './models/User.js';
+import User from "../models/User.js";  // only import User once
+import transporter from "../utils/mailer.js"; // adjust path correctly
 
 const router = express.Router();
 // =========================
