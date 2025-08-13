@@ -23,28 +23,26 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Import your routes in ESM style
-import authRoutes from '../routes/Auth.js';
-import adminRoutes from '../routes/Admin.js';
-import uploadRoutes from '../routes/Upload.js';
-import contactRoutes from '../routes/Contact.js';
-import userRoutes from "../routes/User.js";
-import withdrawalRoutes from "../routes/Withdrawals.js";
+// ====== Routes (case-sensitive) ======
+import AuthRoutes from './routes/Auth.js';
+import AdminRoutes from './routes/Admin.js';
+import UploadRoutes from './routes/Upload.js';
+import ContactRoutes from './routes/Contact.js';
+import UserRoutes from './routes/User.js';
+import WithdrawalRoutes from './routes/Withdrawals.js';
 
-// ...
-app.use("/api/user", userRoutes);
-app.use("/api/withdrawals", withdrawalRoutes);
-// Routes
+// Mount routes
+app.use('/api/auth', AuthRoutes);
+app.use('/api/admin', AdminRoutes);
+app.use('/api/upload', UploadRoutes);
+app.use('/api/contact', ContactRoutes);
+app.use('/api/user', UserRoutes);
+app.use('/api/withdrawals', WithdrawalRoutes);
+
+// Test route
 app.get('/', (req, res) => {
-  res.send('TradexInvest backend running...');
+  res.send('✅ TradexInvest backend running...');
 });
-
-app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api', uploadRoutes);
-app.use('/api/contact', contactRoutes);
-app.use("/api/user", userRoutes);
-app.use("/api/withdrawals", withdrawalRoutes);
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
