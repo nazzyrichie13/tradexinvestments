@@ -1,34 +1,41 @@
 
     require('dotenv').config();
 const mongoose = require('mongoose');
-const Admin = require('./models/Admin');  // Correct relative path
+const bcrypt = require('bcrypt');
 
+// Define Admin schema
+const adminSchema = new mongoose.Schema({
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true }
+});
+
+const Admin = mongoose.model('Admin', adminSchema);
+
+// Async function to create admin
 async function createAdmin() {
   try {
     console.log('Connecting to MongoDB...');
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log('Connected to MongoDB');
+    await mongoose.connect(process.env.MONGO_URI, {
+      useUnifiedTopology: true
+    });
 
-    const email = 'youngnazzy13@gmai.com';
-    const password = 'loveisgood100';
+    const email = 'youngnazzy13@gmail.com'; // Change to your admin email
+    const plainPassword = 'chinelo100';      // Your admin password
+    const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
-    console.log(`Checking if admin with email ${email} exists...`);
-    const existingAdmin = await Admin.findOne({ email });
-    if (existingAdmin) {
-      console.log('Admin user already exists!');
-      process.exit(0);
-    }
+    const admin = new Admin({
+      email,
+      password: hashedPassword
+    });
 
-    console.log('Creating new admin user...');
-    const admin = new Admin({ email, password }); // plain password, hashing done in model
     await admin.save();
-    console.log('Admin user created successfully!');
-
-    process.exit(0);
+    console.log('✅ Admin created successfully!');
+    mongoose.disconnect();
   } catch (error) {
-    console.error('Error creating admin:', error);
-    process.exit(1);
+    console.error('❌ Error creating admin:', error.message);
+    mongoose.disconnect();
   }
 }
 
+// Run the function
 createAdmin();
