@@ -2,9 +2,9 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import Admin from "../models/Admin.js";
+import Admin from "./models/Admin.js";
 import User from "./models/User.js";
-import transporter from "../utils/mailer.js";
+import transporter from "./utils/mailer.js";
 
 const router = express.Router();
 

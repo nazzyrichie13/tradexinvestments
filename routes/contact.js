@@ -1,5 +1,5 @@
-const express = require("express");
-const nodemailer = require("nodemailer");
+import express from "express";
+import nodemailer from"nodemailer";
 
 const router = express.Router();
 
@@ -46,3 +46,4 @@ router.post("/", async (req, res) => {
 });
 
 module.exports = router;
+
