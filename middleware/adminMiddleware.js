@@ -1,4 +1,6 @@
 // middleware/adminMiddleware.js
+
+
 export const requireAdmin = (req, res, next) => {
   // Make sure req.userRole is set in requireAuth
   if (!req.userRole || req.userRole !== "admin") {
