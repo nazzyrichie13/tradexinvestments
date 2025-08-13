@@ -24,12 +24,12 @@ app.use(cors());
 app.use(express.json());
 
 // Import your routes in ESM style
-import authRoutes from './routes/auth.js';
-import adminRoutes from './routes/admin.js';
-import uploadRoutes from './routes/upload.js';
-import contactRoutes from './routes/contact.js';
-import userRoutes from "./routes/user.js";
-import withdrawalRoutes from "./routes/withdrawals.js";
+import authRoutes from '../routes/Auth.js';
+import adminRoutes from '../routes/Admin.js';
+import uploadRoutes from '../routes/Upload.js';
+import contactRoutes from '../routes/Contact.js';
+import userRoutes from "../routes/User.js";
+import withdrawalRoutes from "../routes/Withdrawals.js";
 
 // ...
 app.use("/api/user", userRoutes);
