@@ -1,6 +1,8 @@
-import express from "express";
-import Withdrawal from "../models/Withdrawal.js";
-import Investment from "../models/Investment.js";
+// withdrawals.js
+
+// upload.js
+import User from "../models/User.js";
+
 import { requireAuth } from "../middleware/auth.js";
 import { send2FACode as sendMail } from "../utils/mailer.js"; // reuse transporter
 
