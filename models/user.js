@@ -1,22 +1,17 @@
 // models/User.js
-const mongoose = require('mongoose');
+
+  // other fields for your app
+  // models/User.js
+import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
-  passwordHash: { type: String, required: true },
-  fullName: { type: String },
-  profilePhoto: { type: String, default: '' },
-   role: { type: String, default: 'user' },
-  // 2FA fields
-  twoFA: {
-    secret: { type: String, default: null }, // store base32 secret
-    enabled: { type: Boolean, default: false } // has2FA
-  },
+  password: { type: String, required: true },
+  name: String,
+  photo: String,
+  twoFACode: String,
+  twoFAExpires: Date // new field for code expiration
+});
 
-  // other fields for your app
-  investmentAmount: { type: Number, default: 0 },
-  profit: { type: Number, default: 0 },
-  totalInterest: { type: Number, default: 0 }
-}, { timestamps: true });
-
-module.exports = mongoose.model('User', userSchema);
+const User = mongoose.model("User", userSchema);
+export default User;

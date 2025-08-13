@@ -1,4 +1,7 @@
-const nodemailer = require('nodemailer');
+import nodemailer from "nodemailer";
+import dotenv from "dotenv";
+dotenv.config();
+
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -15,5 +18,13 @@ transporter.verify((error, success) => {
     console.log('Mailer is ready to send messages');
   }
 });
+export const send2FACode = async (toEmail, code) => {
+  await transporter.sendMail({
+    from: `"TradexInvest" <${process.env.SMTP_USER}>`,
+    to: toEmail,
+    subject: "Your 2FA Code",
+    html: `<p>Your 2FA code is: <strong>${code}</strong></p>`
+  });
+};
 
 module.exports = transporter;

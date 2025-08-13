@@ -28,8 +28,12 @@ import authRoutes from './routes/auth.js';
 import adminRoutes from './routes/admin.js';
 import uploadRoutes from './routes/upload.js';
 import contactRoutes from './routes/contact.js';
-import withdrawalRoutes from './routes/withdrawals.js';
+import userRoutes from "./routes/user.js";
+import withdrawalRoutes from "./routes/withdrawals.js";
 
+// ...
+app.use("/api/user", userRoutes);
+app.use("/api/withdrawals", withdrawalRoutes);
 // Routes
 app.get('/', (req, res) => {
   res.send('TradexInvest backend running...');
@@ -39,7 +43,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', uploadRoutes);
 app.use('/api/contact', contactRoutes);
-app.use('/api/withdrawals', withdrawalRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/withdrawals", withdrawalRoutes);
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));

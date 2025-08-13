@@ -3,8 +3,7 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import Admin from "../models/Admin.js";
-import User from "../models/user.js";
-import WithdrawalRequest from "../models/withdrawalRequest.js";
+import User from "./models/User.js";
 import transporter from "../utils/mailer.js";
 
 const router = express.Router();
@@ -65,117 +64,65 @@ router.get("/users", authenticateAdmin, async (req, res) => {
   }
 });
 
-// =========================
-// Update a user's investment
-// =========================
-router.put("/user/:id", authenticateAdmin, async (req, res) => {
+router.get("/withdrawals", requireAuth, requireAdmin, async (req, res) => {
+  const list = await Withdrawal.find()
+    .sort({ createdAt: -1 })
+    .populate("userId", "name email");
+  res.json(list);
+});
+
+// POST approve/reject
+router.post("/withdrawals/:id", requireAuth, requireAdmin, async (req, res) => {
   try {
-    const { investmentAmount, profit, totalInterest } = req.body;
+    const { action } = req.body; // 'approve' or 'reject'
+    if (!["approve","reject"].includes(action))
+      return res.status(400).json({ msg: "Invalid action" });
+
+    const withdrawal = await Withdrawal.findById(req.params.id).populate("userId");
+    if (!withdrawal) return res.status(404).json({ msg: "Withdrawal not found" });
+
+    withdrawal.status = action === "approve" ? "approved" : "rejected";
+    await withdrawal.save();
+
+    // Send email notification to user
+    const msg = action === "approve" 
+      ? `Your withdrawal of $${withdrawal.amount} via ${withdrawal.method} has been approved.`
+      : `Your withdrawal of $${withdrawal.amount} via ${withdrawal.method} has been rejected. Please contact support.`;
+
+    await sendMail(withdrawal.userId.email, msg);
+
+    res.json({ msg: `Withdrawal ${action}d successfully` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
+// Admin: Update User Investment
+// =========================
+router.put("/update-user-investment/:id", async (req, res) => {
+  try {
+    const { amount, interest, outcome } = req.body;
+
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
-      { investmentAmount, profit, totalInterest },
+      { amount, interest, outcome },
       { new: true }
     );
 
-    if (!updatedUser) return res.status(404).json({ message: "User not found" });
-    res.json({ message: "User updated successfully", user: updatedUser });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-// =========================
-// List all withdrawal requests
-// =========================
-router.get("/withdrawals", authenticateAdmin, async (req, res) => {
-  try {
-    const requests = await WithdrawalRequest.find()
-      .populate("userId", "email fullName")
-      .sort({ createdAt: -1 });
-    res.json(requests);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// =========================
-// Approve withdrawal
-// =========================
-router.put("/withdrawal/:id/approve", authenticateAdmin, async (req, res) => {
-  try {
-    const request = await WithdrawalRequest.findById(req.params.id).populate("userId");
-    if (!request) return res.status(404).json({ message: "Request not found" });
-    if (request.status !== "pending") return res.status(400).json({ message: "Request already processed" });
-
-    const user = request.userId;
-    user.investmentAmount = Math.max(0, (user.investmentAmount || 0) - request.amount);
-    await user.save();
-
-    request.status = "approved";
-    request.updatedAt = new Date();
-    await request.save();
-
-    // Email user
-    const mailOptions = {
-      from: `"TradeXInvest" <support@tradexinvest.com>`,
-      to: user.email,
-      subject: "Withdrawal Request Approved",
-      html: `
-        <p>Dear ${user.fullName || user.email},</p>
-        <p>Your withdrawal request of $${request.amount.toFixed(2)} via <strong>${request.method}</strong> has been <strong>approved</strong>.</p>
-        <p>Recipient Details: ${request.recipientDetails}</p>
-        <p>Thank you for investing with TradeXInvest.</p>
-      `,
-    };
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) console.error("Error sending approval email:", error);
-      else console.log("Approval email sent:", info.response);
+    res.json({
+      message: "User investment updated successfully",
+      user: updatedUser
     });
-
-    res.json({ message: "Withdrawal approved", request });
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error("Update Error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-// =========================
-// Reject withdrawal
-// =========================
-router.put("/withdrawal/:id/reject", authenticateAdmin, async (req, res) => {
-  try {
-    const request = await WithdrawalRequest.findById(req.params.id).populate("userId");
-    if (!request) return res.status(404).json({ message: "Request not found" });
-    if (request.status !== "pending") return res.status(400).json({ message: "Request already processed" });
-
-    request.status = "rejected";
-    request.updatedAt = new Date();
-    await request.save();
-
-    // Email user
-    const user = request.userId;
-    const mailOptions = {
-      from: `"TradeXInvest" <support@tradexinvest.com>`,
-      to: user.email,
-      subject: "Withdrawal Request Rejected",
-      html: `
-        <p>Dear ${user.fullName || user.email},</p>
-        <p>Your withdrawal request of $${request.amount.toFixed(2)} via <strong>${request.method}</strong> has been <strong>rejected</strong>.</p>
-        <p>If you have any questions, please contact support.</p>
-      `,
-    };
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) console.error("Error sending rejection email:", error);
-      else console.log("Rejection email sent:", info.response);
-    });
-
-    res.json({ message: "Withdrawal rejected", request });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
 
 export default router;

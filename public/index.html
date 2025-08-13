@@ -69,13 +69,18 @@
       font-size: 1.2rem;
       font-weight: 600;
     }
-
-    /* Hide withdraw form by default */
-    .withdraw-form.hidden {
-      display: none;
-    }
-    
+#dashboard { display:none; max-width:600px; margin:auto; background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.2);}
+img { border-radius:50%; width:60px; vertical-align:middle; margin-right:10px; }
+h2 { display:flex; align-items:center; }
+button { padding:8px 12px; cursor:pointer; margin-top:10px; border:none; border-radius:5px; background:#007bff; color:#fff;}
+input, select { width:100%; padding:8px; margin:5px 0; border-radius:5px; border:1px solid #ccc; }
+.withdraw-section { margin-top:20px; }
+.withdraw-section h3 { margin-bottom:10px; }
 </style>
+</head>
+<body>
+
+
 <body>
       <div class="lowerNAV" onclick="toggleMobileNav()">
     <div style="display: flex; flex-direction: column; gap: 4px;">
@@ -98,7 +103,30 @@
        <a href="login-user.html" style="color: black; text-decoration: none; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;white-space: nowrap;">Login</a> 
       
     </div>
-    </div>
+    <!-- </div> -->
+     <div id="dashboard">
+  <h2><img id="userPhoto" src="" alt="Profile"><span id="userName"></span></h2>
+  <p>Investment: $<span id="investment">0</span></p>
+  <p>Profit: $<span id="profit">0</span></p>
+  <p>Total Interest: $<span id="interest">0</span></p>
+
+  <div class="withdraw-section">
+    <h3>Withdraw Funds</h3>
+    <select id="withdrawMethod">
+      <option value="paypal">PayPal</option>
+      <option value="bitcoin">Bitcoin</option>
+      <option value="cashapp">CashApp</option>
+      <option value="bank">Bank-to-Bank</option>
+    </select>
+    <input type="number" id="withdrawAmount" placeholder="Enter amount">
+    <button id="withdrawBtn">Withdraw</button>
+    <p id="withdrawMsg" style="color:red;"></p>
+  </div>
+
+  <button id="logoutBtn">Logout</button>
+</div>
+
+    <!--  -->
   <div id="welcomeNote" class="welcomeNote">
   <img src="images/photo 5.avif" alt="img" />
   <img src="images/stock 1.webp" alt="img" />
@@ -115,78 +143,11 @@
 
 
   
-  <!-- Login form popup -->
-  <div id="loginForm" class="container" style="display: none;">
-    <h2>Login</h2>
-    <form id="loginFormElement">
-      <input type="email" name="email" placeholder="Email" required>
-      <input type="password" name="password" placeholder="Password" required>
-      <button type="submit">Login</button>
-    </form>
-  </div>
-
-   <!-- Dashboard -->
-    <div class="container" id="dashboardSection" style="display: none;">
-      <!-- Profile info injected dynamically -->
-      <h2>Your Investment Summary</h2>
-      <p>
-        <strong>Investment:</strong> $
-        <span id="investmentAmount">0</span>
-      </p>
-      <p><strong>Profit:</strong> $<span id="profit">0</span></p>
-      <p>
-        <strong>Total Interest:</strong> $
-        <span id="totalInterest">0</span>
-      </p>
-      <button onclick="toggleWithdrawForm()" class="withdraw-btn">
-        💸 Withdraw Funds
-      </button>
-
-      <div id="withdrawForm" class="withdraw-form hidden">
-        <h3>Select Withdrawal Method</h3>
-        <form id="submitWithdrawal">
-          <label>Amount ($):</label>
-          <input type="number" name="amount" required />
-
-          <label>Withdrawal Method:</label>
-          <select name="method" required>
-            <option value="">-- Select --</option>
-            <option value="paypal">PayPal</option>
-            <option value="cashapp">CashApp</option>
-            <option value="bank">Bank Transfer</option>
-            <option value="crypto">Cryptocurrency</option>
-            <option value="wise">Wise (TransferWise)</option>
-          </select>
-
-          <label>Recipient Details:</label>
-          <input
-            type="text"
-            name="recipient"
-            placeholder="Email / Wallet / Account No."
-            required
-          />
-
-          <button type="submit">Submit Withdrawal</button>
-        </form>
-      </div>
-      <div id="withdrawalHistoryContainer" style="margin-top: 30px;">
-  <h3>Your Withdrawal History</h3>
-  <table id="withdrawalHistoryTable" style="width: 100%; border-collapse: collapse;">
-    <thead>
-      <tr>
-        <th>Amount ($)</th>
-        <th>Method</th>
-        <th>Recipient</th>
-        <th>Status</th>
-        <th>Requested At</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- Filled dynamically -->
-    </tbody>
-  </table>
-  <p id="noWithdrawals" style="display:none;">No withdrawals made yet.</p>
-</div>
+  
+  
+      
+          
+        
 
     </div>
  
@@ -347,7 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
     menu.classList.toggle('show');
   }
   window.toggleMobileNav = toggleMobileNav; // expose globally if used inline
-
+})
   // Slider for welcome images and quotes (fixed typo from 'qoutes' to 'quotes')
    const images = document.querySelectorAll('#welcomeNote img');
   let imgIndex = 0;
@@ -453,150 +414,90 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Show dashboard if user logged in
-  const name = localStorage.getItem("name");
-  if (name) {
-    const dashboard = document.getElementById("dashboardSection");
-    if(dashboard) dashboard.style.display = "block";
+  o;
+    
 
-    const authLinks = document.getElementById("authLinks");
-    if(authLinks) authLinks.style.display = "none";
+    
 
-    const userNameSpan = document.getElementById("userName");
-    if(userNameSpan) userNameSpan.textContent = name;
+      // dashboard
+      
+const API = "https://tradexinvestments.onrender.com"; // adjust to your backend host
+const token = localStorage.getItem("jwtToken");
+const user = JSON.parse(localStorage.getItem("currentUser"));
+const termsAccepted = localStorage.getItem("termsAccepted") === "true";
+const twoFAVerified = localStorage.getItem("twoFAVerified") === "true";
 
-    const profilePhoto = localStorage.getItem("profilePhoto");
-    if (profilePhoto) {
-      const profileImg = document.getElementById("profilePhoto");
-      if (profileImg) profileImg.src = profilePhoto;
-    }
+if (!token || !user || !termsAccepted || !twoFAVerified) {
+  window.location.href = "login-user.html";
+} else { initDashboard(); }
 
-    document.getElementById("investmentAmount").textContent = localStorage.getItem("investmentAmount") || "0";
-    document.getElementById("profit").textContent = localStorage.getItem("profit") || "0";
-    document.getElementById("totalInterest").textContent = localStorage.getItem("totalInterest") || "0";
-
-    // Fetch withdrawal history immediately
-    fetchWithdrawalHistory();
-  }
-
-  // Toggle withdraw form visibility
-  window.toggleWithdrawForm = function () {
-    const form = document.getElementById("withdrawForm");
-    if(form) form.classList.toggle("hidden");
-  };
-
-  // Withdraw form submit handler
-  const withdrawForm = document.getElementById("submitWithdrawal");
-  if (withdrawForm) {
-    withdrawForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      const token = localStorage.getItem("token");
-      if (!token) {
-        alert("Please log in first.");
-        return;
-      }
-
-      const form = e.target;
-      const amount = parseFloat(form.amount.value);
-      const method = form.method.value;
-      const recipient = form.recipient.value.trim();
-
-      if (amount <= 0) {
-        alert("Enter a valid amount");
-        return;
-      }
-      if (!method) {
-        alert("Please select a withdrawal method");
-        return;
-      }
-      if (!recipient) {
-        alert("Please enter recipient details");
-        return;
-      }
-
-      // Optional: validate amount against user balance here if you have it on frontend
-      const userBalance = parseFloat(localStorage.getItem("investmentAmount") || "0");
-      if (amount > userBalance) {
-        alert("Withdrawal amount exceeds your current balance.");
-        return;
-      }
-
-      try {
-        const response = await fetch("/api/withdrawals/request", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ amount, method, recipient }),
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-          alert(result.message || "Failed to submit withdrawal request.");
-          return;
-        }
-
-        alert("Withdrawal request submitted successfully!");
-
-        form.reset();
-        toggleWithdrawForm();
-        fetchWithdrawalHistory();
-
-      } catch (err) {
-        console.error(err);
-        alert("Error submitting withdrawal request.");
-      }
+async function initDashboard() {
+  try {
+    // Profile + stats
+    const res = await fetch(`${API}/api/user/me`, {
+      headers: { Authorization: `Bearer ${token}` }
     });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.msg || "Failed to load dashboard");
+
+    document.getElementById("userName").textContent = data.name;
+    document.getElementById("userPhoto").src = data.photo || "default.png";
+    document.getElementById("investment").textContent = (data.stats?.investment ?? 0).toFixed(2);
+    document.getElementById("profit").textContent = (data.stats?.profit ?? 0).toFixed(2);
+    document.getElementById("interest").textContent = (data.stats?.interest ?? 0).toFixed(2);
+
+    // (Optional) render recent withdrawals table if you add one in HTML
+    // renderWithdrawals(data.withdrawals);
+
+    document.getElementById("dashboard").style.display = "block";
+  } catch (e) {
+    alert(e.message);
+    localStorage.clear();
+    window.location.href = "login-user.html";
   }
+}
 
-  // Fetch withdrawal history and display it
-  async function fetchWithdrawalHistory() {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+// Withdraw
+document.getElementById("withdrawBtn").onclick = async () => {
+  const method = document.getElementById("withdrawMethod").value;
+  const amount = Number(document.getElementById("withdrawAmount").value);
+  const msg = document.getElementById("withdrawMsg");
 
-    try {
-      const res = await fetch("/api/withdrawals", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await res.json();
+  msg.style.color = "red"; msg.textContent = "";
 
-      const tbody = document.querySelector("#withdrawalHistoryTable tbody");
-      const noDataMsg = document.getElementById("noWithdrawals");
+  if (!amount || amount <= 0) { msg.textContent = "Enter a valid amount."; return; }
 
-      if (!tbody) return;
+  try {
+    const res = await fetch(`${API}/api/withdrawals`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ method, amount })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.msg || "Failed to submit withdrawal");
 
-      tbody.innerHTML = ""; // clear previous rows
+    msg.style.color = "green";
+    msg.textContent = data.msg;
 
-      if (!data.length) {
-        if(noDataMsg) noDataMsg.style.display = "block";
-        return;
-      } else {
-        if(noDataMsg) noDataMsg.style.display = "none";
-      }
-
-      data.forEach((wd) => {
-        const tr = document.createElement("tr");
-
-        tr.innerHTML = `
-          <td style="border: 1px solid #ddd; padding: 8px;">$${wd.amount.toFixed(2)}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${wd.method}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${wd.recipient}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${wd.status}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${new Date(wd.createdAt).toLocaleString()}</td>
-        `;
-
-        tbody.appendChild(tr);
-      });
-    } catch (err) {
-      console.error("Error fetching withdrawal history", err);
-    }
+    // Optionally refresh balances
+    await initDashboard();
+  } catch (e) {
+    msg.style.color = "red";
+    msg.textContent = e.message;
   }
-});
+};
+
+document.getElementById("logoutBtn").onclick = () => {
+  localStorage.clear();
+  window.location.href = "login-user.html";
+};
+
+
+  
+      
 </script>
 
   

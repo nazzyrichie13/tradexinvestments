@@ -6,46 +6,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
     /* (styles kept similar to your earlier design) */
-    body { font-family: Arial, sans-serif; padding: 20px; background-color: whitesmoke; }
-    h2 { color: #333; }
-    form { max-width: 400px; margin: 20px 0; }
-    input { width: 100%; padding: 10px; margin-top: 10px; box-sizing: border-box; }
-    button { padding: 10px 20px; margin-top: 15px; background-color: #007BFF; color: white; border: none; cursor: pointer; }
-    #dashboardSection { display: none; margin-top: 30px; }
-    #profileInfo { display: none; align-items: center; gap: 10px; margin-bottom: 20px; }
-    #profilePhoto { width: 60px; height: 60px; border-radius: 50%; }
-    #authLinks { margin-bottom: 20px; }
-    .stat { margin-bottom: 10px; }
-    /* Modal styles for Terms & 2FA */
-    .overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 9999; }
-    .modal { background: white; padding: 20px; width: 500px; border-radius: 8px; text-align: left; max-height: 80vh; display: flex; flex-direction: column; }
-    #termsContent { overflow-y: auto; flex-grow: 1; border: 1px solid #ddd; padding: 10px; margin-bottom: 15px; }
-    .btn-row { display:flex; justify-content:space-between; gap:10px; }
-    .btn-green { background: green; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; }
-    .btn-red { background: red; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; }
-    .small-muted { font-size: 13px; color: #666; margin-top:8px; }
+body { font-family: Arial; display:flex; justify-content:center; align-items:center; height:100vh; background-color: rgba(0, 0, 255, 0.479); }
+.login-box { padding:20px; border:1px solid #ccc; border-radius:8px; width:300px; }
+input { width:100%; padding:8px; margin:5px 0; }
+button { width:100%; padding:8px; margin-top:10px; cursor:pointer; }
+.popup { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%);
+        background:#fff; border:1px solid #ccc; padding:20px; z-index:1000; width:300px; border-radius:8px; }
+.popup h3 { margin-top:0; }
   </style>
 </head>
 <body>
-
-  <div id="authLinks">
-    <h2>Welcome to TradeXInvest</h2>
-    <button id="loginButton" >User Login</button>
-  </div>
-
-  <form id="loginForm" style="display: none;">
-    <h3>Login to Your Account</h3>
-    <input type="email" name="email" placeholder="Enter Email" required />
-    <input type="password" name="password" placeholder="Enter Password" required />
-    <button type="submit">Login</button>
-  </form>
-  
-
- <!-- Terms & Conditions Popup -->
-<div id="termsPopup" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:1000;">
-  <div style="background:#fff; width:80%; max-width:700px; padding:20px; border-radius:8px; max-height:90vh; overflow-y:auto;">
-    <h2 style="text-align:center; margin-bottom:15px;">Terms & Conditions</h2>
-    <p>Welcome to TradexInvest. By using our services, you agree to the following terms:</p>
+<h2>WELCOME TO TradeXInvest</h2>
+  <div class="login-box">
+<h2>Login</h2>
+<input type="email" id="email" placeholder="Email">
+<input type="password" id="password" placeholder="Password">
+<button id="loginBtn">Login</button>
+</div>
+<div id="termsPopup" class="popup">
+<h3>Terms & Conditions</h3>
+p>Welcome to TradexInvest. By using our services, you agree to the following terms:</p>
     
     <h3>1. Security Features</h3>
     <ul>
@@ -68,145 +48,132 @@
     <h3>4. User Agreement</h3>
     <p>By continuing, you acknowledge that you have read, understood, and agree to these Terms & Conditions. You also agree to our Privacy Policy and any updates that may occur.</p>
 
-    <div style="text-align:center; margin-top:20px;">
-      <button id="agreeBtn" style="background:#28a745; color:white; border:none; padding:10px 20px; margin-right:10px; border-radius:5px;">I Agree</button>
-      <button id="declineBtn" style="background:#dc3545; color:white; border:none; padding:10px 20px; border-radius:5px;">Decline</button>
-    </div>
-  </div>
+<p>Please accept our terms to continue.</p>
+<button id="acceptTermsBtn">Accept</button>
 </div>
 
-<div id="twoFAPopup">
-    <div>
-      <h2>Two-Factor Authentication</h2>
-      <p>Please enter the 6-digit code from your Google Authenticator app.</p>
-      <input type="text" id="twoFACode" placeholder="Enter 6-digit code" maxlength="6" />
-      <div style="margin-top:15px;">
-        <button id="verify2FA" style="background:#28a745; color:white; padding:10px 20px; border:none; border-radius:5px;">Verify</button>
-        <button id="cancel2FA" style="background:#dc3545; color:white; padding:10px 20px; border:none; border-radius:5px;">Cancel</button>
-      </div>
-    </div>
-  </div>
+  
+
+ <div id="twoFAPopup" class="popup">
+  <h3>2FA Verification</h3>
+  <input type="text" id="twoFAInput" placeholder="Enter 2FA code">
+  <button id="verify2FABtn">Verify</button>
+  <button id="resend2FABtn">Resend Code</button>
+  <p id="countdown"></p>
+</div>
+
+    
+
 
 
   
 
   <script>
-  const API_BASE = 'https://tradexinvestments.onrender.com/api/auth';
-  let pendingLogin = { tempToken: null, user: null };
+ 
+  const backendUrl = "https://tradexinvestments.onrender.com"; // adjust to your backend
 
-  document.getElementById('loginButton').addEventListener('click', () => {
-    document.getElementById('authLinks').style.display = 'none';
-    document.getElementById('loginForm').style.display = 'block';
-  });
+async function loginUser(email, password) {
+  try {
+    const res = await fetch(`${backendUrl}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.msg || "Login failed");
 
-  document.getElementById('loginForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    const email = e.target.email.value.trim();
-    const password = e.target.password.value;
+    localStorage.setItem("currentUser", JSON.stringify(data));
+    localStorage.setItem("termsAccepted", "true");
 
+    // 2FA step (assume verified automatically for demo)
+    localStorage.setItem("twoFAVerified", "true");
+
+    // Redirect based on admin or normal user
+    if (email.toLowerCase() === "youngnazzy13@gmail.com") {
+      window.location.href = "admin.html";
+    } else {
+      window.location.href = "index.html";
+    }
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+
+
+
+let countdownTimer;
+
+function startCountdown(duration = 300) { // 5 minutes
+  clearInterval(countdownTimer);
+  const countdownEl = document.getElementById("countdown");
+  let timeLeft = duration;
+
+  countdownEl.textContent = `Code expires in: ${formatTime(timeLeft)}`;
+  countdownTimer = setInterval(() => {
+    timeLeft--;
+    countdownEl.textContent = `Code expires in: ${formatTime(timeLeft)}`;
+    if (timeLeft <= 0) {
+      clearInterval(countdownTimer);
+      countdownEl.textContent = "Code expired. Please resend.";
+    }
+  }, 1000);
+}
+
+function formatTime(seconds) {
+  const min = Math.floor(seconds / 60);
+  const sec = seconds % 60;
+  return `${min}:${sec < 10 ? "0" + sec : sec}`;
+}
+
+function show2FAPopup() {
+  const popup = document.getElementById("twoFAPopup");
+  popup.style.display = "block";
+  startCountdown();
+
+  document.getElementById("verify2FABtn").onclick = async () => {
+    const code = document.getElementById("twoFAInput").value;
+    const user = JSON.parse(localStorage.getItem("currentUser"));
     try {
-      const res = await fetch(`${API_BASE}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+      const res = await fetch(`${backendUrl}/verify-2fa`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email, code })
       });
       const data = await res.json();
-      if (!res.ok) return alert(data.message || 'Login failed');
+      if (!res.ok) throw new Error(data.msg);
 
-      if (data.user?.role !== 'user') {
-        alert('Unauthorized account role');
-        return;
-      }
-
-      if (data.twoFARequired) {
-        pendingLogin.tempToken = data.tempToken;
-        pendingLogin.user = data.user;
-        if (localStorage.getItem('termsAccepted') === 'true') {
-          openTwoFA();
-        } else {
-          openTerms();
-        }
-        return;
-      }
-
-      // No 2FA required, direct login
-      if (data.token) {
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        localStorage.setItem('termsAccepted', 'true'); // Assume terms accepted if no 2FA?
-        redirectToDashboard();
-        return;
-      }
-
-      alert('Unexpected login response');
+      localStorage.setItem("twoFAVerified", true);
+      localStorage.setItem("jwtToken", data.token);
+      popup.style.display = "none";
+      clearInterval(countdownTimer);
+      window.location.href = "index.html";
     } catch (err) {
-      console.error(err);
-      alert('Network or server error during login');
+      alert(err.message);
     }
-  });
+  };
 
-  // Terms popup handlers
-  document.getElementById('agreeBtn').addEventListener('click', () => {
-    localStorage.setItem('termsAccepted', 'true');
-    closeTerms();
-    if (pendingLogin.tempToken) {
-      openTwoFA();
-    } else if (pendingLogin.user) {
-      redirectToDashboard();
-    }
-  });
-  document.getElementById('declineBtn').addEventListener('click', () => {
-    alert('You must agree to the Terms & Conditions to continue.');
-    logout();
-  });
-
-  // 2FA handlers
-  document.getElementById('verify2FA').addEventListener('click', async () => {
-    const code = document.getElementById('twoFACode').value.trim();
-    if (!/^\d{6}$/.test(code)) return alert('Enter the 6-digit code');
-
+  document.getElementById("resend2FABtn").onclick = async () => {
+    const user = JSON.parse(localStorage.getItem("currentUser"));
     try {
-      const res = await fetch(`${API_BASE}/2fa/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tempToken: pendingLogin.tempToken, token: code })
+      const res = await fetch(`${backendUrl}/resend-2fa`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email })
       });
       const data = await res.json();
-      if (!res.ok) return alert(data.message || '2FA verification failed');
-
-      if (data.token && data.user) {
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        closeTwoFA();
-        redirectToDashboard();
-      } else {
-        alert('Invalid server response after 2FA');
-      }
+      alert(data.msg);
+      startCountdown();
     } catch (err) {
-      console.error(err);
-      alert('Network or server error verifying 2FA');
+      alert(err.message);
     }
-  });
-  document.getElementById('cancel2FA').addEventListener('click', logout);
+  };
+}
 
-  // UI helpers
-  function openTerms() { document.getElementById('termsPopup').style.display = 'flex'; }
-  function closeTerms() { document.getElementById('termsPopup').style.display = 'none'; }
-  function openTwoFA() { document.getElementById('twoFAPopup').style.display = 'flex'; }
-  function closeTwoFA() {
-    document.getElementById('twoFAPopup').style.display = 'none';
-    document.getElementById('twoFACode').value = '';
-    pendingLogin = { tempToken: null, user: null };
-  }
-
-  function logout() {
-    localStorage.clear();
-    location.reload();
-  }
-
-  function redirectToDashboard() {
-    window.location.href = 'index.html';
-  }
+ 
+    
+    
+   
 </script>
 
 
