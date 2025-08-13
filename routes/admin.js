@@ -3,6 +3,7 @@ import express from "express";
 import Admin from "../models/Admin.js";
 import User from "../models/User.js";
 import { requireAuth } from "../middleware/authMiddleware.js";
+import { requireAdmin } from "../middleware/adminMiddleware.js";
 import transporter from "../utils/mailer.js";
 
 
