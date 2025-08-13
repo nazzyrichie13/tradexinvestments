@@ -1,7 +1,8 @@
-const express = require('express');
-const multer = require('multer');
-const path = require('path');
-const User = require('./models/User');
+import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import User from './models/User.js';
+
 const router = express.Router();
 
 // Allowed file types
