@@ -6,7 +6,15 @@ import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { Server } from 'socket.io';
-import AuthRoutes from "./routes/auth.js";
+
+// Routes
+import authRoutes from "./routes/auth.js";
+import userRoutes from "./routes/user.js";
+import adminRoutes from "./routes/admin.js";
+import uploadRoutes from "./routes/upload.js";
+import contactRoutes from "./routes/contact.js";
+import withdrawalRoutes from "./routes/withdrawals.js";
+
 // Load environment variables
 dotenv.config();
 
@@ -17,23 +25,14 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
-// const PORT = process.env.PORT || 5000;
-app.use('/api/auth', AuthRoutes);
+
+const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-import express from "express";
-import authRoutes from "./routes/auth.js";
-import userRoutes from "./routes/user.js";
-import adminRoutes from "./routes/admin.js";
-import uploadRoutes from "./routes/upload.js";
-import contactRoutes from "./routes/contact.js";
-import withdrawalRoutes from "./routes/withdrawals.js";
-
-
-
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/admin", adminRoutes);
