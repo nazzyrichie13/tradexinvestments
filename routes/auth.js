@@ -7,7 +7,7 @@ import jwt from "jsonwebtoken";
 import speakeasy from "speakeasy";
 import qrcode  from "qrcode";
 import path from "path";
-const multer = require("multer");
+import multer from "multer";
 import fs from "fs";
 import User from "./models/User.js";
 
