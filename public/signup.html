@@ -9,14 +9,13 @@
 <body>
   <div class="container">
     <h2>Sign Up</h2>
-    <form id="signupForm" enctype="multipart/form-data">
-      <input type="text" placeholder="Full Name" name="fullName" required />
-      <input type="email" placeholder="Email" name="email" required />
-      <input type="password" placeholder="Password" name="password" required />
-      <input type="file" name="profilePic" accept="image/*" />
-
-      <button type="submit">Sign Up</button>
-    </form>
+    <form id="signupForm" enctype="multipart/form-data" method="POST" action="/api/auth/signup">
+  <input type="text" placeholder="Full Name" name="name" required />
+  <input type="email" placeholder="Email" name="email" required />
+  <input type="password" placeholder="Password" name="password" required />
+  <input type="file" name="photo" accept="image/*" />
+  <button type="submit">Sign Up</button>
+</form>
     <p>Already have an account? <a href="login-user.html">Login</a></p>
   </div>
   <script>
