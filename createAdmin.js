@@ -1,42 +1,44 @@
 
-require('dotenv').config();
-console.log('MONGO_URI from env:', process.env.MONGO_URI);
-const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
+// createAdmin.js
+import dotenv from 'dotenv';
+import mongoose from 'mongoose';
+import bcrypt from 'bcrypt';
+import Admin from './models/Admin.js'; // Adjust path if your Admin model is elsewhere
 
-// Define Admin schema
-const adminSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true }
-});
+dotenv.config();
 
-const Admin = mongoose.model('Admin', adminSchema);
+if (!process.env.MONGODB_URI) {
+  console.error('❌ MONGODB_URI not found in .env');
+  process.exit(1);
+}
 
-// Async function to create admin
-async function createAdmin() {
+(async () => {
   try {
-    console.log('Connecting to MongoDB...');
-    await mongoose.connect(process.env.MONGO_URI, {
-      useUnifiedTopology: true
-    });
+    // Connect to MongoDB
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('✅ MongoDB connected');
 
-    const email = 'youngnazzy13@gmail.com'; // Change to your admin email
-    const plainPassword = 'chinelo100';      // Your admin password
-    const hashedPassword = await bcrypt.hash(plainPassword, 10);
+    // Check if admin already exists
+    const existingAdmin = await Admin.findOne({ email: process.env.ADMIN_EMAIL });
+    if (existingAdmin) {
+      console.log('⚠️ Admin already exists:', existingAdmin.email);
+      process.exit(0);
+    }
 
-    const admin = new Admin({
-      email,
+    // Hash password
+    const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASS, 10);
+
+    // Create admin
+    const newAdmin = await Admin.create({
+      email: process.env.ADMIN_EMAIL,
       password: hashedPassword
     });
 
-    await admin.save();
-    console.log('✅ Admin created successfully!');
-    mongoose.disconnect();
-  } catch (error) {
-    console.error('❌ Error creating admin:', error.message);
-    mongoose.disconnect();
-  }
-}
+    console.log('✅ Admin created:', newAdmin.email);
+    process.exit(0);
 
-// Run the function
-createAdmin();
+  } catch (err) {
+    console.error('❌ Error creating admin:', err);
+    process.exit(1);
+  }
+})();
