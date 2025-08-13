@@ -9,7 +9,7 @@ import fs from "fs";
 
 import User from "../models/User.js";
 
-import middleware from "./middleware/auth.js";
+import middleware from "../middleware/auth.js";
 
 const router = express.Router()
 
