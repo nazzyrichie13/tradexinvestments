@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import path from 'path';
-import User from './models/User.js';
+import User from '../models/User.js';
 
 const router = express.Router();
 
@@ -56,4 +56,4 @@ router.post('/upload-profile/:userId', upload.single('profilePhoto'), async (req
   }
 });
 
-module.exports = router;
+export default router;

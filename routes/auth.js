@@ -1,16 +1,17 @@
 // routes/auth.js
 // routes/auth.js
 import express from "express";
-const router = express.Router();
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import speakeasy from "speakeasy";
-import qrcode  from "qrcode";
 import path from "path";
 import multer from "multer";
 import fs from "fs";
-import User from '../models/User.js';
-// const authMiddleware = require("../middleware/authMiddleware");
+
+import User from "../models/User.js";
+
+import middleware from "./middleware/auth.js";
+
+const router = express.Router()
 
 
 
@@ -142,4 +143,5 @@ router.post("/resend-2fa", async (req, res) => {
   } catch (err) { res.status(500).send("Server error"); }
 });
 
-module.exports = router;
+export default router;
+

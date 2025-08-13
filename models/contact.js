@@ -9,5 +9,4 @@ const contactSchema = new mongoose.Schema({
     default: Date.now
   }
 });
-
-module.exports = mongoose.model('Contact', contactSchema);
+export default mongoose.model("Contact", contactSchema);
