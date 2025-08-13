@@ -84,9 +84,16 @@ app.post('/api/contact', async (req, res) => {
 });
 
 // ====== Connect to MongoDB ======
+// ====== Connect to MongoDB and Start Server ======
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error('MongoDB connection error:', err));
+  .then(() => {
+    console.log('✅ MongoDB connected');
+    server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+  })
+  .catch(err => {
+    console.error('❌ MongoDB connection error:', err);
+    process.exit(1);
+  });
 
 // ====== Routes ======
 // ====== ROUTES ======
@@ -186,4 +193,4 @@ app.get("/api/users", async (req, res) => {
 });
 
 // ====== Start Server ======
-server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
