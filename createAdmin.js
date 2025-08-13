@@ -1,5 +1,6 @@
 
-    require('dotenv').config();
+require('dotenv').config();
+console.log('MONGO_URI from env:', process.env.MONGO_URI);
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
