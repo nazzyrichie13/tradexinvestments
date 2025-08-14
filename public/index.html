@@ -365,6 +365,7 @@
 </div>
 
 <!-- Terms Modal -->
+<!-- Terms Modal -->
 <div id="termsModal" class="modal">
   <h3>Terms & Conditions</h3>
   <div style="max-height:220px;overflow:auto;border:1px solid #1f2937;border-radius:10px;padding:12px">
@@ -382,7 +383,7 @@
 </div>
 
 <!-- 2FA Modal -->
-<div id="twofaModal" class="modal">
+<div id="twoFAModal" class="modal">
   <h3>Two-Factor Verification</h3>
   <p class="muted" id="twofaHint">We’ve emailed a 6-digit code to your address.</p>
   <input id="twofaCode" placeholder="Enter 2FA code" />
@@ -391,7 +392,7 @@
     <button id="resend2FA" class="btn right">Resend code</button>
   </div>
   <div class="actions">
-    <button class="btn" data-close="twofaModal">Cancel</button>
+    <button class="btn" data-close="twoFAModal">Cancel</button>
     <button id="verify2FA" class="btn btn-primary">Verify</button>
   </div>
 </div>
@@ -653,6 +654,54 @@ function toggleMobileNav() {
   mobileMenu.classList.toggle("show"); // toggles the 'show' class
 }
 
+let interest = 8000; // Starting interest
+const interestRatePerSecond = 0.05; // Amount to grow every second (you can adjust)
+const interestEl = document.getElementById("interestCounter");
+
+function updateInterest() {
+  interest += interestRatePerSecond;
+  interestEl.textContent = interest.toFixed(2);
+}
+setInterval(updateInterest, 1000); // Update every 1 second
+
+
+// ====== NEXT PAYOUT COUNTDOWN ======
+const countdownEl = document.getElementById("payoutCountdown");
+
+// Example: set next payout 48 hours from now
+const nextPayoutDate = new Date();
+nextPayoutDate.setHours(nextPayoutDate.getHours() + 48);
+
+function updateCountdown() {
+  const now = new Date().getTime();
+  const distance = nextPayoutDate - now;
+
+  if (distance < 0) {
+    countdownEl.textContent = "Payout processing...";
+    return;
+  }
+
+  const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+  let output = "";
+  if (days > 0) output += `${days}d `;
+  output += `${hours}h ${minutes}m ${seconds}s`;
+
+  countdownEl.textContent = output;
+}
+setInterval(updateCountdown, 1000); // Update every
+
+
+
+
+
+
+
+
+
 // Expose globally if using inline onclick
 window.toggleMobileNav = toggleMobileNav;
 
@@ -813,19 +862,29 @@ document.getElementById("loginSubmit").addEventListener("click", async () => {
     console.log("Login: Response data", data);
 
     if (res.ok) {
-      alert("Login successful!");
+      // Save login details
+      localStorage.setItem("jwtToken", data.token);
+      localStorage.setItem("currentUser", JSON.stringify(data.user));
+
+      // Close login modal
       closeModal("loginModal");
 
-      // Optional: Save token & user info
-      if (data.token) {
-        localStorage.setItem("jwtToken", data.token);
-      }
-      if (data.user) {
-        localStorage.setItem("currentUser", JSON.stringify(data.user));
+      // Step 1: Check Terms acceptance
+      const termsAccepted = localStorage.getItem("termsAccepted") === "true";
+      if (!termsAccepted) {
+        openModal("termsModal");
+        return;
       }
 
-      // Example: Refresh dashboard
-      // loadDashboard(data.user);
+      // Step 2: Check 2FA verification
+      const twoFAVerified = localStorage.getItem("twoFAVerified") === "true";
+      if (!twoFAVerified) {
+        openModal("twoFAModal");
+        return;
+      }
+
+      // Step 3: Show dashboard
+      showDashboard(data.user);
 
     } else {
       alert(data.message || "Login failed");
@@ -835,6 +894,7 @@ document.getElementById("loginSubmit").addEventListener("click", async () => {
     alert("An error occurred while logging in");
   }
 });
+
 
 // TERMS POPUP
 function openTermsPopup() {
