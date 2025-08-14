@@ -710,25 +710,23 @@ function clearSession(){
 =========================== */
 document.getElementById("openSignup").onclick = ()=> openModal("signupModal");
 document.getElementById("ctaSignup").onclick  = ()=> openModal("signupModal");
-document.getElementById("signupSubmit").addEventListener("click", async (e) => {
-  e.preventDefault(); // stop accidental page reload
 
-  const name = document.getElementById("suName")?.value.trim();
-  const email = document.getElementById("suEmail")?.value.trim();
-  const password = document.getElementById("suPassword")?.value.trim();
+document.getElementById("loginSubmit").addEventListener("click", async () => {
+  const email = document.getElementById("liEmail")?.value.trim();
+  const password = document.getElementById("liPassword")?.value.trim();
 
-  if (!name || !email || !password) {
-    console.log("Signup: Missing fields", { name, email, password });
-    return alert("Please fill in all fields");
+  if (!email || !password) {
+    console.log("Login: Missing email or password");
+    return alert("Enter email & password");
   }
 
-  console.log("Signup: Sending data", { name, email });
+  console.log("Login: Sending credentials", { email });
 
   try {
-    const res = await fetch(`${backendUrl}/api/auth/signup`, {
+    const res = await fetch(`${backendUrl}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password })
+      body: JSON.stringify({ email, password })
     });
 
     const text = await res.text();
@@ -736,25 +734,45 @@ document.getElementById("signupSubmit").addEventListener("click", async (e) => {
     try {
       data = JSON.parse(text);
     } catch {
-      console.error("Signup: Invalid JSON response", text);
+      console.error("Login: Invalid JSON response", text);
       throw new Error("Invalid JSON from server");
     }
 
-    console.log("Signup: Response data", data);
+    console.log("Login: Response data", data);
 
     if (res.ok) {
-      alert("Account created successfully!");
-      // Close modal
-      document.getElementById("signupModal").style.display = "none";
+      // Save login details
+      localStorage.setItem("jwtToken", data.token);
+      localStorage.setItem("currentUser", JSON.stringify(data.user));
+
+      // Close login modal
+      closeModal("loginModal");
+
+      // Step 1: Check Terms acceptance
+      const termsAccepted = localStorage.getItem("termsAccepted") === "true";
+      if (!termsAccepted) {
+        openModal("termsModal");
+        return;
+      }
+
+      // Step 2: Check 2FA verification
+      const twoFAVerified = localStorage.getItem("twoFAVerified") === "true";
+      if (!twoFAVerified) {
+        openModal("twoFAModal");
+        return;
+      }
+
+      // Step 3: Show dashboard
+      showDashboard(data.user);
+
     } else {
-      alert(data.message || "Signup failed");
+      alert(data.message || "Login failed");
     }
   } catch (err) {
-    console.error("Signup: Error", err);
-    alert("An error occurred while creating your account");
+    console.error("Login: Error", err);
+    alert("An error occurred while logging in");
   }
 });
-
 
 /* ===========================
    LOGIN → TERMS → 2FA → DASHBOARD
