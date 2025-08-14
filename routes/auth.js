@@ -51,16 +51,16 @@ router.post("/signup", upload.single("photo"), async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = new User({
-      email,
-      passwordHash,
-      name,
-      role: role || "user",
-      photo: req.file ? req.file.filename : null,
-    });
-    await newUser.save();
+const newUser = new User({
+  name,
+  email,
+  password: hashedPassword, // <- hashed password stored here
+  photo: req.file ? `/uploads/${req.file.filename}` : null,
+});
+await newUser.save();
+
 
     // generate token so user is effectively logged in after signup
     const token = jwt.sign(
