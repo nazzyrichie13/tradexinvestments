@@ -49,7 +49,11 @@
     }
 
     alert('Signup successful! Please login.');
-    window.location.href = 'login-user.html';
+    const loginForm = document.getElementById("loginForm");
+   const overlay = document.getElementById("overlay"); // optional if using overlay
+
+if (loginForm) loginForm.style.display = "block";
+if (overlay) overlay.style.display = "block";
 
   } catch (error) {
     console.error(error);
