@@ -1,377 +1,217 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TradeXinvest</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TradeXinvest</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
 
-</head>
-<style>
-  .testimonials-section {
-    max-width: 900px;
-    margin: 2rem auto;
-    padding: 0 1rem;
-    font-family: Arial, sans-serif;
-  }
-  .testimonials-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-    justify-content: center;
-  }
-  .testimonial-box {
-    background: #f9f9f9;
-    border-radius: 8px;
-    padding: 1.5rem;
-    flex: 1 1 280px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    position: relative;
-  }
-  .testimonial-box p {
-    font-size: 1.1rem;
-    color: #555;
-    margin: 1rem 0 0.8rem;
-  }
-  .testimonial-box h4 {
-    color: #555;
-    font-weight: 600;
-    margin: 0;
-  }
-  .stars {
-    font-size: 1.3rem;
-    color: #f5a623; /* gold star color */
-    user-select: none;
-  }
-  .stars span {
-    letter-spacing: 2px;
-  }
-  .profile-info {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
 
-    .profile-info img {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid #ddd;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
 
-    .profile-info h3 {
-      margin: 0;
-      font-size: 1.2rem;
-      font-weight: 600;
-    }
-#dashboard {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    background: #1e1e2f; color: white;
-    padding: 20px;
-    display: none;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    z-index: 1000;
-  }
-  #dashboard img { border-radius: 50%; vertical-align: middle; margin-right: 10px; }
-  #dashboard h2 { display: inline-block; margin: 0; vertical-align: middle; }
-  #dashboard p { margin: 5px 0; }
-  #dashboard .dashboard-buttons button {
-    margin-right: 10px; padding: 8px 12px;
-    background:#4CAF50; color:white; border:none; cursor:pointer; border-radius:5px;
-  }
-  #dashboard .dashboard-buttons button:hover { background:#45a049; }
+ <style>
+  body { margin:0; font-family: Arial, sans-serif; }
+  .nav { display:flex; justify-content:space-between; align-items:center; padding:10px 20px; background:#f0f0f0; position:relative; z-index:10; }
+  .logo { font-weight:bold; font-size:1.5rem; }
+  #authLinks a, #authLinks button { margin-left:5px; cursor:pointer; }
+  .lowerNAV { display:none; cursor:pointer; padding:10px; }
+  .mobile-menu { display:none; list-style:none; padding:10px; background:#eee; position:absolute; top:60px; left:0; width:100%; z-index:9; }
+  .mobile-menu.show { display:block; }
+  .mobile-menu li { margin:10px 0; }
+  .mobile-menu a { text-decoration:none; color:#000; font-weight:600; }
 
-  /* ----- LOGIN / POPUPS ----- */
-  #loginBox, #termsPopup, #twoFAPopup {
-    background: white; padding:20px; margin: 20px auto; width: 300px;
-    border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    
-  }
-   #loginBox{
-    display: none;
-   }
-  #termsPopup, #twoFAPopup { display:none; }
-  input { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing:border-box; }
-  button { cursor:pointer; }
-  #countdown { font-weight:bold; margin-top:10px; }
-  #loginForm {
-    display: none; /* hidden by default */
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    border: 2px solid #333;
-    padding: 20px;
-    background-color: #f9f9f9;
-    box-shadow: 0 0 10px rgba(0,0,0,0.3);
-    z-index: 1000;
-  }
+  /* Welcome note + quotes */
+  #welcomeNote, #quotes {  text-align:center; height:100px; width: 100%; margin:20px 0; }
+  #welcomeNote img, #quotes p { opacity:0;   transition:opacity 0.5s ease-in-out;  }
+  #welcomeNote img.active, #quotes p.active { opacity:1; }
 
-  #overlay {
-    display: none; /* hidden by default */
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.5);
-    z-index: 500;
-  }
+  /* Testimonials */
+  .testimonials-section { max-width:900px; margin:2rem auto; padding:0 1rem; }
+  .testimonials-container { display:flex; flex-wrap:wrap; gap:1.5rem; justify-content:center; }
+  .testimonial-box { background:#f9f9f9; border-radius:8px; padding:1.5rem; flex:1 1 280px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+  .testimonial-box p { font-size:1.1rem; color:#555; margin:1rem 0 0.8rem; }
+  .testimonial-box h4 { color:#555; font-weight:600; margin:0; }
+  .stars { font-size:1.3rem; color:#f5a623; user-select:none; }
+  .stars span { letter-spacing:2px; }
 
-  button {
-    padding: 10px 20px;
-    font-size: 16px;
-  }
-</style>
+  /* Profile/dashboard */
+  .profile-info { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+  .profile-info img { width:60px; height:60px; border-radius:50%; object-fit:cover; border:2px solid #ddd; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
+
+  /* Overlay + modals */
+  .overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:100; }
+  .modal { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; padding:20px; border-radius:10px; z-index:101; box-shadow:0 0 10px rgba(0,0,0,0.3); transition: all 0.3s ease; max-width:400px; width:90%; }
+  .modal.show { display:block; }
+
+  /* Hero */
+  .hero-section { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; padding:2rem; gap:2rem; background:#f0f0f0; }
+  .hero-content { max-width:500px; }
+  .hero-content h1 { font-size:2rem; margin-bottom:10px; }
+  .hero-buttons a { margin-right:10px; padding:10px 20px; border-radius:5px; text-decoration:none; color:#fff; }
+  .btn-primary { background:#007bff; }
+  .btn-secondary { background:#6c757d; }
+
+  /* Features/Why sections */
+  .features-section, .why-section { padding:2rem 1rem; text-align:center; }
+  .features-container, .why-container { display:flex; flex-wrap:wrap; gap:1.5rem; justify-content:center; }
+  .feature-box, .why-box { background:#f9f9f9; padding:1rem; border-radius:8px; flex:1 1 250px; }
+  .feature-box i, .why-box i { font-size:2rem; margin-bottom:10px; }
+
+  /* CTA */
+  .cta-section { text-align:center; padding:2rem; background:#007bff; color:#fff; }
+  .cta-btn { display:inline-block; padding:10px 20px; background:#ffc107; color:#000; text-decoration:none; border-radius:5px; margin-top:10px; }
+
+  /* Chat */
+  .chat-widget { position:fixed; bottom:20px; right:20px; width:250px; border:1px solid #ccc; border-radius:5px; background:#fff; display:flex; flex-direction:column; z-index:102; }
+  .chat-header { background:#007bff; color:#fff; padding:10px; border-top-left-radius:5px; border-top-right-radius:5px; font-weight:bold; }
+  .chat-body { flex:1; padding:10px; overflow-y:auto; max-height:200px; }
+  .chat-body .message { margin-bottom:10px; padding:5px 10px; border-radius:5px; }
+  .chat-body .admin { background:#f1f1f1; text-align:left; }
+  #chatForm { display:flex; padding:5px; }
+  #chatInput { flex:1; padding:5px; }
+  #chatForm button { padding:5px 10px; }
+
+  /* Footer */
+  .site-footer { background:#222; color:#fff; padding:2rem; text-align:center; }
+  .site-footer a { color:#ffc107; text-decoration:none; }
+ </style>
+  
 </head>
 <body>
 
-
-<body>
-      <div class="lowerNAV" onclick="toggleMobileNav()">
-    <div style="display: flex; flex-direction: column; gap: 4px;">
-      <span style="width: 30px; height: 4px; background-color: black;"></span>
-      <span style="width: 30px; height: 4px; background-color: black;"></span>
-      <span style="width: 30px; height: 4px; background-color: black;"></span>
-    </div>
+<!-- NAV -->
+<div class="nav">
+  <p class="logo">TradeXInvest</p>
+  <div id="authLinks">
+    <a href="signup.html">Sign up</a> /
+    <button id="loginBtn">Login</button>
   </div>
+</div>
 
+<div class="lowerNAV" onclick="toggleMobileNav()">
+  <div style="display:flex; flex-direction:column; gap:4px;">
+    <span style="width:30px; height:4px; background:black;"></span>
+    <span style="width:30px; height:4px; background:black;"></span>
+    <span style="width:30px; height:4px; background:black;"></span>
+  </div>
+</div>
 
 <ul class="mobile-menu" id="mobileMenu">
   <li><a href="index.html">Home</a></li>
   <li><a href="about.html">About Us</a></li>
   <li><a href="contact.html">Contact</a></li>
 </ul>
-  <div class="nav">
-    <p class="logo">TradeXInvest</p>
-    <div id="authLinks" style="display: flex; align-items: center; font-size: 18px; font-weight: 600;">
-      <a href="signup.html" style="color: black; text-decoration: none; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;white-space: nowrap;">Sign up</a> /
-       <button id="loginBtn">Login</button>
-    </div>
-    </div>
-    </div>
-    <!-- DASHBOARD -->
-<!-- DASHBOARD -->
-<div id="dashboard">
-  <div>
-    <img id="dashboardPhoto" src="" alt="Profile" width="50" style="display:none;">
-    <h2 id="dashboardName"></h2>
-  </div>
-  <p id="dashboardEmail"></p>
-  <p>Investment: $<span id="dashboardInvestment">0</span> | Profit: $<span id="dashboardProfit">0</span> | Interest: $<span id="dashboardInterest">0</span></p>
-  <div class="dashboard-buttons">
-    <button id="withdrawBtn">Withdraw</button>
-    <button id="depositBtn">Deposit</button>
-    <button id="transactionsBtn">Transactions</button>
-    <button id="logoutBtn">Logout</button>
-  </div>
-  <!-- Deposit Modal -->
-<div id="depositModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5);">
-  <div style="background:white; padding:20px; width:300px; margin:100px auto; border-radius:8px; position:relative;">
-    <h3>Deposit Funds</h3>
-    <input type="number" id="depositAmount" placeholder="Amount"><br><br>
-    <button id="submitDeposit">Submit</button>
-    <button id="closeDeposit" style="margin-left:10px;">Cancel</button>
-  </div>
-</div>
 
-<!-- Withdraw Modal -->
-<div id="withdrawModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5);">
-  <div style="background:white; padding:20px; width:300px; margin:100px auto; border-radius:8px; position:relative;">
-    <h3>Withdraw Funds</h3>
-    <input type="number" id="withdrawAmount" placeholder="Amount"><br><br>
-    <select id="withdrawMethod">
-      <option value="paypal">PayPal</option>
-      <option value="bitcoin">Bitcoin</option>
-      <option value="cashapp">CashApp</option>
-      <option value="bank">Bank-to-Bank</option>
-    </select><br><br>
-    <button id="submitWithdraw">Submit</button>
-    <button id="closeWithdraw" style="margin-left:10px;">Cancel</button>
-  </div>
-</div>
-
-</div>
-
-<!-- LOGIN BOX -->
-
-
-<div id="overlay"></div>
-
-<div id="loginForm">
-  <h2>Login</h2>
-  <input type="email" placeholder="Email" name="email"><br><br>
-  <input type="password" placeholder="Password" name="password"><br><br>
-  <button id="closeBtn">Close</button>
-  <button>Submit</button>
-</div>
-
-
-<!-- TERMS POPUP -->
-<div id="termsPopup" class="popup"> 
-  <h3>Terms & Conditions</h3> 
-  <p>Welcome to TradexInvest. By using our services, you agree to the following terms:</p>
-   <h3>1. Security Features</h3> 
-   <ul> 
-    <li><strong>Two-Factor Authentication (2FA):</strong> Recommended for account security.</li> 
-    <li><strong>Cold Storage:</strong> Majority of assets are stored offline.</li> 
-    <li><strong>Encryption:</strong> Sensitive data encrypted in transit and at rest.</li> 
-  </ul>
-   <h3>2. Fee Structure</h3>
-    <ul> 
-      <li>Deposit Fee: <strong>0%</strong></li>
-       <li>Withdrawal Fee: <strong>1.5%</strong></li> 
-       <li>Trading Fee: <strong>0.25%</strong></li> 
-      </ul> 
-      <h3>3. Risk Disclosure</h3>
-       <p>Investing in digital assets involves high risk, including the potential loss of your entire investment. Past performance is not indicative of future results.</p>
-        <h3>4. User Agreement</h3>
-         <p>By continuing, you acknowledge you have read, understood, and agree to these Terms & Conditions and our Privacy Policy.</p> 
-         <p>Please accept our terms to continue.</p> 
-         
-         <button id="acceptTermsBtn">Accept</button> 
-        </div>
-
-
-<!-- 2FA POPUP -->
-<div id="twoFAPopup">
-  <p>Enter your 2FA code:</p>
-  <input type="text" id="twoFAInput" placeholder="2FA Code"><br><br>
-  <button id="verify2FABtn">Verify</button>
-  <button id="resend2FABtn">Resend</button>
-  <p id="countdown"></p>
-</div>
-      
-    
-  <div id="welcomeNote" class="welcomeNote">
+<!-- Welcome Note + Quotes -->
+<div id="welcomeNote">
   <img src="images/photo 5.avif" alt="img" />
   <img src="images/stock 1.webp" alt="img" />
   <img src="images/photo 7.avif" alt="img" />
   <img src="images/photo-1749741326969-e1676b3bce43.avif" alt="img" />
 </div>
-
-<div id="quotes" class="quotes">
+<div id="quotes">
   <p>WELCOME TO TRADEX</p>
   <p>"Do not save what is left after spending, but spend what is left after saving."</p>
   <p>"An investment in knowledge pays the best interest."</p>
   <p>"Successful investing is about managing risk, not avoiding it."</p>
 </div>
 
+<div id="overlay" class="overlay"></div>
 
-  
-  
-  
-      
-          
-        
-
-    </div>
- 
-  <section id="features" class="features-section">
-  <h2>Our Features</h2>
-  <div class="features-container">
-    <div class="feature-box">
-      <i class="fa fa-shield-alt"></i>
-      <h3>Secure Platform</h3>
-      <p>We use top-level security to keep your data and transactions safe at all times.</p>
-    </div>
-    <div class="feature-box">
-      <i class="fa fa-chart-line"></i>
-      <h3>Live Investment Tracking</h3>
-      <p>View real-time updates of your investment, profit, and total interest on your dashboard.</p>
-    </div>
-    <div class="feature-box">
-      <i class="fa fa-hand-holding-usd"></i>
-      <h3>Flexible Investment Plans</h3>
-      <p>Choose from a variety of plans that suit your goals and budget with high returns.</p>
-    </div>
-    <div class="feature-box">
-      <i class="fa fa-headset"></i>
-      <h3>24/7 Support</h3>
-      <p>Our dedicated support team is always here to help you through live chat or email.</p>
-    </div>
-  </div>
-</section>
-<div class="live-counter">
-  <h3>Total Interest Growing:</h3>
-  <p>$<span id="interestCounter">0.00</span></p>
+<!-- LOGIN MODAL -->
+<div id="loginForm" class="modal">
+  <h2>Login</h2>
+  <input type="email" id="loginEmail" placeholder="Email"><br><br>
+  <input type="password" id="loginPassword" placeholder="Password"><br><br>
+  <button id="loginSubmit">Submit</button>
+  <button id="closeLogin">Close</button>
 </div>
-<div class="countdown-box">
-  <h3>Next Payout In:</h3>
-  <p id="payoutCountdown">Loading...</p>
-</div>
-<section id="whyChooseUs" class="why-section">
-  <h2>Why Choose TradeXInvest</h2>
-  <div class="why-container">
-    <div class="why-box">
-      <i class="fa fa-users"></i>
-      <h3>Trusted by Thousands</h3>
-      <p>Over 10,000 investors trust us with their money, and our reviews speak for themselves.</p>
-    </div>
-    <div class="why-box">
-      <i class="fa fa-bolt"></i>
-      <h3>Fast & Easy</h3>
-      <p>Sign up and start investing in just minutes. User-friendly and accessible from any device.</p>
-    </div>
-    <div class="why-box">
-      <i class="fa fa-award"></i>
-      <h3>Proven Results</h3>
-      <p>We’ve consistently delivered strong returns for our investors with transparent performance.</p>
-    </div>
-  </div>
-</section>
-<section class="hero-section">
-  <div class="hero-content">
-    <h1>Invest Smart with TradeXInvest</h1>
-    <p>Your trusted platform to grow wealth with secure and high-yield investment plans.</p>
-    <div class="hero-buttons">
-      <a href="sign up.html" class="btn-primary">Get Started</a>
-      <a href="#features" class="btn-secondary">Learn More</a>
-    </div>
-  </div>
-  <div class="hero-image">
-    <img src="images/photo 5.webp" alt="Investment Image">
-  </div>
-</section>
 
+<!-- TERMS POPUP -->
+<div id="termsPopup" class="modal"> 
+  <h3>Terms & Conditions</h3> 
+  <p>Welcome to TradexInvest. By using our services, you agree to the following terms:</p>
+  <ul>
+    <li><strong>2FA recommended</strong></li>
+    <li><strong>Cold storage</strong></li>
+    <li><strong>Encryption</strong></li>
+  </ul>
+  <p>Fees: Deposit 0%, Withdrawal 1.5%, Trading 0.25%</p>
+  <p>High-risk investment. By continuing, you accept our Terms & Privacy.</p>
+  <button id="acceptTermsBtn">Accept</button> 
+</div>
+
+<!-- 2FA POPUP -->
+<div id="twoFAPopup" class="modal">
+  <p id="countdown">Code expires in: 5:00</p>
+  <input id="twoFAInput" placeholder="Enter 2FA code">
+  <button id="verify2FABtn">Verify</button>
+  <button id="resend2FABtn">Resend Code</button>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="modal">
+  <img id="dashboardPhoto" style="display:none;width:50px;height:50px;">
+  <h2 id="dashboardName"></h2>
+  <p id="dashboardEmail"></p>
+  <p>Investment: $<span id="dashboardInvestment"></span></p>
+  <p>Profit: $<span id="dashboardProfit"></span></p>
+  <p>Total Interest: $<span id="dashboardInterest"></span></p>
+  <button id="depositBtn">Deposit</button>
+  <button id="withdrawBtn">Withdraw</button>
+  <button id="logoutBtn">Logout</button>
+</div>
+
+<!-- DEPOSIT MODAL -->
+<div id="depositModal" class="modal">
+  <input id="depositAmount" placeholder="Amount">
+  <button id="submitDeposit">Deposit</button>
+  <button id="closeDeposit">Close</button>
+</div>
+
+<!-- WITHDRAW MODAL -->
+<div id="withdrawModal" class="modal">
+  <input id="withdrawAmount" placeholder="Amount">
+  <select id="withdrawMethod">
+    <option value="paypal">PayPal</option>
+    <option value="bitcoin">Bitcoin</option>
+    <option value="cashapp">CashApp</option>
+    <option value="bank">Bank-to-Bank</option>
+  </select>
+  <button id="submitWithdraw">Withdraw</button>
+  <button id="closeWithdraw">Close</button>
+</div>
+
+<!-- TESTIMONIALS -->
 <section id="testimonials" class="testimonials-section">
   <h2>What Our Investors Say......</h2>
   <div class="testimonials-container">
     <div class="testimonial-box">
-      <div class="stars" aria-label="Rating: 5 out of 5 stars">
-        <span>⭐️⭐️⭐️⭐️⭐️</span>
-      </div>
+      <div class="stars"><span>⭐️⭐️⭐️⭐️⭐️</span></div>
       <p>"TradeXInvest helped me grow my savings steadily. The dashboard is simple, and the support team is amazing!"</p>
       <h4>— Sarah U., Australia</h4>
     </div>
     <div class="testimonial-box">
-      <div class="stars" aria-label="Rating: 4.5 out of 5 stars">
-        <span>⭐️⭐️⭐️⭐️⭐️</span>
-      </div>
+      <div class="stars"><span>⭐️⭐️⭐️⭐️⭐️</span></div>
       <p>"I was skeptical at first, but now I’m earning consistent interest on my investment. I recommend it 100%!"</p>
       <h4>— James Eudardo., Brazil</h4>
     </div>
     <div class="testimonial-box">
-      <div class="stars" aria-label="Rating: 4 out of 5 stars">
-        <span>⭐️⭐️⭐️⭐️⭐️</span>
-      </div>
+      <div class="stars"><span>⭐️⭐️⭐️⭐️⭐️</span></div>
       <p>"What I love is the transparency. I see my profits in real time and the withdrawals are smooth."</p>
       <h4>— Anita O., New Jersey</h4>
     </div>
   </div>
 </section>
 
+<!-- CTA -->
 <section class="cta-section">
   <h2>Ready to Grow Your Wealth?</h2>
   <p>Join thousands of investors earning passive income with TradeXInvest.</p>
   <a href="sign up.html" class="cta-btn">Get Started Now</a>
 </section>
+
+<!-- Chat -->
 <div id="chatWidget" class="chat-widget">
   <div class="chat-header">💬 Chat With Us</div>
   <div class="chat-body" id="chatBody">
@@ -383,405 +223,174 @@
   </form>
 </div>
 
+<!-- Footer -->
 <footer class="site-footer">
   <div class="footer-content">
     <h2>TradeXInvest</h2>
     <p>Secure and smart investment platform to grow your wealth.</p>
-
-    <!-- 🔗 Contact Info -->
-    <div class="contact-info">
-      <p><i class="fas fa-envelope"></i> <a href="mailto:support@tradexinvest.com">support@tradexinvest.com</a></p>
-      <p><i class="fas fa-phone"></i> <a href="https://wa.me/+13137768220">+13137768220</a></p>
-      <p><i class="fas fa-paper-plane"></i> <a href="contact.html">Send Us a Message</a></p>
-    </div>
-
-    <!-- 🔗 Social Media -->
-    <div class="social-icons">
-      <a href="https://signal.me/#eu/B0bK1TWO1rDFGcCqWeraUIdHqG29QV04qxhVbyN4zxW5N3TXSEtPwY6Dcy9JaDGm" target="_blank" class="icon facebook"><i class="fab fa-facebook-f"></i></a>
-      <a href="https://wa.me/13137768220" target="_blank" class="icon whatsapp"><i class="fab fa-whatsapp"></i></a>
-      <a href="https://twitter.com" target="_blank" class="icon twitter"><i class="fab fa-x-twitter"></i></a>
-      <a href="https://instagram.com" target="_blank" class="icon instagram"><i class="fab fa-instagram"></i></a>
-    </div>
+    <p><i class="fas fa-envelope"></i> <a href="mailto:support@tradexinvest.com">support@tradexinvest.com</a></p>
+    <p><i class="fas fa-phone"></i> <a href="https://wa.me/+13137768220">+13137768220</a></p>
+    <p><i class="fas fa-paper-plane"></i> <a href="contact.html">Send Us a Message</a></p>
     <div> <a href="security.html">Security & Protection</a></div>
-
-    <p class="copyright">
-      &copy; 2025 TradeXInvest. All rights reserved.
-    </p>
+    <p class="copyright">&copy; 2025 TradeXInvest. All rights reserved.</p>
   </div>
 </footer>
 
+<script>
+const backendUrl = "https://tradexinvestments.onrender.com";
+let countdownTimer;
 
-
-
-
-
-<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
-
-<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-<!-- <script src="/tradexinvest-backend/public/js/script
-  .jsm"></script> -->
-  
-  
- <script>
-document.addEventListener('DOMContentLoaded', () => {
-  // Mobile nav toggle
-  function toggleMobileNav() {
-    const menu = document.getElementById('mobileMenu');
-    menu.classList.toggle('show');
-  }
-  window.toggleMobileNav = toggleMobileNav; // expose globally if used inline
-})
-
-
-
-// forl
-
- const loginBtn = document.getElementById("loginBtn");
-  const loginForm = document.getElementById("loginForm");
-  const closeBtn = document.getElementById("closeBtn");
-  const overlay = document.getElementById("overlay");
-
-  // Show form
-  loginBtn.addEventListener("click", () => {
-    loginForm.style.display = "block";
-    overlay.style.display = "block";
-  });
-
-  // Close form
-  closeBtn.addEventListener("click", () => {
-    loginForm.style.display = "none";
-    overlay.style.display = "none";
-  });
-
-  // Close form when clicking outside
-  overlay.addEventListener("click", () => {
-    loginForm.style.display = "none";
-    overlay.style.display = "none";
-  });
-  // Slider for welcome images and quotes (fixed typo from 'qoutes' to 'quotes')
-   const images = document.querySelectorAll('#welcomeNote img');
-  let imgIndex = 0;
-
-  function showImage(index) {
-    images.forEach((img, i) => {
-      img.classList.toggle('active', i === index);
-    });
-  }
-
-  function nextImage() {
-    imgIndex = (imgIndex + 1) % images.length;
-    showImage(imgIndex);
-  }
-
-  // Quotes slider
-  const quotes = document.querySelectorAll('#quotes p');
-  let quoteIndex = 0;
-
-  function showQuote(index) {
-    quotes.forEach((quote, i) => {
-      quote.classList.toggle('active', i === index);
-    });
-  }
-
-  function nextQuote() {
-    quoteIndex = (quoteIndex + 1) % quotes.length;
-    showQuote(quoteIndex);
-  }
-
-  // Initial display
-  showImage(imgIndex);
-  showQuote(quoteIndex);
-
-  // Change every 3 seconds
-  setInterval(() => {
-    nextImage();
-    nextQuote();
-  }, 3000);
-  // Payout countdown timer
-  const countdownEl = document.getElementById("payoutCountdown");
-  const nextPayoutDate = new Date();
-  nextPayoutDate.setHours(nextPayoutDate.getHours() + 48); // 48 hours from now
-
-  function updateCountdown() {
-    if(!countdownEl) return;
-    const now = new Date().getTime();
-    const distance = nextPayoutDate - now;
-
-    if (distance < 0) {
-      countdownEl.textContent = "Processing...";
-      return;
-    }
-
-    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const mins = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-    const secs = Math.floor((distance % (1000 * 60)) / 1000);
-
-    countdownEl.textContent = `${hours}h ${mins}m ${secs}s`;
-  }
-  updateCountdown();
-  setInterval(updateCountdown, 1000);
-
-  // Socket.io chat connection
-  const socket = io("https://tradexinvestments.onrender.com");
-
-  const chatBody = document.getElementById("chatBody");
-  const chatForm = document.getElementById("chatForm");
-  const chatInput = document.getElementById("chatInput");
-
-  // Append message helper
-  function appendMessage(sender, message) {
-    const msgDiv = document.createElement("div");
-    msgDiv.className = `message ${sender}`;
-    msgDiv.textContent = message;
-    chatBody.appendChild(msgDiv);
-    chatBody.scrollTop = chatBody.scrollHeight;
-  }
-
-  // Display chat history when received
-  socket.on("chatHistory", (messages) => {
-    messages.forEach(msg => appendMessage(msg.sender, msg.message));
-  });
-
-  // Handle new incoming messages
-  socket.on("newMessage", (msg) => {
-    appendMessage(msg.sender, msg.message);
-  });
-
-  // Send message on form submit
-  if(chatForm){
-    chatForm.addEventListener("submit", function (e) {
-      e.preventDefault();
-      const message = chatInput.value.trim();
-      if (!message) return;
-
-      socket.emit("sendMessage", {
-        sender: "user",
-        message
-      });
-
-      chatInput.value = "";
-    });
-  }
-
-  o;
-    
-
-    
-
-      // dashboard
-      
-// Login submit
-document.getElementById("loginSubmit").addEventListener("click", async () => {
-  const email = document.getElementById("loginEmail").value.trim();
-  const password = document.getElementById("loginPassword").value.trim();
-  if (!email || !password) return alert("Enter email & password");
-
-  try {
-    const res = await fetch(`${backendUrl}/api/auth/`, {
-      method:"POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({email, password})
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.msg || "Login failed");
-
-    localStorage.setItem("currentUser", JSON.stringify(data));
-    alert("Login successful!");
-
-    // Hide login form
-    document.getElementById("loginForm").style.display = "none";
-    document.getElementById("overlay").style.display = "none";
-
-    // Continue with terms/2FA or dashboard
-    showTermsPopup(); // if you have terms/2FA logic
-  } catch (err) {
-    alert(err.message);
-  }
-});
-
-// ----- TERMS POPUP -----
-function showTermsPopup() {
-  document.getElementById("termsPopup").style.display = "block";
-  document.getElementById("acceptTermsBtn").onclick = () => {
-    localStorage.setItem("termsAccepted","true");
-    document.getElementById("termsPopup").style.display = "none";
-    show2FAPopup();
-  };
+// --- Mobile Nav ---
+function toggleMobileNav() {
+  const menu = document.getElementById('mobileMenu');
+  menu.classList.toggle('show');
 }
 
-// ----- 2FA POPUP -----
-function show2FAPopup() {
-  const popup = document.getElementById("twoFAPopup");
-  popup.style.display = "block";
+// --- Login ---
+const loginBtn = document.getElementById("loginBtn");
+const loginForm = document.getElementById("loginForm");
+const overlay = document.getElementById("overlay");
+loginBtn.addEventListener("click",()=>{ loginForm.style.display="block"; overlay.style.display="block"; });
+document.getElementById("closeLogin").onclick = ()=>{ loginForm.style.display="none"; overlay.style.display="none"; };
+overlay.addEventListener("click",()=>{ loginForm.style.display="none"; overlay.style.display="none"; document.getElementById("termsPopup").style.display="none"; document.getElementById("twoFAPopup").style.display="none"; document.getElementById("dashboard").style.display="none"; document.getElementById("depositModal").style.display="none"; document.getElementById("withdrawModal").style.display="none"; });
+
+// --- Terms ---
+document.getElementById("acceptTermsBtn").onclick=()=>{
+  localStorage.setItem("termsAccepted","true");
+  document.getElementById("termsPopup").style.display="none";
+  show2FAPopup();
+};
+
+// --- 2FA ---
+function show2FAPopup(){
+  const popup=document.getElementById("twoFAPopup");
+  popup.style.display="block"; overlay.style.display="block";
   startCountdown();
-
-  document.getElementById("verify2FABtn").onclick = async () => {
-    const code = document.getElementById("twoFAInput").value.trim();
-    const user = JSON.parse(localStorage.getItem("currentUser"));
-    if (!code) return alert("Enter 2FA code");
-
-    try {
-      const res = await fetch(`${backendUrl}/api/auth/verify-2fa`, {
-        method:"POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ code, tempToken: user.tempToken })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.msg);
-
-      localStorage.setItem("twoFAVerified","true");
-      localStorage.setItem("jwtToken", data.token);
-      popup.style.display = "none";
-      clearInterval(countdownTimer);
+  document.getElementById("verify2FABtn").onclick=async()=>{
+    const code=document.getElementById("twoFAInput").value.trim();
+    const user=JSON.parse(localStorage.getItem("currentUser"));
+    if(!code) return alert("Enter 2FA code");
+    try{
+      const res=await fetch(`${backendUrl}/api/auth/verify-2fa`,{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({code,tempToken:user.tempToken}) });
+      const data=await res.json();
+      if(!res.ok) throw new Error(data.msg);
+      localStorage.setItem("twoFAVerified","true"); localStorage.setItem("jwtToken",data.token);
+      popup.style.display="none"; overlay.style.display="none"; clearInterval(countdownTimer); document.getElementById("twoFAInput").value="";
       showUserDashboard(user);
-      document.getElementById("twoFAInput").value = "";
-    } catch(err){ alert(err.message); }
+    }catch(err){ alert(err.message); }
   };
-
-  document.getElementById("resend2FABtn").onclick = async () => {
-    const user = JSON.parse(localStorage.getItem("currentUser"));
-    try {
-      const res = await fetch(`${backendUrl}/api/auth/resend-2fa`, {
-        method:"POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ email:user.email })
-      });
-      const data = await res.json();
-      alert(data.msg);
-      document.getElementById("twoFAInput").value = "";
-      startCountdown();
-    } catch(err){ alert(err.message); }
+  document.getElementById("resend2FABtn").onclick=async()=>{
+    const user=JSON.parse(localStorage.getItem("currentUser"));
+    try{
+      const res=await fetch(`${backendUrl}/api/auth/resend-2fa`,{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({email:user.email}) });
+      const data=await res.json(); alert(data.msg); document.getElementById("twoFAInput").value=""; startCountdown();
+    }catch(err){ alert(err.message); }
   };
 }
-
-// ----- COUNTDOWN -----
 function startCountdown(duration=300){
   clearInterval(countdownTimer);
-  const el = document.getElementById("countdown");
-  let timeLeft = duration;
-  el.textContent = `Code expires in: ${formatTime(timeLeft)}`;
-  document.getElementById("verify2FABtn").disabled = false;
-
-  countdownTimer = setInterval(()=>{
-    timeLeft--;
-    el.textContent = `Code expires in: ${formatTime(timeLeft)}`;
-    if(timeLeft<=0){
-      clearInterval(countdownTimer);
-      el.textContent="Code expired. Please resend.";
-      document.getElementById("verify2FABtn").disabled = true;
-    }
+  const el=document.getElementById("countdown");
+  let timeLeft=duration;
+  el.textContent=`Code expires in: ${formatTime(timeLeft)}`;
+  document.getElementById("verify2FABtn").disabled=false;
+  countdownTimer=setInterval(()=>{
+    timeLeft--; el.textContent=`Code expires in: ${formatTime(timeLeft)}`;
+    if(timeLeft<=0){ clearInterval(countdownTimer); el.textContent="Code expired. Please resend."; document.getElementById("verify2FABtn").disabled=true; }
   },1000);
 }
 function formatTime(sec){ return `${Math.floor(sec/60)}:${sec%60<10?"0"+sec%60:sec%60}`; }
 
-// ----- DASHBOARD -----
+// --- Dashboard ---
 function showUserDashboard(user){
-  document.getElementById("loginBox").style.display = "none";
-  document.getElementById("twoFAPopup").style.display = "none";
-  document.getElementById("termsPopup").style.display = "none";
-
-  document.getElementById("dashboardName").textContent = `Welcome, ${user.name}`;
-  document.getElementById("dashboardEmail").textContent = `Email: ${user.email}`;
-  if(user.photo){
-    document.getElementById("dashboardPhoto").src = `${backendUrl}${user.photo}`;
-    document.getElementById("dashboardPhoto").style.display = "inline-block";
-  }
-
-  // Example placeholders for investment info
-  document.getElementById("dashboardInvestment").textContent = user.investment || 0;
-  document.getElementById("dashboardProfit").textContent = user.profit || 0;
-  document.getElementById("dashboardInterest").textContent = user.totalInterest || 0;
-
-  document.getElementById("dashboard").style.display = "block";
-
-  // Dashboard buttons
-  document.getElementById("withdrawBtn").onclick = ()=>alert("Withdraw clicked");
-  document.getElementById("depositBtn").onclick = ()=>alert("Deposit clicked");
-  document.getElementById("transactionsBtn").onclick = ()=>alert("Transactions clicked");
-  document.getElementById("logoutBtn").onclick = ()=>{
-    localStorage.clear();
-    document.getElementById("dashboard").style.display = "none";
-    document.getElementById("loginBox").style.display = "block";
-  };
+  const dash=document.getElementById("dashboard");
+  document.getElementById("dashboardName").textContent=`Welcome, ${user.name}`;
+  document.getElementById("dashboardEmail").textContent=`Email: ${user.email}`;
+  if(user.photo){ document.getElementById("dashboardPhoto").src=user.photo; document.getElementById("dashboardPhoto").style.display="block"; }
+  document.getElementById("dashboardInvestment").textContent=user.investment||0;
+  document.getElementById("dashboardProfit").textContent=user.profit||0;
+  document.getElementById("dashboardInterest").textContent=user.interest||0;
+  dash.style.display="block"; overlay.style.display="block";
 }
 
-// ----- AUTO DASHBOARD IF LOGGED IN -----
-document.addEventListener("DOMContentLoaded",()=>{
-  const user = JSON.parse(localStorage.getItem("currentUser"));
-  const twoFA = localStorage.getItem("twoFAVerified");
-  if(user && twoFA==="true") showUserDashboard(user);
+// --- Deposit ---
+const depositBtn=document.getElementById("depositBtn");
+const depositModal=document.getElementById("depositModal");
+depositBtn.onclick=()=>{ depositModal.style.display="block"; overlay.style.display="block"; };
+document.getElementById("closeDeposit").onclick=()=>{ depositModal.style.display="none"; overlay.style.display="none"; };
+document.getElementById("submitDeposit").onclick=async()=>{
+  const amount=parseFloat(document.getElementById("depositAmount").value);
+  if(!amount || amount<=0) return alert("Enter a valid deposit amount");
+  const token=localStorage.getItem("jwtToken");
+  try{
+    const res=await fetch(`${backendUrl}/api/deposit`,{
+      method:"POST",
+      headers:{ "Content-Type":"application/json", "Authorization":`Bearer ${token}` },
+      body:JSON.stringify({amount})
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.msg);
+    alert("Deposit successful!"); depositModal.style.display="none"; overlay.style.display="none"; document.getElementById("depositAmount").value="";
+  }catch(err){ alert(err.message); }
+};
+
+// --- Withdraw ---
+const withdrawBtn=document.getElementById("withdrawBtn");
+const withdrawModal=document.getElementById("withdrawModal");
+withdrawBtn.onclick=()=>{ withdrawModal.style.display="block"; overlay.style.display="block"; };
+document.getElementById("closeWithdraw").onclick=()=>{ withdrawModal.style.display="none"; overlay.style.display="none"; };
+document.getElementById("submitWithdraw").onclick=async()=>{
+  const amount=parseFloat(document.getElementById("withdrawAmount").value);
+  const method=document.getElementById("withdrawMethod").value;
+  if(!amount || amount<=0) return alert("Enter a valid withdraw amount");
+  if(method==="bank") return alert("Bank-to-Bank withdraw not supported. Contact support@tradexinvest.com");
+  const token=localStorage.getItem("jwtToken");
+  try{
+    const res=await fetch(`${backendUrl}/api/withdraw`,{
+      method:"POST",
+      headers:{ "Content-Type":"application/json", "Authorization":`Bearer ${token}` },
+      body:JSON.stringify({amount,method})
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.msg);
+    alert("Withdrawal successful!"); withdrawModal.style.display="none"; overlay.style.display="none"; document.getElementById("withdrawAmount").value="";
+  }catch(err){ alert(err.message); }
+};
+
+// --- Logout ---
+document.getElementById("logoutBtn").onclick=()=>{
+  localStorage.removeItem("jwtToken");
+  localStorage.removeItem("currentUser");
+  localStorage.removeItem("twoFAVerified");
+  document.getElementById("dashboard").style.display="none"; overlay.style.display="none";
+  alert("Logged out successfully!");
+};
+
+// --- Chat ---
+const chatForm=document.getElementById("chatForm");
+const chatInput=document.getElementById("chatInput");
+const chatBody=document.getElementById("chatBody");
+chatForm.addEventListener("submit",e=>{ e.preventDefault();
+  if(!chatInput.value) return;
+  const msg=document.createElement("div"); msg.className="message"; msg.textContent=chatInput.value;
+  chatBody.appendChild(msg); chatInput.value=""; chatBody.scrollTop=chatBody.scrollHeight;
 });
 
-// ----- DASHBOARD BUTTONS -----
-document.getElementById("depositBtn").onclick = () => {
-  document.getElementById("depositModal").style.display = "block";
-};
-
-document.getElementById("withdrawBtn").onclick = () => {
-  document.getElementById("withdrawModal").style.display = "block";
-};
-
-// ----- CLOSE MODALS -----
-document.getElementById("closeDeposit").onclick = () => {
-  document.getElementById("depositModal").style.display = "none";
-  document.getElementById("depositAmount").value = "";
-};
-document.getElementById("closeWithdraw").onclick = () => {
-  document.getElementById("withdrawModal").style.display = "none";
-  document.getElementById("withdrawAmount").value = "";
-};
-
-// ----- DEPOSIT SUBMIT -----
-document.getElementById("submitDeposit").onclick = async () => {
-  const amount = parseFloat(document.getElementById("depositAmount").value);
-  if (!amount || amount <= 0) return alert("Enter valid amount");
-  const token = localStorage.getItem("jwtToken");
-
-  try {
-    const res = await fetch(`${backendUrl}/api/user/deposit`, {
-      method:"POST",
-      headers: {"Content-Type":"application/json","Authorization":`Bearer ${token}`},
-      body: JSON.stringify({ amount })
-    });
-    const data = await res.json();
-    if(!res.ok) throw new Error(data.msg);
-
-    alert(data.msg || "Deposit successful");
-    document.getElementById("depositModal").style.display = "none";
-    document.getElementById("depositAmount").value = "";
-    document.getElementById("dashboardInvestment").textContent = data.newInvestment || 0;
-  } catch(err){ alert(err.message); }
-};
-
-// ----- WITHDRAW SUBMIT -----
-document.getElementById("submitWithdraw").onclick = async () => {
-  const amount = parseFloat(document.getElementById("withdrawAmount").value);
-  const method = document.getElementById("withdrawMethod").value;
-  if (!amount || amount <= 0) return alert("Enter valid amount");
-  const token = localStorage.getItem("jwtToken");
-
-  try {
-    const res = await fetch(`${backendUrl}/api/user/withdraw`, {
-      method:"POST",
-      headers: {"Content-Type":"application/json","Authorization":`Bearer ${token}`},
-      body: JSON.stringify({ amount, method })
-    });
-    const data = await res.json();
-    if(!res.ok) throw new Error(data.msg);
-
-    alert(data.msg || "Withdrawal successful");
-    document.getElementById("withdrawModal").style.display = "none";
-    document.getElementById("withdrawAmount").value = "";
-    document.getElementById("dashboardInvestment").textContent = data.newInvestment || 0;
-  } catch(err){ alert(err.message); }
-};
-
- 
-  
-      
+// --- Welcome Note & Quotes Slider ---
+const welcomeImages=document.querySelectorAll("#welcomeNote img");
+const quotes=document.querySelectorAll("#quotes p");
+let currentIndex=0;
+function showSlide(index){
+  welcomeImages.forEach(img=>img.classList.remove("active"));
+  quotes.forEach(q=>q.classList.remove("active"));
+  welcomeImages[index].classList.add("active");
+  quotes[index].classList.add("active");
+}
+setInterval(()=>{
+  currentIndex=(currentIndex+1)%welcomeImages.length;
+  showSlide(currentIndex);
+},4000);
+showSlide(currentIndex);
 </script>
 
-  
 </body>
 </html>
