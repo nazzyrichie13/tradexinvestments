@@ -31,7 +31,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // ---------------- REGISTER ----------------
-router.post("/signup", upload.single("profilePic"), async (req, res) => {
+router.post("/signup", upload.single("photo"), async (req, res) => {
   try {
     // With multipart/form-data, text fields are on req.body, file on req.file
     const { email, password, fullName, role } = req.body;
@@ -58,7 +58,7 @@ router.post("/signup", upload.single("profilePic"), async (req, res) => {
       passwordHash,
       fullName,
       role: role || "user",
-      profilePic: req.file ? req.file.filename : null,
+      photo: req.file ? req.file.filename : null,
     });
     await newUser.save();
 
