@@ -85,11 +85,14 @@ await newUser.save();
 });
 
 // JWT secret
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_here";
+
+const JWT_SECRET = process.env.JWT_SECRET || "super_secret_jwt_key";
 
 // ==================== LOGIN ROUTE ====================
 router.post("/login", async (req, res) => {
+  console.log("Login attempt:", req.body);
   const { email, password } = req.body;
+
   try {
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) return res.status(401).json({ msg: "Invalid email" });
@@ -104,7 +107,7 @@ router.post("/login", async (req, res) => {
       await user.save();
     }
 
-    // Respond to frontend for 2FA step
+    // Send response for frontend to show 2FA popup
     res.json({
       msg: "Login successful, proceed with 2FA",
       email: user.email,
@@ -112,14 +115,16 @@ router.post("/login", async (req, res) => {
       photo: user.photo || "",
     });
   } catch (err) {
-    console.error(err);
+    console.error("Login error:", err);
     res.status(500).json({ msg: "Server error" });
   }
 });
 
 // ==================== VERIFY 2FA ====================
 router.post("/verify-2fa", async (req, res) => {
+  console.log("2FA verify attempt:", req.body);
   const { email, code } = req.body;
+
   try {
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) return res.status(401).json({ msg: "User not found" });
@@ -142,32 +147,33 @@ router.post("/verify-2fa", async (req, res) => {
 
     res.json({ msg: "2FA verified", token });
   } catch (err) {
-    console.error(err);
+    console.error("2FA verify error:", err);
     res.status(500).json({ msg: "Server error" });
   }
 });
 
 // ==================== RESEND 2FA ====================
 router.post("/resend-2fa", async (req, res) => {
+  console.log("2FA resend attempt:", req.body);
   const { email } = req.body;
+
   try {
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) return res.status(401).json({ msg: "User not found" });
 
-    // For demo purposes, we'll just return the code (in production, send email/SMS)
+    // Generate a new TOTP code
     const token = speakeasy.totp({
       secret: user.twoFASecret,
       encoding: "base32",
     });
 
+    // In production, send token via email/SMS instead of returning
     res.json({ msg: `Your 2FA code is: ${token}` });
   } catch (err) {
-    console.error(err);
+    console.error("2FA resend error:", err);
     res.status(500).json({ msg: "Server error" });
   }
 });
-
-
 
 
 export default router;
