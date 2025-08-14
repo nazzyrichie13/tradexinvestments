@@ -91,11 +91,43 @@
   #loginBox, #termsPopup, #twoFAPopup {
     background: white; padding:20px; margin: 20px auto; width: 300px;
     border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    
   }
+   #loginBox{
+    display: none;
+   }
   #termsPopup, #twoFAPopup { display:none; }
   input { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing:border-box; }
   button { cursor:pointer; }
   #countdown { font-weight:bold; margin-top:10px; }
+  #loginForm {
+    display: none; /* hidden by default */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 2px solid #333;
+    padding: 20px;
+    background-color: #f9f9f9;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    z-index: 1000;
+  }
+
+  #overlay {
+    display: none; /* hidden by default */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 500;
+  }
+
+  button {
+    padding: 10px 20px;
+    font-size: 16px;
+  }
 </style>
 </head>
 <body>
@@ -120,8 +152,7 @@
     <p class="logo">TradeXInvest</p>
     <div id="authLinks" style="display: flex; align-items: center; font-size: 18px; font-weight: 600;">
       <a href="signup.html" style="color: black; text-decoration: none; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;white-space: nowrap;">Sign up</a> /
-       <a href="login-user.html" style="color: black; text-decoration: none; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;white-space: nowrap;">Login</a> 
-      
+       <button id="loginBtn">Login</button>
     </div>
     </div>
     </div>
@@ -169,12 +200,18 @@
 </div>
 
 <!-- LOGIN BOX -->
-<div id="loginBox">
+
+
+<div id="overlay"></div>
+
+<div id="loginForm">
   <h2>Login</h2>
-  <input type="email" id="email" placeholder="Email"><br><br>
-  <input type="password" id="password" placeholder="Password"><br><br>
-  <button id="loginBtn">Login</button>
+  <input type="email" placeholder="Email" name="email"><br><br>
+  <input type="password" placeholder="Password" name="password"><br><br>
+  <button id="closeBtn">Close</button>
+  <button>Submit</button>
 </div>
+
 
 <!-- TERMS POPUP -->
 <div id="termsPopup" class="popup"> 
@@ -394,6 +431,33 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   window.toggleMobileNav = toggleMobileNav; // expose globally if used inline
 })
+
+
+
+// forl
+
+ const loginBtn = document.getElementById("loginBtn");
+  const loginForm = document.getElementById("loginForm");
+  const closeBtn = document.getElementById("closeBtn");
+  const overlay = document.getElementById("overlay");
+
+  // Show form
+  loginBtn.addEventListener("click", () => {
+    loginForm.style.display = "block";
+    overlay.style.display = "block";
+  });
+
+  // Close form
+  closeBtn.addEventListener("click", () => {
+    loginForm.style.display = "none";
+    overlay.style.display = "none";
+  });
+
+  // Close form when clicking outside
+  overlay.addEventListener("click", () => {
+    loginForm.style.display = "none";
+    overlay.style.display = "none";
+  });
   // Slider for welcome images and quotes (fixed typo from 'qoutes' to 'quotes')
    const images = document.querySelectorAll('#welcomeNote img');
   let imgIndex = 0;
@@ -706,6 +770,7 @@ document.getElementById("submitWithdraw").onclick = async () => {
   } catch(err){ alert(err.message); }
 };
 
+ 
   
       
 </script>
