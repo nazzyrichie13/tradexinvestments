@@ -743,12 +743,18 @@ document.getElementById("ctaLogin").onclick  = ()=> openModal("loginModal");
 
 // ----- LOGIN / TERMS / 2FA -----
 document.getElementById("loginSubmit").addEventListener("click", async () => {
-  const email = document.getElementById("loginEmail").value.trim();
-  const password = document.getElementById("loginPassword").value.trim();
-  if (!email || !password) return alert("Enter email & password");
+  const email = document.getElementById("loginEmail")?.value.trim();
+  const password = document.getElementById("loginPassword")?.value.trim();
+
+  if (!email || !password) {
+    console.log("Login: Missing email or password");
+    return alert("Enter email & password");
+  }
+
+  console.log("Login: Sending credentials", { email });
 
   try {
-    const res = await fetch(`${backendUrl}/api/auth/`, {
+    const res = await fetch(`${backendUrl}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password })
@@ -756,32 +762,47 @@ document.getElementById("loginSubmit").addEventListener("click", async () => {
 
     const text = await res.text();
     let data;
-    try { data = JSON.parse(text); } 
-    catch { throw new Error("Invalid JSON from server: " + text); }
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.error("Login: Invalid JSON response", text);
+      throw new Error("Invalid JSON from server");
+    }
 
-    if (!res.ok) throw new Error(data.msg || "Login failed");
+    if (!res.ok) {
+      console.error("Login failed", data);
+      throw new Error(data.msg || "Login failed");
+    }
 
+    console.log("Login successful", data);
     localStorage.setItem("currentUser", JSON.stringify(data));
 
-    document.getElementById("loginForm").style.display = "none";
-    document.getElementById("overlay").style.display = "none";
+    // Show terms popup
+    openTermsPopup();
 
-    showTermsPopup();
-  } catch(err) { alert(err.message); }
+  } catch (err) {
+    console.error("Login error:", err);
+    alert(err.message);
+  }
 });
 
-// ----- TERMS -----
-function showTermsPopup() {
-  document.getElementById("termsPopup").style.display = "block";
+// TERMS POPUP
+function openTermsPopup() {
+  console.log("Showing terms popup");
+  const termsPopup = document.getElementById("termsPopup");
+  termsPopup.style.display = "block";
+
   document.getElementById("acceptTermsBtn").onclick = () => {
-    localStorage.setItem("termsAccepted","true");
-    document.getElementById("termsPopup").style.display = "none";
-    show2FAPopup();
+    console.log("Terms accepted");
+    localStorage.setItem("termsAccepted", "true");
+    termsPopup.style.display = "none";
+    open2FAPopup();
   };
 }
 
-// ----- 2FA -----
-function show2FAPopup() {
+// 2FA POPUP
+function open2FAPopup() {
+  console.log("Showing 2FA popup");
   const popup = document.getElementById("twoFAPopup");
   popup.style.display = "block";
   startCountdown();
@@ -789,7 +810,9 @@ function show2FAPopup() {
   document.getElementById("verify2FABtn").onclick = async () => {
     const code = document.getElementById("twoFAInput").value.trim();
     const user = JSON.parse(localStorage.getItem("currentUser"));
-    if(!code) return alert("Enter 2FA code");
+    if (!code) return alert("Enter 2FA code");
+
+    console.log("Verifying 2FA code", code);
 
     try {
       const res = await fetch(`${backendUrl}/api/auth/verify-2fa`, {
@@ -797,33 +820,24 @@ function show2FAPopup() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code, tempToken: user.tempToken })
       });
-      const data = await res.json();
-      if(!res.ok) throw new Error(data.msg);
 
-      localStorage.setItem("twoFAVerified","true");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.msg);
+
+      console.log("2FA verified", data);
+      localStorage.setItem("twoFAVerified", "true");
       localStorage.setItem("jwtToken", data.token);
-      popup.style.display = "none";
-      clearInterval(countdownTimer);
-      document.getElementById("twoFAInput").value = "";
-      showUserDashboard(user);
-    } catch(err){ alert(err.message); }
-  };
 
-  document.getElementById("resend2FABtn").onclick = async () => {
-    const user = JSON.parse(localStorage.getItem("currentUser"));
-    try {
-      const res = await fetch(`${backendUrl}/api/auth/resend-2fa`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: user.email })
-      });
-      const data = await res.json();
-      alert(data.msg);
-      document.getElementById("twoFAInput").value = "";
-      startCountdown();
-    } catch(err){ alert(err.message); }
+      popup.style.display = "none";
+      showUserDashboard(user);
+
+    } catch (err) {
+      console.error("2FA verification error:", err);
+      alert(err.message);
+    }
   };
 }
+
 
 // ----- 2FA COUNTDOWN -----
 function startCountdown(duration=300) {
@@ -846,45 +860,58 @@ function startCountdown(duration=300) {
 function formatTime(sec){ return `${Math.floor(sec/60)}:${(sec%60<10?"0":"")+sec%60}`; }
 
 // ----- DASHBOARD -----
-function showUserDashboard(user) {
-  document.getElementById("loginBox").style.display = "none";
-  document.getElementById("twoFAPopup").style.display = "none";
-  document.getElementById("termsPopup").style.display = "none";
+// After user login + 2FA verification
+async function showUserDashboard(user) {
+  const jwt = localStorage.getItem("jwtToken");
+  try {
+    const res = await fetch(`${backendUrl}/api/user/me`, {
+      headers: { "Authorization": `Bearer ${jwt}` }
+    });
+    const me = await res.json();
+    if (!res.ok) throw new Error(me.msg || "Failed to load profile");
 
-  document.getElementById("dashboardName").textContent = `Welcome, ${user.name}`;
-  document.getElementById("dashboardEmail").textContent = `Email: ${user.email}`;
-  if(user.photo){
-    document.getElementById("dashboardPhoto").src = `${backendUrl}${user.photo}`;
-    document.getElementById("dashboardPhoto").style.display = "inline-block";
+    localStorage.setItem("currentUser", JSON.stringify(me));
+
+    // Show regular dashboard
+    document.getElementById("dashboardCard").classList.remove("hidden");
+    document.getElementById("logoutTop").classList.remove("hidden");
+    document.getElementById("welcomeUser").textContent = `Welcome, ${me.name || "Investor"}`;
+    document.getElementById("statBalance").textContent  = currency(me.investment);
+    document.getElementById("statProfit").textContent   = currency(me.profit);
+    document.getElementById("statInterest").textContent = currency(me.totalInterest);
+
+    // If user is admin, show admin nav button
+    if (me.role === "admin" || me.isAdmin) {
+      console.log("Admin detected, showing admin nav");
+      document.getElementById("openAdmin").classList.remove("hidden");
+
+      // Optional: automatically load admin panel
+      document.getElementById("openAdmin").onclick = async () => {
+        document.getElementById("adminCard").classList.remove("hidden");
+        document.getElementById("dashboardCard").classList.add("hidden");
+        await loadAdminUsers();
+        await loadAdminWithdrawals();
+      };
+    }
+
+  } catch (err) {
+    console.error("Dashboard load error:", err);
+    alert(err.message);
   }
-
-  document.getElementById("dashboardInvestment").textContent = user.investment || 0;
-  document.getElementById("dashboardProfit").textContent = user.profit || 0;
-  document.getElementById("dashboardInterest").textContent = user.totalInterest || 0;
-
-  document.getElementById("dashboard").style.display = "block";
-
-  // Admin button visibility
-  if(user.isAdmin){
-    document.getElementById("openAdmin").style.display = "inline-block";
-  }
-
-  // Dashboard buttons
-  document.getElementById("withdrawBtn").onclick = ()=> document.getElementById("withdrawModal").style.display = "block";
-  document.getElementById("depositBtn").onclick = ()=> document.getElementById("depositModal").style.display = "block";
-  document.getElementById("logoutBtn").onclick = ()=> {
-    localStorage.clear();
-    document.getElementById("dashboard").style.display = "none";
-    document.getElementById("loginBox").style.display = "block";
-  };
 }
 
-// ----- AUTO DASHBOARD ON LOAD -----
-window.addEventListener("DOMContentLoaded", ()=>{
-  const user = JSON.parse(localStorage.getItem("currentUser"));
+// Optional: quick check to auto-show admin if JWT + 2FA and role is admin
+window.addEventListener("DOMContentLoaded", async () => {
+  const jwt = localStorage.getItem("jwtToken");
   const twoFA = localStorage.getItem("twoFAVerified");
-  if(user && twoFA==="true") showUserDashboard(user);
+  const user = JSON.parse(localStorage.getItem("currentUser"));
+  console.log("Auto-check admin on load:", user?.role);
+
+  if (jwt && twoFA === "true" && (user?.role === "admin" || user?.isAdmin)) {
+    document.getElementById("openAdmin").click(); // auto-open admin card
+  }
 });
+
 
 // ----- ADMIN -----
 const adminCard = document.getElementById("adminCard");
