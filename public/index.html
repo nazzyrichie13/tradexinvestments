@@ -69,13 +69,33 @@
       font-size: 1.2rem;
       font-weight: 600;
     }
-#dashboard { display:none; max-width:600px; margin:auto; background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.2);}
-i#dashboard img { border-radius:50%; width:60px; vertical-align:middle; margin-right:10px; }
-h2 { display:flex; align-items:center; }
-button { padding:8px 12px; cursor:pointer; margin-top:10px; border:none; border-radius:5px; background:#007bff; color:#fff;}
-input, select { width:100%; padding:8px; margin:5px 0; border-radius:5px; border:1px solid #ccc; }
-.withdraw-section { margin-top:20px; }
-.withdraw-section h3 { margin-bottom:10px; }
+#dashboard {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: #1e1e2f; color: white;
+    padding: 20px;
+    display: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 1000;
+  }
+  #dashboard img { border-radius: 50%; vertical-align: middle; margin-right: 10px; }
+  #dashboard h2 { display: inline-block; margin: 0; vertical-align: middle; }
+  #dashboard p { margin: 5px 0; }
+  #dashboard .dashboard-buttons button {
+    margin-right: 10px; padding: 8px 12px;
+    background:#4CAF50; color:white; border:none; cursor:pointer; border-radius:5px;
+  }
+  #dashboard .dashboard-buttons button:hover { background:#45a049; }
+
+  /* ----- LOGIN / POPUPS ----- */
+  #loginBox, #termsPopup, #twoFAPopup {
+    background: white; padding:20px; margin: 20px auto; width: 300px;
+    border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  }
+  #termsPopup, #twoFAPopup { display:none; }
+  input { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing:border-box; }
+  button { cursor:pointer; }
+  #countdown { font-weight:bold; margin-top:10px; }
 </style>
 </head>
 <body>
@@ -104,31 +124,94 @@ input, select { width:100%; padding:8px; margin:5px 0; border-radius:5px; border
       
     </div>
     </div>
-    
-    <!-- </div> -->
-     <div id="dashboard">
-  <h2><img id="userPhoto" src="" alt="Profile"><span id="userName"></span></h2>
-  <p>Investment: $<span id="investment">0</span></p>
-  <p>Profit: $<span id="profit">0</span></p>
-  <p>Total Interest: $<span id="interest">0</span></p>
+    </div>
+    <!-- DASHBOARD -->
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div>
+    <img id="dashboardPhoto" src="" alt="Profile" width="50" style="display:none;">
+    <h2 id="dashboardName"></h2>
+  </div>
+  <p id="dashboardEmail"></p>
+  <p>Investment: $<span id="dashboardInvestment">0</span> | Profit: $<span id="dashboardProfit">0</span> | Interest: $<span id="dashboardInterest">0</span></p>
+  <div class="dashboard-buttons">
+    <button id="withdrawBtn">Withdraw</button>
+    <button id="depositBtn">Deposit</button>
+    <button id="transactionsBtn">Transactions</button>
+    <button id="logoutBtn">Logout</button>
+  </div>
+  <!-- Deposit Modal -->
+<div id="depositModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5);">
+  <div style="background:white; padding:20px; width:300px; margin:100px auto; border-radius:8px; position:relative;">
+    <h3>Deposit Funds</h3>
+    <input type="number" id="depositAmount" placeholder="Amount"><br><br>
+    <button id="submitDeposit">Submit</button>
+    <button id="closeDeposit" style="margin-left:10px;">Cancel</button>
+  </div>
+</div>
 
-  <div class="withdraw-section">
+<!-- Withdraw Modal -->
+<div id="withdrawModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5);">
+  <div style="background:white; padding:20px; width:300px; margin:100px auto; border-radius:8px; position:relative;">
     <h3>Withdraw Funds</h3>
+    <input type="number" id="withdrawAmount" placeholder="Amount"><br><br>
     <select id="withdrawMethod">
       <option value="paypal">PayPal</option>
       <option value="bitcoin">Bitcoin</option>
       <option value="cashapp">CashApp</option>
       <option value="bank">Bank-to-Bank</option>
-    </select>
-    <input type="number" id="withdrawAmount" placeholder="Enter amount">
-    <button id="withdrawBtn">Withdraw</button>
-    <p id="withdrawMsg" style="color:red;"></p>
+    </select><br><br>
+    <button id="submitWithdraw">Submit</button>
+    <button id="closeWithdraw" style="margin-left:10px;">Cancel</button>
   </div>
-
-  <button id="logoutBtn">Logout</button>
 </div>
 
-    <!--  -->
+</div>
+
+<!-- LOGIN BOX -->
+<div id="loginBox">
+  <h2>Login</h2>
+  <input type="email" id="email" placeholder="Email"><br><br>
+  <input type="password" id="password" placeholder="Password"><br><br>
+  <button id="loginBtn">Login</button>
+</div>
+
+<!-- TERMS POPUP -->
+<div id="termsPopup" class="popup"> 
+  <h3>Terms & Conditions</h3> 
+  <p>Welcome to TradexInvest. By using our services, you agree to the following terms:</p>
+   <h3>1. Security Features</h3> 
+   <ul> 
+    <li><strong>Two-Factor Authentication (2FA):</strong> Recommended for account security.</li> 
+    <li><strong>Cold Storage:</strong> Majority of assets are stored offline.</li> 
+    <li><strong>Encryption:</strong> Sensitive data encrypted in transit and at rest.</li> 
+  </ul>
+   <h3>2. Fee Structure</h3>
+    <ul> 
+      <li>Deposit Fee: <strong>0%</strong></li>
+       <li>Withdrawal Fee: <strong>1.5%</strong></li> 
+       <li>Trading Fee: <strong>0.25%</strong></li> 
+      </ul> 
+      <h3>3. Risk Disclosure</h3>
+       <p>Investing in digital assets involves high risk, including the potential loss of your entire investment. Past performance is not indicative of future results.</p>
+        <h3>4. User Agreement</h3>
+         <p>By continuing, you acknowledge you have read, understood, and agree to these Terms & Conditions and our Privacy Policy.</p> 
+         <p>Please accept our terms to continue.</p> 
+         
+         <button id="acceptTermsBtn">Accept</button> 
+        </div>
+
+
+<!-- 2FA POPUP -->
+<div id="twoFAPopup">
+  <p>Enter your 2FA code:</p>
+  <input type="text" id="twoFAInput" placeholder="2FA Code"><br><br>
+  <button id="verify2FABtn">Verify</button>
+  <button id="resend2FABtn">Resend</button>
+  <p id="countdown"></p>
+</div>
+      
+    
   <div id="welcomeNote" class="welcomeNote">
   <img src="images/photo 5.avif" alt="img" />
   <img src="images/stock 1.webp" alt="img" />
@@ -423,82 +506,205 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // dashboard
       
-const API = "https://tradexinvestments.onrender.com"; // adjust to your backend host
-const token = localStorage.getItem("jwtToken");
-const user = JSON.parse(localStorage.getItem("currentUser"));
-const termsAccepted = localStorage.getItem("termsAccepted") === "true";
-const twoFAVerified = localStorage.getItem("twoFAVerified") === "true";
+const backendUrl = "https://tradexinvestments.onrender.com";
+let countdownTimer;
 
-if (!token || !user || !termsAccepted || !twoFAVerified) {
-  window.location.href = "login-user.html";
-} else { initDashboard(); }
+// ----- LOGIN -----
+document.getElementById("loginBtn").addEventListener("click", async () => {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
+  if (!email || !password) { alert("Enter email & password"); return; }
 
-async function initDashboard() {
   try {
-    // Profile + stats
-    const res = await fetch(`${API}/api/user/me`, {
-      headers: { Authorization: `Bearer ${token}` }
+    const res = await fetch(`${backendUrl}/api/auth/login`, {
+      method:"POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({email, password})
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.msg || "Failed to load dashboard");
+    if (!res.ok) throw new Error(data.msg || "Login failed");
 
-    document.getElementById("userName").textContent = data.name;
-    document.getElementById("userPhoto").src = data.photo || "default.png";
-    document.getElementById("investment").textContent = (data.stats?.investment ?? 0).toFixed(2);
-    document.getElementById("profit").textContent = (data.stats?.profit ?? 0).toFixed(2);
-    document.getElementById("interest").textContent = (data.stats?.interest ?? 0).toFixed(2);
+    localStorage.setItem("currentUser", JSON.stringify(data));
+    showTermsPopup();
+  } catch (err) { alert(err.message); }
+});
 
-    // (Optional) render recent withdrawals table if you add one in HTML
-    // renderWithdrawals(data.withdrawals);
-
-    document.getElementById("dashboard").style.display = "block";
-  } catch (e) {
-    alert(e.message);
-    localStorage.clear();
-    window.location.href = "login-user.html";
-  }
+// ----- TERMS POPUP -----
+function showTermsPopup() {
+  document.getElementById("termsPopup").style.display = "block";
+  document.getElementById("acceptTermsBtn").onclick = () => {
+    localStorage.setItem("termsAccepted","true");
+    document.getElementById("termsPopup").style.display = "none";
+    show2FAPopup();
+  };
 }
 
+// ----- 2FA POPUP -----
+function show2FAPopup() {
+  const popup = document.getElementById("twoFAPopup");
+  popup.style.display = "block";
+  startCountdown();
 
+  document.getElementById("verify2FABtn").onclick = async () => {
+    const code = document.getElementById("twoFAInput").value.trim();
+    const user = JSON.parse(localStorage.getItem("currentUser"));
+    if (!code) return alert("Enter 2FA code");
 
-// Withdraw
-document.getElementById("withdrawBtn").onclick = async () => {
-  const method = document.getElementById("withdrawMethod").value;
-  const amount = Number(document.getElementById("withdrawAmount").value);
-  const msg = document.getElementById("withdrawMsg");
+    try {
+      const res = await fetch(`${backendUrl}/api/auth/verify-2fa`, {
+        method:"POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ code, tempToken: user.tempToken })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.msg);
 
-  msg.style.color = "red"; msg.textContent = "";
+      localStorage.setItem("twoFAVerified","true");
+      localStorage.setItem("jwtToken", data.token);
+      popup.style.display = "none";
+      clearInterval(countdownTimer);
+      showUserDashboard(user);
+      document.getElementById("twoFAInput").value = "";
+    } catch(err){ alert(err.message); }
+  };
 
-  if (!amount || amount <= 0) { msg.textContent = "Enter a valid amount."; return; }
+  document.getElementById("resend2FABtn").onclick = async () => {
+    const user = JSON.parse(localStorage.getItem("currentUser"));
+    try {
+      const res = await fetch(`${backendUrl}/api/auth/resend-2fa`, {
+        method:"POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ email:user.email })
+      });
+      const data = await res.json();
+      alert(data.msg);
+      document.getElementById("twoFAInput").value = "";
+      startCountdown();
+    } catch(err){ alert(err.message); }
+  };
+}
+
+// ----- COUNTDOWN -----
+function startCountdown(duration=300){
+  clearInterval(countdownTimer);
+  const el = document.getElementById("countdown");
+  let timeLeft = duration;
+  el.textContent = `Code expires in: ${formatTime(timeLeft)}`;
+  document.getElementById("verify2FABtn").disabled = false;
+
+  countdownTimer = setInterval(()=>{
+    timeLeft--;
+    el.textContent = `Code expires in: ${formatTime(timeLeft)}`;
+    if(timeLeft<=0){
+      clearInterval(countdownTimer);
+      el.textContent="Code expired. Please resend.";
+      document.getElementById("verify2FABtn").disabled = true;
+    }
+  },1000);
+}
+function formatTime(sec){ return `${Math.floor(sec/60)}:${sec%60<10?"0"+sec%60:sec%60}`; }
+
+// ----- DASHBOARD -----
+function showUserDashboard(user){
+  document.getElementById("loginBox").style.display = "none";
+  document.getElementById("twoFAPopup").style.display = "none";
+  document.getElementById("termsPopup").style.display = "none";
+
+  document.getElementById("dashboardName").textContent = `Welcome, ${user.name}`;
+  document.getElementById("dashboardEmail").textContent = `Email: ${user.email}`;
+  if(user.photo){
+    document.getElementById("dashboardPhoto").src = `${backendUrl}${user.photo}`;
+    document.getElementById("dashboardPhoto").style.display = "inline-block";
+  }
+
+  // Example placeholders for investment info
+  document.getElementById("dashboardInvestment").textContent = user.investment || 0;
+  document.getElementById("dashboardProfit").textContent = user.profit || 0;
+  document.getElementById("dashboardInterest").textContent = user.totalInterest || 0;
+
+  document.getElementById("dashboard").style.display = "block";
+
+  // Dashboard buttons
+  document.getElementById("withdrawBtn").onclick = ()=>alert("Withdraw clicked");
+  document.getElementById("depositBtn").onclick = ()=>alert("Deposit clicked");
+  document.getElementById("transactionsBtn").onclick = ()=>alert("Transactions clicked");
+  document.getElementById("logoutBtn").onclick = ()=>{
+    localStorage.clear();
+    document.getElementById("dashboard").style.display = "none";
+    document.getElementById("loginBox").style.display = "block";
+  };
+}
+
+// ----- AUTO DASHBOARD IF LOGGED IN -----
+document.addEventListener("DOMContentLoaded",()=>{
+  const user = JSON.parse(localStorage.getItem("currentUser"));
+  const twoFA = localStorage.getItem("twoFAVerified");
+  if(user && twoFA==="true") showUserDashboard(user);
+});
+
+// ----- DASHBOARD BUTTONS -----
+document.getElementById("depositBtn").onclick = () => {
+  document.getElementById("depositModal").style.display = "block";
+};
+
+document.getElementById("withdrawBtn").onclick = () => {
+  document.getElementById("withdrawModal").style.display = "block";
+};
+
+// ----- CLOSE MODALS -----
+document.getElementById("closeDeposit").onclick = () => {
+  document.getElementById("depositModal").style.display = "none";
+  document.getElementById("depositAmount").value = "";
+};
+document.getElementById("closeWithdraw").onclick = () => {
+  document.getElementById("withdrawModal").style.display = "none";
+  document.getElementById("withdrawAmount").value = "";
+};
+
+// ----- DEPOSIT SUBMIT -----
+document.getElementById("submitDeposit").onclick = async () => {
+  const amount = parseFloat(document.getElementById("depositAmount").value);
+  if (!amount || amount <= 0) return alert("Enter valid amount");
+  const token = localStorage.getItem("jwtToken");
 
   try {
-    const res = await fetch(`${API}/api/withdrawals`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({ method, amount })
+    const res = await fetch(`${backendUrl}/api/user/deposit`, {
+      method:"POST",
+      headers: {"Content-Type":"application/json","Authorization":`Bearer ${token}`},
+      body: JSON.stringify({ amount })
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.msg || "Failed to submit withdrawal");
+    if(!res.ok) throw new Error(data.msg);
 
-    msg.style.color = "green";
-    msg.textContent = data.msg;
-
-    // Optionally refresh balances
-    await initDashboard();
-  } catch (e) {
-    msg.style.color = "red";
-    msg.textContent = e.message;
-  }
+    alert(data.msg || "Deposit successful");
+    document.getElementById("depositModal").style.display = "none";
+    document.getElementById("depositAmount").value = "";
+    document.getElementById("dashboardInvestment").textContent = data.newInvestment || 0;
+  } catch(err){ alert(err.message); }
 };
 
-document.getElementById("logoutBtn").onclick = () => {
-  localStorage.clear();
-  window.location.href = "login-user.html";
-};
+// ----- WITHDRAW SUBMIT -----
+document.getElementById("submitWithdraw").onclick = async () => {
+  const amount = parseFloat(document.getElementById("withdrawAmount").value);
+  const method = document.getElementById("withdrawMethod").value;
+  if (!amount || amount <= 0) return alert("Enter valid amount");
+  const token = localStorage.getItem("jwtToken");
 
+  try {
+    const res = await fetch(`${backendUrl}/api/user/withdraw`, {
+      method:"POST",
+      headers: {"Content-Type":"application/json","Authorization":`Bearer ${token}`},
+      body: JSON.stringify({ amount, method })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.msg);
+
+    alert(data.msg || "Withdrawal successful");
+    document.getElementById("withdrawModal").style.display = "none";
+    document.getElementById("withdrawAmount").value = "";
+    document.getElementById("dashboardInvestment").textContent = data.newInvestment || 0;
+  } catch(err){ alert(err.message); }
+};
 
   
       
