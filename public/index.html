@@ -710,28 +710,51 @@ function clearSession(){
 =========================== */
 document.getElementById("openSignup").onclick = ()=> openModal("signupModal");
 document.getElementById("ctaSignup").onclick  = ()=> openModal("signupModal");
+document.getElementById("signupSubmit").addEventListener("click", async (e) => {
+  e.preventDefault(); // stop accidental page reload
 
-document.getElementById("signupSubmit").addEventListener("click", async ()=>{
-  const name = document.getElementById("suName").value.trim();
-  const email = document.getElementById("suEmail").value.trim();
-  const password = document.getElementById("suPassword").value.trim();
-  if(!name || !email || !password) return alert("Fill in all fields");
+  const name = document.getElementById("suName")?.value.trim();
+  const email = document.getElementById("suEmail")?.value.trim();
+  const password = document.getElementById("suPassword")?.value.trim();
 
-  try{
-    const res = await fetch(`${backendUrl}/api/auth/signup`,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
+  if (!name || !email || !password) {
+    console.log("Signup: Missing fields", { name, email, password });
+    return alert("Please fill in all fields");
+  }
+
+  console.log("Signup: Sending data", { name, email });
+
+  try {
+    const res = await fetch(`${backendUrl}/api/auth/signup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, password })
     });
-    const data = await res.json();
-    if(!res.ok) throw new Error(data.msg || "Signup failed");
-    alert("Signup successful! Please login.");
-    closeModal("signupModal");
-    // Prefill login email
-    document.getElementById("liEmail").value = email;
-    openModal("loginModal");
-  }catch(err){ alert(err.message); }
+
+    const text = await res.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.error("Signup: Invalid JSON response", text);
+      throw new Error("Invalid JSON from server");
+    }
+
+    console.log("Signup: Response data", data);
+
+    if (res.ok) {
+      alert("Account created successfully!");
+      // Close modal
+      document.getElementById("signupModal").style.display = "none";
+    } else {
+      alert(data.message || "Signup failed");
+    }
+  } catch (err) {
+    console.error("Signup: Error", err);
+    alert("An error occurred while creating your account");
+  }
 });
+
 
 /* ===========================
    LOGIN → TERMS → 2FA → DASHBOARD
@@ -743,8 +766,8 @@ document.getElementById("ctaLogin").onclick  = ()=> openModal("loginModal");
 
 // ----- LOGIN / TERMS / 2FA -----
 document.getElementById("loginSubmit").addEventListener("click", async () => {
-  const email = document.getElementById("loginEmail")?.value.trim();
-  const password = document.getElementById("loginPassword")?.value.trim();
+ const email = document.getElementById("liEmail")?.value.trim();
+  const password = document.getElementById("liPassword")?.value.trim();
 
   if (!email || !password) {
     console.log("Login: Missing email or password");
