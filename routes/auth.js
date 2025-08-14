@@ -84,63 +84,91 @@ await newUser.save();
   }
 });
 
-// ---------------- LOGIN ----------------
+// JWT secret
+const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_here";
+
+// ==================== LOGIN ROUTE ====================
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) return res.status(401).json({ msg: "Invalid email" });
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ msg: "Invalid password" });
 
-    const twoFACode = Math.floor(100000 + Math.random() * 900000).toString();
-    user.twoFACode = twoFACode;
-    user.twoFAExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 min expiry
-    await user.save();
+    // Generate a temporary 2FA secret if user doesn't have one
+    if (!user.twoFASecret) {
+      const secret = speakeasy.generateSecret({ length: 20 });
+      user.twoFASecret = secret.base32;
+      await user.save();
+    }
 
-    await send2FACode(user.email, twoFACode);
-    res.json({ email: user.email, name: user.name, photo: user.photo });
-  } catch (err) { res.status(500).send("Server error"); }
+    // Respond to frontend for 2FA step
+    res.json({
+      msg: "Login successful, proceed with 2FA",
+      email: user.email,
+      name: user.name,
+      photo: user.photo || "",
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Server error" });
+  }
 });
 
-// POST /verify-2fa
+// ==================== VERIFY 2FA ====================
 router.post("/verify-2fa", async (req, res) => {
   const { email, code } = req.body;
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) return res.status(401).json({ msg: "User not found" });
 
-    if (!user.twoFACode || !user.twoFAExpires || new Date() > user.twoFAExpires)
-      return res.status(401).json({ msg: "2FA code expired. Please resend." });
+    const verified = speakeasy.totp.verify({
+      secret: user.twoFASecret,
+      encoding: "base32",
+      token: code,
+      window: 2, // allow ±2 intervals
+    });
 
-    if (user.twoFACode !== code) return res.status(401).json({ msg: "Invalid 2FA code" });
+    if (!verified) return res.status(400).json({ msg: "Invalid 2FA code" });
 
-    user.twoFACode = null;
-    user.twoFAExpires = null;
-    await user.save();
+    // Generate JWT
+    const token = jwt.sign(
+      { id: user._id, email: user.email },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
-    res.json({ token });
-  } catch (err) { res.status(500).send("Server error"); }
+    res.json({ msg: "2FA verified", token });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Server error" });
+  }
 });
 
-// POST /resend-2fa
+// ==================== RESEND 2FA ====================
 router.post("/resend-2fa", async (req, res) => {
   const { email } = req.body;
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) return res.status(401).json({ msg: "User not found" });
 
-    const twoFACode = Math.floor(100000 + Math.random() * 900000).toString();
-    user.twoFACode = twoFACode;
-    user.twoFAExpires = new Date(Date.now() + 5 * 60 * 1000);
-    await user.save();
+    // For demo purposes, we'll just return the code (in production, send email/SMS)
+    const token = speakeasy.totp({
+      secret: user.twoFASecret,
+      encoding: "base32",
+    });
 
-    await send2FACode(user.email, twoFACode);
-    res.json({ msg: "2FA code resent successfully" });
-  } catch (err) { res.status(500).send("Server error"); }
+    res.json({ msg: `Your 2FA code is: ${token}` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Server error" });
+  }
 });
+
+
+
 
 export default router;
 

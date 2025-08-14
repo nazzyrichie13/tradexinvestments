@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password:  { type: String, required: true },
   photo: String,
+  twoFASecret: String,
   twoFACode: String,
   twoFAExpires: Date,
   createdAt: { type: Date, default: Date.now },
