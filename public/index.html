@@ -145,6 +145,67 @@
       cursor: pointer;
       border-radius: 0 0 8px 0;
     }
+    :root{
+    --bg:#0f172a; --card:#111827; --text:#e5e7eb; --muted:#9ca3af; --brand:#22c55e; --danger:#ef4444;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif}
+  .container{max-width:1100px;margin:0 auto;padding:24px}
+  .grid{display:grid;gap:16px}
+  .two{grid-template-columns:1fr 1fr}
+  .card{background:var(--card);border:1px solid #1f2937;border-radius:16px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+  h1,h2,h3{margin:.4em 0}
+  input,select,button,textarea{
+    width:100%;padding:12px 14px;border-radius:12px;border:1px solid #253041;background:#0b1220;color:var(--text);
+    outline:none
+  }
+  input::placeholder{color:#6b7280}
+  button{cursor:pointer;transition:transform .05s ease, opacity .15s ease}
+  button:hover{opacity:.95}
+  .btn{background:#1f2937}
+  .btn-primary{background:var(--brand);color:#052e16;border:none}
+  .btn-danger{background:var(--danger);border:none}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .row>.grow{flex:1}
+  .muted{color:var(--muted);font-size:.9rem}
+  .hidden{display:none !important}
+
+  /* Overlay + Modal */
+  #overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter: blur(2px);z-index:1000}
+  .modal{display:none;position:fixed;inset:auto;top:50%;left:50%;transform:translate(-50%,-50%);
+    background:#0b1220;border:1px solid #26334d;border-radius:16px;padding:20px;z-index:1001;min-width:min(92vw,520px)}
+  .modal h3{margin-top:0}
+  .modal .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+
+  /* Tables */
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:10px;border-bottom:1px solid #1f2937;text-align:left}
+  th{color:#9ca3af;font-weight:600}
+
+  /* Header */
+  .topbar{position:sticky;top:0;background:rgba(15,23,42,.7);backdrop-filter:blur(6px);border-bottom:1px solid #1f2937;z-index:50}
+  .topbar-inner{display:flex;align-items:center;justify-content:space-between;padding:12px 24px}
+  .brand{font-weight:700;letter-spacing:.3px}
+  .pill{padding:6px 10px;border-radius:999px;background:#0b1220;border:1px solid #1f2937}
+
+  /* Stat cards */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .stat{background:#0b1220;border:1px solid #1f2937;border-radius:14px;padding:16px}
+  .stat .label{color:#94a3b8;font-size:.9rem}
+  .stat .value{font-size:1.4rem;font-weight:700;margin-top:6px}
+
+  /* Sliders */
+  #welcomeNote img{display:none;width:100%;max-height:180px;object-fit:cover;border-radius:12px;border:1px solid #1f2937}
+  #welcomeNote img.active{display:block}
+  #quotes p{display:none;font-style:italic;margin:0}
+  #quotes p.active{display:block}
+
+  /* Admin tabs */
+  .tabs{display:flex;gap:8px;margin-bottom:10px}
+  .tabs button{padding:8px 12px;border-radius:10px}
+  .tabs button.active{background:#19324f}
+
+  /* Tiny helper */
+  .right{float:right}
   </style>
 </head>
 <body>
@@ -163,104 +224,208 @@
   </ul> 
    <div class="nav">
     <p class="logo">TradeXInvest</p>
-    <div
-      id="authLinks"
-      style="
-        display: flex;
-        align-items: center;
-        font-size: 18px;
-        font-weight: 600;
-      "
-    >
-      <a
-        href="signup.html"
-        style="
-          color: black;
-          text-decoration: none;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont,
-            'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans',
-            'Helvetica Neue', sans-serif;
-          white-space: nowrap;
-        "
-        >Sign up</a
-      >
-      /
-      <a
-        href="login-user.html"
-        style="
-          color: black;
-          text-decoration: none;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont,
-            'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans',
-            'Helvetica Neue', sans-serif;
-          white-space: nowrap;
-        "
-        >Login</a
-      >
-    </div> 
     </div>
-    <!-- OVERLAY -->
+    
+
+<!-- end of dashboard -->
+ <!-- Topbar -->
+<div class="topbar">
+  <div class="topbar-inner container">
+    <div class="brand">TradexInvest</div>
+    <div class="row">
+      <button id="openLogin" class="pill">Login</button>
+      <button id="openSignup" class="pill">Sign Up</button>
+      <button id="openDashboard" class="pill hidden">Dashboard</button>
+      <button id="openAdmin" class="pill hidden">Admin</button>
+      <button id="logoutTop" class="pill hidden">Logout</button>
+    </div>
+  </div>
+</div>
+
+<div class="container grid two">
+
+  <!-- Public / left column -->
+  <div class="grid">
+    <div class="card">
+      <h2>Get started</h2>
+      <p class="muted">Create an account, log in, accept the terms, verify 2FA, then manage your investments — all on this page.</p>
+      <div class="row">
+        <button id="ctaSignup" class="btn btn-primary">Create account</button>
+        <button id="ctaLogin" class="btn">I already have an account</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Welcome</h3>
+      <div id="welcomeNote">
+        <img src="https://picsum.photos/seed/a/1100/280" class="active" alt="">
+        <img src="https://picsum.photos/seed/b/1100/280" alt="">
+        <img src="https://picsum.photos/seed/c/1100/280" alt="">
+      </div>
+      <div style="margin-top:12px" id="quotes">
+        <p class="active">“Invest smart, live better.”</p>
+        <p>“Your future starts today.”</p>
+        <p>“Profit is a journey, not a destination.”</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard / right column -->
+  <div class="grid">
+    <div id="dashboardCard" class="card hidden">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div>
+          <h2 id="welcomeUser">Welcome</h2>
+          <p id="welcomeEmail" class="muted"></p>
+        </div>
+        <div>
+          <button id="depositBtn" class="btn btn-primary">Deposit</button>
+          <button id="withdrawBtn" class="btn right">Withdraw</button>
+        </div>
+      </div>
+
+      <div class="stats" style="margin-top:10px">
+        <div class="stat">
+          <div class="label">Investment Balance</div>
+          <div class="value">$<span id="statBalance">0</span></div>
+        </div>
+        <div class="stat">
+          <div class="label">Total Profit</div>
+          <div class="value">$<span id="statProfit">0</span></div>
+        </div>
+        <div class="stat">
+          <div class="label">Total Interest</div>
+          <div class="value">$<span id="statInterest">0</span></div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px">
+        <h3>Recent Transactions</h3>
+        <table id="txTable">
+          <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Admin panel -->
+    <div id="adminCard" class="card hidden">
+      <h2>Admin</h2>
+      <div class="tabs">
+        <button data-tab="usersTab" class="btn active">Users</button>
+        <button data-tab="withdrawalsTab" class="btn">Withdrawals</button>
+      </div>
+
+      <div id="usersTab">
+        <table>
+          <thead><tr><th>Name</th><th>Email</th><th>Balance</th><th>Profit</th><th style="width:200px">Actions</th></tr></thead>
+          <tbody id="adminUsersBody"></tbody>
+        </table>
+      </div>
+
+      <div id="withdrawalsTab" class="hidden">
+        <table>
+          <thead><tr><th>User</th><th>Method</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="adminWdBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Overlay + Modals ===== -->
 <div id="overlay"></div>
 
-<!-- LOGIN MODAL -->
-<div id="loginForm" class="modal">
-  <h2>Login</h2>
-  <input type="email" id="loginEmail" placeholder="Email"><br><br>
-  <input type="password" id="loginPassword" placeholder="Password"><br><br>
-  <button id="loginSubmit">Submit</button>
-  <button id="closeLogin">Close</button>
+<!-- Signup Modal -->
+<div id="signupModal" class="modal">
+  <h3>Create account</h3>
+  <div class="row">
+    <input id="suName" placeholder="Full name" class="grow" />
+    <input id="suEmail" placeholder="Email" class="grow" />
+  </div>
+  <div class="row" style="margin-top:10px">
+    <input id="suPassword" placeholder="Password" type="password" class="grow" />
+  </div>
+  <div class="actions">
+    <button class="btn" data-close="signupModal">Cancel</button>
+    <button id="signupSubmit" class="btn btn-primary">Sign Up</button>
+  </div>
 </div>
 
-<!-- TERMS POPUP -->
-<div id="termsPopup" class="modal">
-  <p>Please accept terms to continue.</p>
-  <button id="acceptTermsBtn">Accept</button>
+<!-- Login Modal -->
+<div id="loginModal" class="modal">
+  <h3>Login</h3>
+  <input id="liEmail" placeholder="Email" />
+  <div style="height:8px"></div>
+  <input id="liPassword" placeholder="Password" type="password" />
+  <div class="actions">
+    <button class="btn" data-close="loginModal">Cancel</button>
+    <button id="loginSubmit" class="btn btn-primary">Login</button>
+  </div>
 </div>
 
-<!-- 2FA POPUP -->
-<div id="twoFAPopup" class="modal">
-  <p id="countdown">Code expires in: 5:00</p>
-  <input id="twoFAInput" placeholder="Enter 2FA code">
-  <button id="verify2FABtn">Verify</button>
-  <button id="resend2FABtn">Resend Code</button>
+<!-- Terms Modal -->
+<div id="termsModal" class="modal">
+  <h3>Terms & Conditions</h3>
+  <div style="max-height:220px;overflow:auto;border:1px solid #1f2937;border-radius:10px;padding:12px">
+    <p class="muted">By continuing, you agree to our terms regarding investments, risk disclosure, and platform policies.</p>
+    <ul class="muted">
+      <li>Investments involve risk of loss.</li>
+      <li>Profits shown are indicative and not guaranteed.</li>
+      <li>We may require identity verification for withdrawals.</li>
+    </ul>
+  </div>
+  <div class="actions">
+    <button class="btn" data-close="termsModal">Decline</button>
+    <button id="acceptTerms" class="btn btn-primary">I Accept</button>
+  </div>
 </div>
 
-<!-- DASHBOARD -->
-<div id="dashboard" class="modal">
-  <img id="dashboardPhoto" style="display:none;">
-  <h2 id="dashboardName"></h2>
-  <p id="dashboardEmail"></p>
-  <p>Investment: $<span id="dashboardInvestment"></span></p>
-  <p>Profit: $<span id="dashboardProfit"></span></p>
-  <p>Total Interest: $<span id="dashboardInterest"></span></p>
-  <button id="depositBtn">Deposit</button>
-  <button id="withdrawBtn">Withdraw</button>
-  <button id="logoutBtn">Logout</button>
+<!-- 2FA Modal -->
+<div id="twofaModal" class="modal">
+  <h3>Two-Factor Verification</h3>
+  <p class="muted" id="twofaHint">We’ve emailed a 6-digit code to your address.</p>
+  <input id="twofaCode" placeholder="Enter 2FA code" />
+  <div class="row" style="align-items:center;margin-top:8px">
+    <div id="countdown" class="muted">Code expires in 5:00</div>
+    <button id="resend2FA" class="btn right">Resend code</button>
+  </div>
+  <div class="actions">
+    <button class="btn" data-close="twofaModal">Cancel</button>
+    <button id="verify2FA" class="btn btn-primary">Verify</button>
+  </div>
 </div>
 
-<!-- DEPOSIT MODAL -->
+<!-- Deposit Modal -->
 <div id="depositModal" class="modal">
-  <input id="depositAmount" placeholder="Amount">
-  <button id="submitDeposit">Deposit</button>
-  <button id="closeDeposit">Close</button>
+  <h3>Deposit</h3>
+  <input id="depositAmount" placeholder="Amount (USD)" />
+  <div class="actions">
+    <button class="btn" data-close="depositModal">Close</button>
+    <button id="submitDeposit" class="btn btn-primary">Deposit</button>
+  </div>
 </div>
 
-<!-- WITHDRAW MODAL -->
+<!-- Withdraw Modal -->
 <div id="withdrawModal" class="modal">
-  <input id="withdrawAmount" placeholder="Amount">
+  <h3>Withdraw</h3>
+  <input id="withdrawAmount" placeholder="Amount (USD)" />
+  <div style="height:8px"></div>
   <select id="withdrawMethod">
+    <option value="bank">Bank-to-Bank</option>
     <option value="paypal">PayPal</option>
     <option value="bitcoin">Bitcoin</option>
     <option value="cashapp">CashApp</option>
-    <option value="bank">Bank-to-Bank</option>
   </select>
-  <button id="submitWithdraw">Withdraw</button>
-  <button id="closeWithdraw">Close</button>
+  <div class="actions">
+    <button class="btn" data-close="withdrawModal">Close</button>
+    <button id="submitWithdraw" class="btn btn-primary">Request Withdraw</button>
+  </div>
 </div>
-<!-- end of dashboard -->
+
 
     
-
+<!-- end  -->
     <div id="welcomeNote" class="welcomeNote">
       <img src="images/photo 5.avif" alt="img" />
       <img src="images/stock 1.webp" alt="img" />
@@ -480,114 +645,406 @@
         <p class="copyright">&copy; 2025 TradeXInvest. All rights reserved.</p>
       </div>
     </footer>
-    <script>
-      const backendUrl = "https://tradexinvestments.onrender.com";
-      
-// --- UTILITY ---
-function showModal(modal){
-  document.getElementById("overlay").style.display="block";
-  modal.style.display="block";
+<script>
+
+const backendUrl = "https://tradexinvestments.onrender.com"; // change if needed
+let countdownTimer = null;
+
+/* ===========================
+   HELPERS: MODALS & STATE
+=========================== */
+const overlay = document.getElementById("overlay");
+function openModal(id){
+  overlay.style.display = "block";
+  document.getElementById(id).style.display = "block";
 }
-function closeModal(modal){
-  modal.style.display="none";
-  document.getElementById("overlay").style.display="none";
+function closeModal(id){
+  const el = document.getElementById(id);
+  if(el) el.style.display = "none";
+  // If no other modal is open, hide overlay
+  const anyOpen = [...document.querySelectorAll(".modal")].some(m => m.style.display === "block");
+  if(!anyOpen) overlay.style.display = "none";
+}
+overlay.addEventListener("click", ()=>{
+  document.querySelectorAll(".modal").forEach(m=>m.style.display="none");
+  overlay.style.display="none";
+});
+document.querySelectorAll("[data-close]").forEach(btn=>{
+  btn.addEventListener("click", ()=> closeModal(btn.getAttribute("data-close")));
+});
+
+function currency(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2}); }
+function setSession(user, jwt){
+  if(user) localStorage.setItem("currentUser", JSON.stringify(user));
+  if(jwt)  localStorage.setItem("jwtToken", jwt);
+}
+function clearSession(){
+  localStorage.clear();
 }
 
-// --- LOGIN ---
-const loginForm = document.getElementById("loginForm");
+/* ===========================
+   SLIDERS
+=========================== */
+(function sliders(){
+  const imgs = document.querySelectorAll("#welcomeNote img");
+  const quotes = document.querySelectorAll("#quotes p");
+  let i=0, q=0;
+  function showImg(k){ imgs.forEach((im,idx)=>im.classList.toggle("active", idx===k)); }
+  function showQuote(k){ quotes.forEach((p,idx)=>p.classList.toggle("active", idx===k)); }
+  showImg(0); showQuote(0);
+  setInterval(()=>{ i=(i+1)%imgs.length; showImg(i); }, 3000);
+  setInterval(()=>{ q=(q+1)%quotes.length; showQuote(q); }, 3000);
+})();
+
+/* ===========================
+   SIGNUP
+=========================== */
+document.getElementById("openSignup").onclick = ()=> openModal("signupModal");
+document.getElementById("ctaSignup").onclick  = ()=> openModal("signupModal");
+
+document.getElementById("signupSubmit").addEventListener("click", async ()=>{
+  const name = document.getElementById("suName").value.trim();
+  const email = document.getElementById("suEmail").value.trim();
+  const password = document.getElementById("suPassword").value.trim();
+  if(!name || !email || !password) return alert("Fill in all fields");
+
+  try{
+    const res = await fetch(`${backendUrl}/api/auth/signup`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ name, email, password })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.msg || "Signup failed");
+    alert("Signup successful! Please login.");
+    closeModal("signupModal");
+    // Prefill login email
+    document.getElementById("liEmail").value = email;
+    openModal("loginModal");
+  }catch(err){ alert(err.message); }
+});
+
+/* ===========================
+   LOGIN → TERMS → 2FA → DASHBOARD
+=========================== */
+document.getElementById("openLogin").onclick = ()=> openModal("loginModal");
+document.getElementById("ctaLogin").onclick  = ()=> openModal("loginModal");
+
 document.getElementById("loginSubmit").addEventListener("click", async ()=>{
-  const email = document.getElementById("loginEmail").value.trim();
-  const password = document.getElementById("loginPassword").value.trim();
-  if(!email||!password) return alert("Enter email & password");
+  const email = document.getElementById("liEmail").value.trim();
+  const password = document.getElementById("liPassword").value.trim();
+  if(!email || !password) return alert("Enter email & password");
+
   try{
     const res = await fetch(`${backendUrl}/api/auth/`,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({email,password})
+      body: JSON.stringify({ email, password })
     });
     const data = await res.json();
-    if(!res.ok) throw new Error(data.msg||"Login failed");
-    localStorage.setItem("currentUser", JSON.stringify(data));
-    closeModal(loginForm);
-    showTermsPopup();
+    if(!res.ok) throw new Error(data.msg || "Login failed");
+    // Expect backend to send a tempToken and user skeleton (no full JWT yet)
+    setSession(data, null); // store currentUser (with tempToken + email + name)
+    closeModal("loginModal");
+    // TERMS
+    openModal("termsModal");
   }catch(err){ alert(err.message); }
 });
-document.getElementById("closeLogin").onclick = ()=>closeModal(loginForm);
 
-// --- TERMS ---
-function showTermsPopup(){
-  const popup = document.getElementById("termsPopup");
-  showModal(popup);
-  document.getElementById("acceptTermsBtn").onclick = ()=>{
-    localStorage.setItem("termsAccepted","true");
-    closeModal(popup);
-    show2FAPopup();
-  };
-}
-
-// --- 2FA ---
-function show2FAPopup(){
-  const popup = document.getElementById("twoFAPopup");
-  showModal(popup);
+document.getElementById("acceptTerms").addEventListener("click", ()=>{
+  localStorage.setItem("termsAccepted","true");
+  closeModal("termsModal");
+  // 2FA step
+  openModal("twofaModal");
   startCountdown();
-  document.getElementById("verify2FABtn").onclick = async ()=>{
-    const code = document.getElementById("twoFAInput").value.trim();
-    const user = JSON.parse(localStorage.getItem("currentUser"));
-    if(!code) return alert("Enter 2FA code");
-    try{
-      const res = await fetch(`${backendUrl}/api/auth/verify-2fa`,{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({code,tempToken:user.tempToken})
-      });
-      const data = await res.json();
-      if(!res.ok) throw new Error(data.msg);
-      localStorage.setItem("twoFAVerified","true");
-      localStorage.setItem("jwtToken", data.token);
-      closeModal(popup);
-      clearInterval(countdownTimer);
-      document.getElementById("twoFAInput").value="";
-      showUserDashboard(user);
-    }catch(err){ alert(err.message); }
-  };
-  document.getElementById("resend2FABtn").onclick = async ()=>{
-    const user = JSON.parse(localStorage.getItem("currentUser"));
-    try{
-      const res = await fetch(`${backendUrl}/api/auth/resend-2fa`,{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({email:user.email})
-      });
-      const data = await res.json();
-      alert(data.msg);
-      document.getElementById("twoFAInput").value="";
-      startCountdown();
-    }catch(err){ alert(err.message); }
-  };
-}
-// DASHCOARD
-function showUserDashboard(user){
-  const dash = document.getElementById("dashboard");
-  dash.style.display="block";
-  document.getElementById("dashboardName").textContent=`Welcome, ${user.name}`;
-  document.getElementById("dashboardEmail").textContent=`Email: ${user.email}`;
-  if(user.photo){
-    const img = document.getElementById("dashboardPhoto");
-    img.src = `${backendUrl}${user.photo}`;
-    img.style.display="inline-block";
-  }
-  document.getElementById("dashboardInvestment").textContent=user.investment||0;
-  document.getElementById("dashboardProfit").textContent=user.profit||0;
-  document.getElementById("dashboardInterest").textContent=user.totalInterest||0;
-}
- document.getElementById("logoutBtn").onclick = ()=>{
-    localStorage.clear();
-    dash.style.display="none";
-    hideDashboardComponents();
-    showModal(loginForm);
- }
-    </script>
-      
-    </body>
-    </html>
+});
 
+function startCountdown(duration=300){
+  clearInterval(countdownTimer);
+  let timeLeft = duration;
+  const el = document.getElementById("countdown");
+  el.textContent = "Code expires in " + formatTime(timeLeft);
+  document.getElementById("verify2FA").disabled = false;
+
+  countdownTimer = setInterval(()=>{
+    timeLeft--; el.textContent = "Code expires in " + formatTime(timeLeft);
+    if(timeLeft<=0){
+      clearInterval(countdownTimer);
+      el.textContent = "Code expired. Please resend.";
+      document.getElementById("verify2FA").disabled = true;
+    }
+  },1000);
+}
+function formatTime(sec){ return `${Math.floor(sec/60)}:${(sec%60).toString().padStart(2,"0")}`; }
+
+document.getElementById("resend2FA").addEventListener("click", async ()=>{
+  const user = JSON.parse(localStorage.getItem("currentUser"));
+  if(!user?.email) return alert("No user in session");
+  try{
+    const res = await fetch(`${backendUrl}/api/auth/resend-2fa`,{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ email: user.email })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.msg || "Failed to resend");
+    alert(data.msg || "Code resent");
+    document.getElementById("twofaCode").value = "";
+    startCountdown();
+  }catch(err){ alert(err.message); }
+});
+
+document.getElementById("verify2FA").addEventListener("click", async ()=>{
+  const code = document.getElementById("twofaCode").value.trim();
+  const user = JSON.parse(localStorage.getItem("currentUser"));
+  if(!code) return alert("Enter 2FA code");
+  try{
+    const res = await fetch(`${backendUrl}/api/auth/verify-2fa`,{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ code, tempToken: user?.tempToken })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.msg || "2FA failed");
+
+    // Expect: { token, user } or at least token; prefer fresh user profile after verify:
+    setSession(user, data.token);
+    localStorage.setItem("twoFAVerified","true");
+    closeModal("twofaModal");
+    await hydrateAndShowDashboard(); // load /me then display
+  }catch(err){ alert(err.message); }
+});
+
+/* ===========================
+   DASHBOARD
+=========================== */
+async function hydrateAndShowDashboard(){
+  const token = localStorage.getItem("jwtToken");
+  try{
+    // Load fresh profile (with balances, roles, etc.)
+    const res = await fetch(`${backendUrl}/api/user/me`,{
+      headers:{ "Authorization": `Bearer ${token}` }
+    });
+    const me = await res.json();
+    if(!res.ok) throw new Error(me.msg || "Failed to load profile");
+    localStorage.setItem("currentUser", JSON.stringify(me));
+
+    // Show dashboard
+    document.getElementById("dashboardCard").classList.remove("hidden");
+    document.getElementById("openDashboard").classList.remove("hidden");
+    document.getElementById("logoutTop").classList.remove("hidden");
+    if(me?.role === "admin" || me?.isAdmin) document.getElementById("openAdmin").classList.remove("hidden");
+
+    document.getElementById("welcomeUser").textContent = `Welcome, ${me.name || "Investor"}`;
+    document.getElementById("welcomeEmail").textContent = me.email || "";
+    document.getElementById("statBalance").textContent  = currency(me.investment);
+    document.getElementById("statProfit").textContent   = currency(me.profit);
+    document.getElementById("statInterest").textContent = currency(me.totalInterest);
+
+    // Transactions if provided
+    const tbody = document.querySelector("#txTable tbody");
+    tbody.innerHTML = "";
+    (me.transactions || []).slice(0,5).forEach(tx=>{
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${new Date(tx.date||Date.now()).toLocaleString()}</td>
+        <td>${tx.type||"-"}</td>
+        <td>$${currency(tx.amount)}</td>
+        <td>${tx.status||"pending"}</td>`;
+      tbody.appendChild(tr);
+    });
+  }catch(err){
+    alert(err.message);
+  }
+}
+
+// Buttons on dashboard card
+document.getElementById("depositBtn").onclick  = ()=> openModal("depositModal");
+document.getElementById("withdrawBtn").onclick = ()=> openModal("withdrawModal");
+
+// Deposit
+document.getElementById("submitDeposit").addEventListener("click", async ()=>{
+  const amount = parseFloat(document.getElementById("depositAmount").value);
+  if(!amount || amount<=0) return alert("Enter a valid amount");
+  try{
+    const token = localStorage.getItem("jwtToken");
+    const res = await fetch(`${backendUrl}/api/user/deposit`,{
+      method:"POST",
+      headers:{ "Content-Type":"application/json", "Authorization": `Bearer ${token}` },
+      body: JSON.stringify({ amount })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.msg || "Deposit failed");
+    alert(data.msg || "Deposit successful");
+    closeModal("depositModal");
+    document.getElementById("depositAmount").value = "";
+    await hydrateAndShowDashboard();
+  }catch(err){ alert(err.message); }
+});
+
+// Withdraw
+document.getElementById("submitWithdraw").addEventListener("click", async ()=>{
+  const amount = parseFloat(document.getElementById("withdrawAmount").value);
+  const method = document.getElementById("withdrawMethod").value;
+  if(!amount || amount<=0) return alert("Enter a valid amount");
+  try{
+    const token = localStorage.getItem("jwtToken");
+    const res = await fetch(`${backendUrl}/api/user/withdraw`,{
+      method:"POST",
+      headers:{ "Content-Type":"application/json", "Authorization": `Bearer ${token}` },
+      body: JSON.stringify({ amount, method })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.msg || "Withdrawal failed");
+    alert(data.msg || "Withdrawal request submitted");
+    closeModal("withdrawModal");
+    document.getElementById("withdrawAmount").value = "";
+    await hydrateAndShowDashboard();
+  }catch(err){ alert(err.message); }
+});
+
+/* ===========================
+   ADMIN
+=========================== */
+const adminCard = document.getElementById("adminCard");
+document.getElementById("openAdmin").onclick = async ()=>{
+  adminCard.classList.remove("hidden");
+  await loadAdminUsers();
+  await loadAdminWithdrawals();
+};
+document.getElementById("openDashboard").onclick = ()=> {
+  adminCard.classList.add("hidden");
+  document.getElementById("dashboardCard").classList.remove("hidden");
+};
+
+document.querySelectorAll(".tabs button").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    const tab = btn.getAttribute("data-tab");
+    document.getElementById("usersTab").classList.toggle("hidden", tab!=="usersTab");
+    document.getElementById("withdrawalsTab").classList.toggle("hidden", tab!=="withdrawalsTab");
+  });
+});
+
+async function loadAdminUsers(){
+  try{
+    const token = localStorage.getItem("jwtToken");
+    const res = await fetch(`${backendUrl}/api/admin/users`,{
+      headers:{ "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.msg || "Failed to load users");
+    const tbody = document.getElementById("adminUsersBody");
+    tbody.innerHTML = "";
+    data.forEach(u=>{
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${u.name||"-"}</td>
+        <td>${u.email}</td>
+        <td>$${currency(u.investment)}</td>
+        <td>$${currency(u.profit)}</td>
+        <td>
+          <div class="row">
+            <input type="number" step="0.01" placeholder="Add profit" data-profit-for="${u._id}" />
+            <button class="btn btn-primary" data-save-profit="${u._id}">Add</button>
+          </div>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+
+    // Bind profit saves
+    tbody.querySelectorAll("[data-save-profit]").forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const id = btn.getAttribute("data-save-profit");
+        const val = parseFloat(tbody.querySelector(`[data-profit-for="${id}"]`).value);
+        if(isNaN(val) || val<=0) return alert("Enter profit to add");
+        try{
+          const token = localStorage.getItem("jwtToken");
+          const res = await fetch(`${backendUrl}/api/admin/users/${id}`,{
+            method:"PATCH",
+            headers:{ "Content-Type":"application/json", "Authorization": `Bearer ${token}` },
+            body: JSON.stringify({ profitDelta: val })
+          });
+          const data = await res.json();
+          if(!res.ok) throw new Error(data.msg || "Failed to update profit");
+          alert("Profit updated");
+          await loadAdminUsers();
+        }catch(err){ alert(err.message); }
+      });
+    });
+
+  }catch(err){ alert(err.message); }
+}
+
+async function loadAdminWithdrawals(){
+  try{
+    const token = localStorage.getItem("jwtToken");
+    const res = await fetch(`${backendUrl}/api/admin/withdrawals`,{
+      headers:{ "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.msg || "Failed to load withdrawals");
+    const tbody = document.getElementById("adminWdBody");
+    tbody.innerHTML = "";
+    data.forEach(w=>{
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${w.user?.email||"-"}</td>
+        <td>${w.method}</td>
+        <td>$${currency(w.amount)}</td>
+        <td>${w.status}</td>
+        <td class="row">
+          <button class="btn btn-primary" data-approve="${w._id}">Approve</button>
+          <button class="btn btn-danger" data-reject="${w._id}">Reject</button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+
+    // Bind approve/reject
+    tbody.querySelectorAll("[data-approve]").forEach(btn=>{
+      btn.addEventListener("click", ()=> handleWd(btn.getAttribute("data-approve"), "approve"));
+    });
+    tbody.querySelectorAll("[data-reject]").forEach(btn=>{
+      btn.addEventListener("click", ()=> handleWd(btn.getAttribute("data-reject"), "reject"));
+    });
+
+  }catch(err){ alert(err.message); }
+}
+
+async function handleWd(id, action){
+  try{
+    const token = localStorage.getItem("jwtToken");
+    const res = await fetch(`${backendUrl}/api/admin/withdrawals/${id}/${action}`,{
+      method:"POST",
+      headers:{ "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.msg || "Action failed");
+    alert(`Withdrawal ${action}d`);
+    await loadAdminWithdrawals();
+  }catch(err){ alert(err.message); }
+}
+
+/* ===========================
+   TOP NAV & SESSION
+=========================== */
+document.getElementById("openDashboard").onclick = ()=> {
+  document.getElementById("adminCard").classList.add("hidden");
+  document.getElementById("dashboardCard").classList.remove("hidden");
+};
+
+document.getElementById("logoutTop").onclick = ()=>{
+  clearSession();
+  location.reload();
+};
+
+// On load: restore session if JWT + 2FA previously done
+window.addEventListener("DOMContentLoaded", async ()=>{
+  const jwt = localStorage.getItem("jwtToken");
+  const twoFA = localStorage.getItem("twoFAVerified");
+  if(jwt && twoFA === "true"){
+    await hydrateAndShowDashboard();
+  }
+});
+</script>
+</body>
+</html>
