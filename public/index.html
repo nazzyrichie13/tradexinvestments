@@ -241,6 +241,19 @@
     </div>
   </div>
 </div>
+  <div class="card">
+      <h3>Welcome</h3>
+      <div id="welcomeNote">
+        <img src="https://picsum.photos/seed/a/1100/280" class="active" alt="">
+        <img src="https://picsum.photos/seed/b/1100/280" alt="">
+        <img src="https://picsum.photos/seed/c/1100/280" alt="">
+      </div>
+      <div style="margin-top:12px" id="quotes">
+        <p class="active">“Invest smart, live better.”</p>
+        <p>“Your future starts today.”</p>
+        <p>“Profit is a journey, not a destination.”</p>
+      </div>
+    </div>
 
 <div class="container grid two">
 
@@ -254,21 +267,8 @@
         <button id="ctaLogin" class="btn">I already have an account</button>
       </div>
     </div>
-
-    <div class="card">
-      <h3>Welcome</h3>
-      <div id="welcomeNote">
-        <img src="https://picsum.photos/seed/a/1100/280" class="active" alt="">
-        <img src="https://picsum.photos/seed/b/1100/280" alt="">
-        <img src="https://picsum.photos/seed/c/1100/280" alt="">
-      </div>
-      <div style="margin-top:12px" id="quotes">
-        <p class="active">“Invest smart, live better.”</p>
-        <p>“Your future starts today.”</p>
-        <p>“Profit is a journey, not a destination.”</p>
-      </div>
-    </div>
-  </div>
+</div>
+    
 
   <!-- Dashboard / right column -->
   <div class="grid">
@@ -433,7 +433,7 @@
       <img src="images/photo-1749741326969-e1676b3bce43.avif" alt="img" />
     </div>
     <div id="qoutes" class="qoutes">
-      <p>WELCOME TO TRADEX</p>
+      <p> WE ARE TRADEX</p>
       <p>"Do not save what is left after spending, but spend what is left after saving."</p>
       <p>"An investment in knowledge pays the best interest."</p>
       <p>"Successful investing is about managing risk, not avoiding it."</p>
@@ -520,7 +520,7 @@
           investment plans.
         </p>
         <div class="hero-buttons">
-          <a href="sign up.html" class="btn-primary">Get Started</a>
+           <button id="ctaSignup" class="btn btn-primary">Create account</button>
           <a href="#features" class="btn-secondary">Learn More</a>
         </div>
       </div>
@@ -568,7 +568,7 @@
     <section class="cta-section">
       <h2>Ready to Grow Your Wealth?</h2>
       <p>Join thousands of investors earning passive income with TradeXInvest.</p>
-      <a href="sign up.html" class="cta-btn">Get Started Now</a>
+      <p> <button id="ctaSignup" class="btn btn-primary">Get Started Now</button></p>
     </section>
 
     <!-- Chat widget -->
@@ -586,7 +586,7 @@
       </div>
       <form id="chatForm">
         <input
-          type="text"
+          type="text" 
           id="chatInput"
           placeholder="Type your message..."
           autocomplete="off"
@@ -730,6 +730,9 @@ document.getElementById("signupSubmit").addEventListener("click", async ()=>{
 document.getElementById("openLogin").onclick = ()=> openModal("loginModal");
 document.getElementById("ctaLogin").onclick  = ()=> openModal("loginModal");
 
+
+
+// ----- LOGIN / TERMS / 2FA -----
 document.getElementById("loginSubmit").addEventListener("click", async () => {
   const email = document.getElementById("loginEmail").value.trim();
   const password = document.getElementById("loginPassword").value.trim();
@@ -738,204 +741,145 @@ document.getElementById("loginSubmit").addEventListener("click", async () => {
   try {
     const res = await fetch(`${backendUrl}/api/auth/`, {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password })
     });
 
-   const text = await res.text(); // get raw response
+    const text = await res.text();
     let data;
-    try {
-      data = JSON.parse(text); // parse safely
-    } catch {
-      throw new Error("Invalid JSON from server: " + text);
-    }
+    try { data = JSON.parse(text); } 
+    catch { throw new Error("Invalid JSON from server: " + text); }
 
     if (!res.ok) throw new Error(data.msg || "Login failed");
 
     localStorage.setItem("currentUser", JSON.stringify(data));
 
-    // Hide login form & overlay
     document.getElementById("loginForm").style.display = "none";
     document.getElementById("overlay").style.display = "none";
 
-    // data should contain tempToken for 2FA and basic user info
-    setSession(data, null); // store in localStorage
-    closeModal("loginModal");
-
-    // Show terms popup
-    openModal("termsModal");
-
-  } catch(err) {
-    alert(err.message);
-  }
+    showTermsPopup();
+  } catch(err) { alert(err.message); }
 });
 
-function setSession(user, jwt) {
-  localStorage.setItem("currentUser", JSON.stringify(user));
-  if (jwt) localStorage.setItem("jwtToken", jwt); // after 2FA
+// ----- TERMS -----
+function showTermsPopup() {
+  document.getElementById("termsPopup").style.display = "block";
+  document.getElementById("acceptTermsBtn").onclick = () => {
+    localStorage.setItem("termsAccepted","true");
+    document.getElementById("termsPopup").style.display = "none";
+    show2FAPopup();
+  };
 }
-document.getElementById("acceptTermsBtn").onclick = async () => {
-  localStorage.setItem("termsAccepted", "true");
-  closeModal("termsModal");
 
-  // open 2FA popup
-  openModal("twoFAModal");
-  startCountdown(); // optional countdown for 2FA code expiration
-};
+// ----- 2FA -----
+function show2FAPopup() {
+  const popup = document.getElementById("twoFAPopup");
+  popup.style.display = "block";
+  startCountdown();
 
-function startCountdown(duration=300){
+  document.getElementById("verify2FABtn").onclick = async () => {
+    const code = document.getElementById("twoFAInput").value.trim();
+    const user = JSON.parse(localStorage.getItem("currentUser"));
+    if(!code) return alert("Enter 2FA code");
+
+    try {
+      const res = await fetch(`${backendUrl}/api/auth/verify-2fa`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, tempToken: user.tempToken })
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.msg);
+
+      localStorage.setItem("twoFAVerified","true");
+      localStorage.setItem("jwtToken", data.token);
+      popup.style.display = "none";
+      clearInterval(countdownTimer);
+      document.getElementById("twoFAInput").value = "";
+      showUserDashboard(user);
+    } catch(err){ alert(err.message); }
+  };
+
+  document.getElementById("resend2FABtn").onclick = async () => {
+    const user = JSON.parse(localStorage.getItem("currentUser"));
+    try {
+      const res = await fetch(`${backendUrl}/api/auth/resend-2fa`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email })
+      });
+      const data = await res.json();
+      alert(data.msg);
+      document.getElementById("twoFAInput").value = "";
+      startCountdown();
+    } catch(err){ alert(err.message); }
+  };
+}
+
+// ----- 2FA COUNTDOWN -----
+function startCountdown(duration=300) {
   clearInterval(countdownTimer);
-  let timeLeft = duration;
   const el = document.getElementById("countdown");
-  el.textContent = "Code expires in " + formatTime(timeLeft);
-  document.getElementById("verify2FA").disabled = false;
+  let timeLeft = duration;
+  el.textContent = `Code expires in: ${formatTime(timeLeft)}`;
+  document.getElementById("verify2FABtn").disabled = false;
 
-  countdownTimer = setInterval(()=>{
-    timeLeft--; el.textContent = "Code expires in " + formatTime(timeLeft);
+  countdownTimer = setInterval(() => {
+    timeLeft--;
+    el.textContent = `Code expires in: ${formatTime(timeLeft)}`;
     if(timeLeft<=0){
       clearInterval(countdownTimer);
       el.textContent = "Code expired. Please resend.";
-      document.getElementById("verify2FA").disabled = true;
+      document.getElementById("verify2FABtn").disabled = true;
     }
-  },1000);
+  }, 1000);
 }
-function formatTime(sec){ return `${Math.floor(sec/60)}:${(sec%60).toString().padStart(2,"0")}`; }
+function formatTime(sec){ return `${Math.floor(sec/60)}:${(sec%60<10?"0":"")+sec%60}`; }
 
-document.getElementById("resend2FA").addEventListener("click", async ()=>{
-  const user = JSON.parse(localStorage.getItem("currentUser"));
-  if(!user?.email) return alert("No user in session");
-  try{
-    const res = await fetch(`${backendUrl}/api/auth/resend-2fa`,{
-      method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ email: user.email })
-    });
-    const data = await res.json();
-    if(!res.ok) throw new Error(data.msg || "Failed to resend");
-    alert(data.msg || "Code resent");
-    document.getElementById("twofaCode").value = "";
-    startCountdown();
-  }catch(err){ alert(err.message); }
-});
+// ----- DASHBOARD -----
+function showUserDashboard(user) {
+  document.getElementById("loginBox").style.display = "none";
+  document.getElementById("twoFAPopup").style.display = "none";
+  document.getElementById("termsPopup").style.display = "none";
 
-document.getElementById("verify2FABtn").onclick = async () => {
-  const code = document.getElementById("twoFAInput").value.trim();
-  const user = JSON.parse(localStorage.getItem("currentUser"));
-  if (!code) return alert("Enter 2FA code");
-
-  try {
-    const res = await fetch(`${backendUrl}/api/auth/verify-2fa`, {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ code, tempToken: user.tempToken })
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.msg);
-
-    // store full JWT
-    setSession(user, data.token);
-    localStorage.setItem("twoFAVerified", "true");
-
-    closeModal("twoFAModal");
-    showUserDashboard(user);
-
-  } catch(err) { alert(err.message); }
-};
-
-
-/* ===========================
-   DASHBOARD
-=========================== */
-async function hydrateAndShowDashboard(){
-  const token = localStorage.getItem("jwtToken");
-  try{
-    // Load fresh profile (with balances, roles, etc.)
-    const res = await fetch(`${backendUrl}/api/user/me`,{
-      headers:{ "Authorization": `Bearer ${token}` }
-    });
-    const me = await res.json();
-    if(!res.ok) throw new Error(me.msg || "Failed to load profile");
-    localStorage.setItem("currentUser", JSON.stringify(me));
-
-    // Show dashboard
-    document.getElementById("dashboardCard").classList.remove("hidden");
-    document.getElementById("openDashboard").classList.remove("hidden");
-    document.getElementById("logoutTop").classList.remove("hidden");
-    if(me?.role === "admin" || me?.isAdmin) document.getElementById("openAdmin").classList.remove("hidden");
-
-    document.getElementById("welcomeUser").textContent = `Welcome, ${me.name || "Investor"}`;
-    document.getElementById("welcomeEmail").textContent = me.email || "";
-    document.getElementById("statBalance").textContent  = currency(me.investment);
-    document.getElementById("statProfit").textContent   = currency(me.profit);
-    document.getElementById("statInterest").textContent = currency(me.totalInterest);
-
-    // Transactions if provided
-    const tbody = document.querySelector("#txTable tbody");
-    tbody.innerHTML = "";
-    (me.transactions || []).slice(0,5).forEach(tx=>{
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${new Date(tx.date||Date.now()).toLocaleString()}</td>
-        <td>${tx.type||"-"}</td>
-        <td>$${currency(tx.amount)}</td>
-        <td>${tx.status||"pending"}</td>`;
-      tbody.appendChild(tr);
-    });
-  }catch(err){
-    alert(err.message);
+  document.getElementById("dashboardName").textContent = `Welcome, ${user.name}`;
+  document.getElementById("dashboardEmail").textContent = `Email: ${user.email}`;
+  if(user.photo){
+    document.getElementById("dashboardPhoto").src = `${backendUrl}${user.photo}`;
+    document.getElementById("dashboardPhoto").style.display = "inline-block";
   }
+
+  document.getElementById("dashboardInvestment").textContent = user.investment || 0;
+  document.getElementById("dashboardProfit").textContent = user.profit || 0;
+  document.getElementById("dashboardInterest").textContent = user.totalInterest || 0;
+
+  document.getElementById("dashboard").style.display = "block";
+
+  // Admin button visibility
+  if(user.isAdmin){
+    document.getElementById("openAdmin").style.display = "inline-block";
+  }
+
+  // Dashboard buttons
+  document.getElementById("withdrawBtn").onclick = ()=> document.getElementById("withdrawModal").style.display = "block";
+  document.getElementById("depositBtn").onclick = ()=> document.getElementById("depositModal").style.display = "block";
+  document.getElementById("logoutBtn").onclick = ()=> {
+    localStorage.clear();
+    document.getElementById("dashboard").style.display = "none";
+    document.getElementById("loginBox").style.display = "block";
+  };
 }
 
-// Buttons on dashboard card
-document.getElementById("depositBtn").onclick  = ()=> openModal("depositModal");
-document.getElementById("withdrawBtn").onclick = ()=> openModal("withdrawModal");
-
-// Deposit
-document.getElementById("submitDeposit").addEventListener("click", async ()=>{
-  const amount = parseFloat(document.getElementById("depositAmount").value);
-  if(!amount || amount<=0) return alert("Enter a valid amount");
-  try{
-    const token = localStorage.getItem("jwtToken");
-    const res = await fetch(`${backendUrl}/api/user/deposit`,{
-      method:"POST",
-      headers:{ "Content-Type":"application/json", "Authorization": `Bearer ${token}` },
-      body: JSON.stringify({ amount })
-    });
-    const data = await res.json();
-    if(!res.ok) throw new Error(data.msg || "Deposit failed");
-    alert(data.msg || "Deposit successful");
-    closeModal("depositModal");
-    document.getElementById("depositAmount").value = "";
-    await hydrateAndShowDashboard();
-  }catch(err){ alert(err.message); }
+// ----- AUTO DASHBOARD ON LOAD -----
+window.addEventListener("DOMContentLoaded", ()=>{
+  const user = JSON.parse(localStorage.getItem("currentUser"));
+  const twoFA = localStorage.getItem("twoFAVerified");
+  if(user && twoFA==="true") showUserDashboard(user);
 });
 
-// Withdraw
-document.getElementById("submitWithdraw").addEventListener("click", async ()=>{
-  const amount = parseFloat(document.getElementById("withdrawAmount").value);
-  const method = document.getElementById("withdrawMethod").value;
-  if(!amount || amount<=0) return alert("Enter a valid amount");
-  try{
-    const token = localStorage.getItem("jwtToken");
-    const res = await fetch(`${backendUrl}/api/user/withdraw`,{
-      method:"POST",
-      headers:{ "Content-Type":"application/json", "Authorization": `Bearer ${token}` },
-      body: JSON.stringify({ amount, method })
-    });
-    const data = await res.json();
-    if(!res.ok) throw new Error(data.msg || "Withdrawal failed");
-    alert(data.msg || "Withdrawal request submitted");
-    closeModal("withdrawModal");
-    document.getElementById("withdrawAmount").value = "";
-    await hydrateAndShowDashboard();
-  }catch(err){ alert(err.message); }
-});
-
-/* ===========================
-   ADMIN
-=========================== */
+// ----- ADMIN -----
 const adminCard = document.getElementById("adminCard");
-document.getElementById("openAdmin").onclick = async ()=>{
+document.getElementById("openAdmin").onclick = async () => {
   adminCard.classList.remove("hidden");
   await loadAdminUsers();
   await loadAdminWithdrawals();
@@ -958,9 +902,7 @@ document.querySelectorAll(".tabs button").forEach(btn=>{
 async function loadAdminUsers(){
   try{
     const token = localStorage.getItem("jwtToken");
-    const res = await fetch(`${backendUrl}/api/admin/users`,{
-      headers:{ "Authorization": `Bearer ${token}` }
-    });
+    const res = await fetch(`${backendUrl}/api/admin/users`, { headers:{ "Authorization": `Bearer ${token}` }});
     const data = await res.json();
     if(!res.ok) throw new Error(data.msg || "Failed to load users");
     const tbody = document.getElementById("adminUsersBody");
@@ -970,8 +912,8 @@ async function loadAdminUsers(){
       tr.innerHTML = `
         <td>${u.name||"-"}</td>
         <td>${u.email}</td>
-        <td>$${currency(u.investment)}</td>
-        <td>$${currency(u.profit)}</td>
+        <td>$${u.investment}</td>
+        <td>$${u.profit}</td>
         <td>
           <div class="row">
             <input type="number" step="0.01" placeholder="Add profit" data-profit-for="${u._id}" />
@@ -981,17 +923,15 @@ async function loadAdminUsers(){
       tbody.appendChild(tr);
     });
 
-    // Bind profit saves
     tbody.querySelectorAll("[data-save-profit]").forEach(btn=>{
       btn.addEventListener("click", async ()=>{
         const id = btn.getAttribute("data-save-profit");
         const val = parseFloat(tbody.querySelector(`[data-profit-for="${id}"]`).value);
-        if(isNaN(val) || val<=0) return alert("Enter profit to add");
+        if(isNaN(val)||val<=0) return alert("Enter profit to add");
         try{
-          const token = localStorage.getItem("jwtToken");
           const res = await fetch(`${backendUrl}/api/admin/users/${id}`,{
             method:"PATCH",
-            headers:{ "Content-Type":"application/json", "Authorization": `Bearer ${token}` },
+            headers:{ "Content-Type":"application/json", "Authorization": `Bearer ${localStorage.getItem("jwtToken")}` },
             body: JSON.stringify({ profitDelta: val })
           });
           const data = await res.json();
@@ -1001,16 +941,13 @@ async function loadAdminUsers(){
         }catch(err){ alert(err.message); }
       });
     });
-
   }catch(err){ alert(err.message); }
 }
 
 async function loadAdminWithdrawals(){
   try{
     const token = localStorage.getItem("jwtToken");
-    const res = await fetch(`${backendUrl}/api/admin/withdrawals`,{
-      headers:{ "Authorization": `Bearer ${token}` }
-    });
+    const res = await fetch(`${backendUrl}/api/admin/withdrawals`, { headers:{ "Authorization": `Bearer ${token}` }});
     const data = await res.json();
     if(!res.ok) throw new Error(data.msg || "Failed to load withdrawals");
     const tbody = document.getElementById("adminWdBody");
@@ -1020,7 +957,7 @@ async function loadAdminWithdrawals(){
       tr.innerHTML = `
         <td>${w.user?.email||"-"}</td>
         <td>${w.method}</td>
-        <td>$${currency(w.amount)}</td>
+        <td>$${w.amount}</td>
         <td>${w.status}</td>
         <td class="row">
           <button class="btn btn-primary" data-approve="${w._id}">Approve</button>
@@ -1029,52 +966,27 @@ async function loadAdminWithdrawals(){
       tbody.appendChild(tr);
     });
 
-    // Bind approve/reject
-    tbody.querySelectorAll("[data-approve]").forEach(btn=>{
-      btn.addEventListener("click", ()=> handleWd(btn.getAttribute("data-approve"), "approve"));
-    });
-    tbody.querySelectorAll("[data-reject]").forEach(btn=>{
-      btn.addEventListener("click", ()=> handleWd(btn.getAttribute("data-reject"), "reject"));
-    });
-
+    tbody.querySelectorAll("[data-approve]").forEach(btn=> btn.addEventListener("click", ()=> handleWd(btn.getAttribute("data-approve"), "approve")));
+    tbody.querySelectorAll("[data-reject]").forEach(btn=> btn.addEventListener("click", ()=> handleWd(btn.getAttribute("data-reject"), "reject")));
   }catch(err){ alert(err.message); }
 }
 
 async function handleWd(id, action){
   try{
     const token = localStorage.getItem("jwtToken");
-    const res = await fetch(`${backendUrl}/api/admin/withdrawals/${id}/${action}`,{
-      method:"POST",
-      headers:{ "Authorization": `Bearer ${token}` }
-    });
-    const data = await res.json();
+    const res = await fetch(`${backendUrl}/api/admin/withdrawals/${id}/${action}`, { method:"POST", headers:{ "Authorization": `Bearer ${token}` }});
+    const data= await res.json();
     if(!res.ok) throw new Error(data.msg || "Action failed");
     alert(`Withdrawal ${action}d`);
     await loadAdminWithdrawals();
   }catch(err){ alert(err.message); }
 }
 
-/* ===========================
-   TOP NAV & SESSION
-=========================== */
-document.getElementById("openDashboard").onclick = ()=> {
-  document.getElementById("adminCard").classList.add("hidden");
-  document.getElementById("dashboardCard").classList.remove("hidden");
-};
-
-document.getElementById("logoutTop").onclick = ()=>{
-  clearSession();
-  location.reload();
-};
-
-// On load: restore session if JWT + 2FA previously done
-window.addEventListener("DOMContentLoaded", async ()=>{
-  const jwt = localStorage.getItem("jwtToken");
-  const twoFA = localStorage.getItem("twoFAVerified");
-  if(jwt && twoFA === "true"){
-    await hydrateAndShowDashboard();
-  }
-});
+// ----- UTILS -----
+function currency(val){ return parseFloat(val||0).toFixed(2); }
 </script>
+
+  
 </body>
 </html>
+
