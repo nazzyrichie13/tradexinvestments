@@ -111,7 +111,7 @@ function show2FAPopup() {
     const code = document.getElementById("twoFAInput").value;
     const user = JSON.parse(localStorage.getItem("currentUser"));
     try {
-      const res = await fetch(`${backendUrl}/verify-2fa`, {
+      const res = await fetch(`${backendUrl}/api/auth/verify-2fa`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: user.email, code })
@@ -139,7 +139,7 @@ function show2FAPopup() {
   document.getElementById("resend2FABtn").onclick = async () => {
     const user = JSON.parse(localStorage.getItem("currentUser"));
     try {
-      const res = await fetch(`${backendUrl}/resend-2fa`, {
+      const res = await fetch(`${backendUrl}/api/auth/resend-2fa`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: user.email })
