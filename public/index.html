@@ -766,7 +766,7 @@ document.getElementById("ctaLogin").onclick  = ()=> openModal("loginModal");
 
 // ----- LOGIN / TERMS / 2FA -----
 document.getElementById("loginSubmit").addEventListener("click", async () => {
- const email = document.getElementById("liEmail")?.value.trim();
+  const email = document.getElementById("liEmail")?.value.trim();
   const password = document.getElementById("liPassword")?.value.trim();
 
   if (!email || !password) {
@@ -792,20 +792,29 @@ document.getElementById("loginSubmit").addEventListener("click", async () => {
       throw new Error("Invalid JSON from server");
     }
 
-    if (!res.ok) {
-      console.error("Login failed", data);
-      throw new Error(data.msg || "Login failed");
+    console.log("Login: Response data", data);
+
+    if (res.ok) {
+      alert("Login successful!");
+      closeModal("loginModal");
+
+      // Optional: Save token & user info
+      if (data.token) {
+        localStorage.setItem("jwtToken", data.token);
+      }
+      if (data.user) {
+        localStorage.setItem("currentUser", JSON.stringify(data.user));
+      }
+
+      // Example: Refresh dashboard
+      // loadDashboard(data.user);
+
+    } else {
+      alert(data.message || "Login failed");
     }
-
-    console.log("Login successful", data);
-    localStorage.setItem("currentUser", JSON.stringify(data));
-
-    // Show terms popup
-    openTermsPopup();
-
   } catch (err) {
-    console.error("Login error:", err);
-    alert(err.message);
+    console.error("Login: Error", err);
+    alert("An error occurred while logging in");
   }
 });
 
