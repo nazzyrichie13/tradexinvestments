@@ -34,7 +34,7 @@ const upload = multer({ storage });
 router.post("/signup", upload.single("photo"), async (req, res) => {
   try {
     // With multipart/form-data, text fields are on req.body, file on req.file
-    const { email, password, fullName, role } = req.body;
+    const { email, password, name, role } = req.body;
 
     if (!email || !password) {
       return res
@@ -56,7 +56,7 @@ router.post("/signup", upload.single("photo"), async (req, res) => {
     const newUser = new User({
       email,
       passwordHash,
-      fullName,
+      name,
       role: role || "user",
       photo: req.file ? req.file.filename : null,
     });
