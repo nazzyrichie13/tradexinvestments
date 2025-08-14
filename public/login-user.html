@@ -69,113 +69,76 @@ p>Welcome to TradexInvest. By using our services, you agree to the following ter
   
 
   <script>
- 
-  const backendUrl = "https://tradexinvestments.onrender.com"; // adjust to your backend
+const backendUrl = "https://tradexinvestments.onrender.com";
 
-async function loginUser(email, password) {
-  try {
-    const res = await fetch(`${backendUrl}/api/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.msg || "Login failed");
+// Populate dashboard after login + 2FA
+function showUserDashboard(user) {
+  const dashboard = document.getElementById("dashboard");
 
-    localStorage.setItem("currentUser", JSON.stringify(data));
-    localStorage.setItem("termsAccepted", "true");
+  // Fill user info
+  document.getElementById("userName").textContent = user.name;
+  if (user.photo) document.getElementById("userPhoto").src = backendUrl + user.photo;
 
-    // 2FA step (assume verified automatically for demo)
-    localStorage.setItem("twoFAVerified", "true");
+  // You can also populate investment/profit/interest dynamically if you fetch them
+  document.getElementById("investment").textContent = user.investment || 0;
+  document.getElementById("profit").textContent = user.profit || 0;
+  document.getElementById("interest").textContent = user.totalInterest || 0;
 
-    // Redirect based on admin or normal user
-    if (email.toLowerCase() === "youngnazzy13@gmail.com") {
-      window.location.href = "admin.html";
-    } else {
-      window.location.href = "index.html";
+  // Logout button
+  document.getElementById("logoutBtn").onclick = () => {
+    localStorage.removeItem("currentUser");
+    localStorage.removeItem("twoFAVerified");
+    localStorage.removeItem("termsAccepted");
+    window.location.reload(); // go back to login
+  };
+
+  // Withdraw button
+  document.getElementById("withdrawBtn").onclick = async () => {
+    const amount = Number(document.getElementById("withdrawAmount").value);
+    const method = document.getElementById("withdrawMethod").value;
+    const msgEl = document.getElementById("withdrawMsg");
+
+    if (!amount || amount <= 0) {
+      msgEl.textContent = "Enter a valid amount";
+      return;
     }
-  } catch (err) {
-    alert(err.message);
+
+    if (method === "bank") {
+      msgEl.textContent = "Bank-to-Bank withdrawals not allowed. Contact support.";
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("jwtToken");
+      const res = await fetch(`${backendUrl}/api/withdraw`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ amount, method })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.msg || "Withdrawal failed");
+      msgEl.style.color = "green";
+      msgEl.textContent = "Withdrawal request submitted successfully!";
+    } catch (err) {
+      msgEl.style.color = "red";
+      msgEl.textContent = err.message;
+    }
+  };
+}
+
+// On index.html load, render dashboard if logged in
+document.addEventListener("DOMContentLoaded", () => {
+  const user = JSON.parse(localStorage.getItem("currentUser"));
+  const twoFAVerified = localStorage.getItem("twoFAVerified");
+
+  if (user && twoFAVerified === "true") {
+    showUserDashboard(user);
   }
-}
-
-
-
-
-let countdownTimer;
-
-function startCountdown(duration = 300) { // 5 minutes
-  clearInterval(countdownTimer);
-  const countdownEl = document.getElementById("countdown");
-  let timeLeft = duration;
-
-  countdownEl.textContent = `Code expires in: ${formatTime(timeLeft)}`;
-  countdownTimer = setInterval(() => {
-    timeLeft--;
-    countdownEl.textContent = `Code expires in: ${formatTime(timeLeft)}`;
-    if (timeLeft <= 0) {
-      clearInterval(countdownTimer);
-      countdownEl.textContent = "Code expired. Please resend.";
-    }
-  }, 1000);
-}
-
-function formatTime(seconds) {
-  const min = Math.floor(seconds / 60);
-  const sec = seconds % 60;
-  return `${min}:${sec < 10 ? "0" + sec : sec}`;
-}
-
-function show2FAPopup() {
-  const popup = document.getElementById("twoFAPopup");
-  popup.style.display = "block";
-  startCountdown();
-
-  document.getElementById("verify2FABtn").onclick = async () => {
-    const code = document.getElementById("twoFAInput").value;
-    const user = JSON.parse(localStorage.getItem("currentUser"));
-    try {
-      const res = await fetch(`${backendUrl}/verify-2fa`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: user.email, code })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.msg);
-
-      localStorage.setItem("twoFAVerified", true);
-      localStorage.setItem("jwtToken", data.token);
-      popup.style.display = "none";
-      clearInterval(countdownTimer);
-      window.location.href = "index.html";
-    } catch (err) {
-      alert(err.message);
-    }
-  };
-
-  document.getElementById("resend2FABtn").onclick = async () => {
-    const user = JSON.parse(localStorage.getItem("currentUser"));
-    try {
-      const res = await fetch(`${backendUrl}/resend-2fa`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: user.email })
-      });
-      const data = await res.json();
-      alert(data.msg);
-      startCountdown();
-    } catch (err) {
-      alert(err.message);
-    }
-  };
-}
-
- 
-    
-    
-   
+});
 </script>
-
 
 
   
