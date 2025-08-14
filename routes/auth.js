@@ -12,108 +12,108 @@ import speakeasy from "speakeasy";
 import { requireAuth } from "../middleware/authMiddleware.js";
 import transporter from "../utils/mailer.js";
 import { send2FACode } from "../utils/mailer.js";
+import nodemailer from "nodemailer";
 const router = express.Router();
 
 
-// --- Multer setup ---
+// ---------------- Multer setup ----------------
 const uploadDir = path.join(process.cwd(), "uploads");
-// ensure uploads folder exists
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
     const uniqueName = Date.now() + "-" + Math.round(Math.random() * 1e9);
     cb(null, uniqueName + path.extname(file.originalname));
   },
 });
+
 const upload = multer({ storage });
 
-// ---------------- REGISTER ----------------
+// ---------------- JWT Secret ----------------
+const JWT_SECRET = process.env.JWT_SECRET || "super_secret_jwt_key";
+
+// ---------------- SIGNUP ----------------
 router.post("/signup", upload.single("photo"), async (req, res) => {
   try {
-    // With multipart/form-data, text fields are on req.body, file on req.file
     const { email, password, name, role } = req.body;
-
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Email and password are required" });
+      if (req.file) fs.unlinkSync(path.join(uploadDir, req.file.filename));
+      return res.status(400).json({ message: "Email and password are required" });
     }
 
-    const existingUser = await User.findOne({ email });
+    const normalizedEmail = email.toLowerCase();
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
-      // If you saved uploaded file but user exists, consider deleting the file to avoid orphans.
-      if (req.file) {
-        try { fs.unlinkSync(path.join(uploadDir, req.file.filename)); } catch (e) {}
-      }
+      if (req.file) fs.unlinkSync(path.join(uploadDir, req.file.filename));
       return res.status(400).json({ message: "User already exists" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-const newUser = new User({
-  name,
-  email,
-  password: hashedPassword, // <- hashed password stored here
-  photo: req.file ? `/uploads/${req.file.filename}` : null,
-});
-await newUser.save();
+    const newUser = new User({
+      name,
+      email: normalizedEmail,
+      password: hashedPassword,
+      role: role || "user",
+      photo: req.file ? `/uploads/${req.file.filename}` : null,
+    });
 
+    await newUser.save();
 
-    // generate token so user is effectively logged in after signup
-    const token = jwt.sign(
-      { id: newUser._id, role: newUser.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
+    // Generate JWT for immediate login (optional)
+    const token = jwt.sign({ id: newUser._id, role: newUser.role }, JWT_SECRET, { expiresIn: "1d" });
 
-    // Return safe user object (remove passwordHash)
     const safeUser = newUser.toObject();
-    delete safeUser.passwordHash;
+    delete safeUser.password;
 
-    return res.status(201).json({ message: "User registered successfully", token, user: safeUser });
+    res.status(201).json({ message: "User registered successfully", token, user: safeUser });
   } catch (err) {
-    console.error(err);
-    // If multer saved file and an error happened, you may want to remove the uploaded file:
-    if (req.file) {
-      try { fs.unlinkSync(path.join(uploadDir, req.file.filename)); } catch (e) {}
-    }
+    console.error("Signup error:", err);
+    if (req.file) fs.unlinkSync(path.join(uploadDir, req.file.filename));
     res.status(500).json({ message: "Server error" });
   }
 });
 
-// JWT secret
-
-const JWT_SECRET = process.env.JWT_SECRET || "super_secret_jwt_key";
-
-// ==================== LOGIN ROUTE ====================
+// ---------------- LOGIN (send 2FA + temp token) ----------------
 router.post("/login", async (req, res) => {
-  console.log("Login attempt:", req.body);
-  const { email, password } = req.body;
-
   try {
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const { email, password } = req.body;
+    const normalizedEmail = email.toLowerCase();
+
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) return res.status(401).json({ msg: "Invalid email" });
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ msg: "Invalid password" });
 
-    // Generate a temporary 2FA secret if user doesn't have one
+    // Generate 2FA secret if missing
     if (!user.twoFASecret) {
       const secret = speakeasy.generateSecret({ length: 20 });
       user.twoFASecret = secret.base32;
       await user.save();
     }
 
-    // Send response for frontend to show 2FA popup
+    // Generate TOTP 2FA code
+    const token2FA = speakeasy.totp({ secret: user.twoFASecret, encoding: "base32" });
+
+    // Send 2FA code via email
+    await transporter.sendMail({
+      from: `"TradexInvest" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: "Your TradexInvest 2FA Code",
+      text: `Your 2FA code is: ${token2FA}`,
+    });
+
+    // Generate temporary token for 2FA verification (expires in 10 min)
+    const tempToken = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: "10m" });
+
     res.json({
-      msg: "Login successful, proceed with 2FA",
+      msg: "Check your email for 2FA code",
+      tempToken,
       email: user.email,
       name: user.name,
-      photo: user.photo || "",
+      photo: user.photo || ""
     });
   } catch (err) {
     console.error("Login error:", err);
@@ -121,61 +121,56 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// ==================== VERIFY 2FA ====================
+// ---------------- VERIFY 2FA ----------------
 router.post("/verify-2fa", async (req, res) => {
-  console.log("2FA verify attempt:", req.body);
-  const { email, code } = req.body;
-
   try {
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const { code, tempToken } = req.body;
+
+    // Decode temporary token
+    const decoded = jwt.verify(tempToken, JWT_SECRET);
+    const user = await User.findById(decoded.id);
     if (!user) return res.status(401).json({ msg: "User not found" });
 
     const verified = speakeasy.totp.verify({
       secret: user.twoFASecret,
       encoding: "base32",
       token: code,
-      window: 2, // allow ±2 intervals
+      window: 2
     });
 
     if (!verified) return res.status(400).json({ msg: "Invalid 2FA code" });
 
-    // Generate JWT
-    const token = jwt.sign(
-      { id: user._id, email: user.email },
-      JWT_SECRET,
-      { expiresIn: "1h" }
-    );
+    // Generate final JWT token for full access
+    const jwtToken = jwt.sign({ id: user._id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: "1h" });
 
-    res.json({ msg: "2FA verified", token });
+    res.json({ msg: "2FA verified", token: jwtToken });
   } catch (err) {
     console.error("2FA verify error:", err);
     res.status(500).json({ msg: "Server error" });
   }
 });
 
-// ==================== RESEND 2FA ====================
+// ---------------- RESEND 2FA ----------------
 router.post("/resend-2fa", async (req, res) => {
-  console.log("2FA resend attempt:", req.body);
-  const { email } = req.body;
-
   try {
+    const { email } = req.body;
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) return res.status(401).json({ msg: "User not found" });
 
-    // Generate a new TOTP code
-    const token = speakeasy.totp({
-      secret: user.twoFASecret,
-      encoding: "base32",
+    const token = speakeasy.totp({ secret: user.twoFASecret, encoding: "base32" });
+
+    await transporter.sendMail({
+      from: `"TradexInvest" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: "Your TradexInvest 2FA Code (Resent)",
+      text: `Your 2FA code is: ${token}`,
     });
 
-    // In production, send token via email/SMS instead of returning
-    res.json({ msg: `Your 2FA code is: ${token}` });
+    res.json({ msg: "2FA code resent to your email" });
   } catch (err) {
     console.error("2FA resend error:", err);
     res.status(500).json({ msg: "Server error" });
   }
 });
 
-
 export default router;
-
