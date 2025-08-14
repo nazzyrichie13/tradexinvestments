@@ -4,9 +4,9 @@ import express from "express";
 import Withdrawal from "../models/Withdrawal.js";
 import User from "../models/User.js";
 import { requireAuth } from "../middleware/authMiddleware.js";
+import transporter from "../utils/mailer.js";
 
-
-import { send2FACode as sendMail } from "../utils/mailer.js"; // reuse transporter
+import { send2FACode } from "../utils/mailer.js"; // reuse transporter
 
 const router = express.Router();
 
