@@ -5,35 +5,11 @@
   <title>User Login - TradexInvest</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
-body {
-  font-family: Arial;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-  background-color: rgba(0, 0, 255, 0.479);
-}
-.login-box {
-  padding:20px;
-  border:1px solid #ccc;
-  border-radius:8px;
-  width:300px;
-  background: #fff;
-}
+body { font-family: Arial; display:flex; justify-content:center; align-items:center; height:100vh; background-color: rgba(0, 0, 255, 0.479);}
+.login-box { padding:20px; border:1px solid #ccc; border-radius:8px; width:300px; background: #fff; }
 input { width:100%; padding:8px; margin:5px 0; }
 button { width:100%; padding:8px; margin-top:10px; cursor:pointer; }
-.popup {
-  display:none;
-  position:fixed;
-  top:50%; left:50%;
-  transform:translate(-50%, -50%);
-  background:#fff;
-  border:1px solid #ccc;
-  padding:20px;
-  z-index:1000;
-  width:300px;
-  border-radius:8px;
-}
+.popup { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:#fff; border:1px solid #ccc; padding:20px; z-index:1000; width:300px; border-radius:8px; }
 .popup h3 { margin-top:0; }
   </style>
 </head>
@@ -51,29 +27,7 @@ button { width:100%; padding:8px; margin-top:10px; cursor:pointer; }
 
 <div id="termsPopup" class="popup">
   <h3>Terms & Conditions</h3>
-  <p>Welcome to TradexInvest. By using our services, you agree to the following terms:</p>
-    
-  <h3>1. Security Features</h3>
-  <ul>
-    <li><strong>Two-Factor Authentication (2FA):</strong> Recommended for account security.</li>
-    <li><strong>Cold Storage:</strong> Majority of assets are stored offline.</li>
-    <li><strong>Encryption:</strong> Sensitive data encrypted in transit and at rest.</li>
-  </ul>
-
-  <h3>2. Fee Structure</h3>
-  <ul>
-    <li>Deposit Fee: <strong>0%</strong></li>
-    <li>Withdrawal Fee: <strong>1.5%</strong></li>
-    <li>Trading Fee: <strong>0.25%</strong></li>
-  </ul>
-
-  <h3>3. Risk Disclosure</h3>
-  <p>Investing in digital assets involves high risk, including the potential loss of your entire investment. Past performance is not indicative of future results.</p>
-
-  <h3>4. User Agreement</h3>
-  <p>By continuing, you acknowledge you have read, understood, and agree to these Terms & Conditions and our Privacy Policy.</p>
-
-  <p>Please accept our terms to continue.</p>
+  <p>By using TradexInvest, you agree to our terms & privacy.</p>
   <button id="acceptTermsBtn">Accept</button>
 </div>
 
@@ -87,51 +41,41 @@ button { width:100%; padding:8px; margin-top:10px; cursor:pointer; }
 
 <script>
 const backendUrl = "https://tradexinvestments.onrender.com"; 
+let countdownTimer;
 
-// Handle login button
-document.getElementById("loginBtn").addEventListener("click", () => {
+// ----- LOGIN -----
+document.getElementById("loginBtn").addEventListener("click", async () => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
+  if (!email || !password) { alert("Enter email & password"); return; }
 
-  if (!email || !password) {
-    alert("Please enter email and password");
-    return;
-  }
-  loginUser(email, password);
-});
-
-// Login function
-async function loginUser(email, password) {
   try {
     const res = await fetch(`${backendUrl}/api/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
+      method:"POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({email, password})
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.msg || "Login failed");
 
+    // Store tempToken and user info
     localStorage.setItem("currentUser", JSON.stringify(data));
     showTermsPopup();
-  } catch (err) {
-    alert(err.message);
-  }
-}
+  } catch (err) { alert(err.message); }
+});
 
-// Terms & Conditions popup
+// ----- TERMS POPUP -----
 function showTermsPopup() {
-  const termsPopup = document.getElementById("termsPopup");
-  termsPopup.style.display = "block";
-
+  const popup = document.getElementById("termsPopup");
+  popup.style.display = "block";
   document.getElementById("acceptTermsBtn").onclick = () => {
-    localStorage.setItem("termsAccepted", "true");
-    termsPopup.style.display = "none";
+    localStorage.setItem("termsAccepted","true");
+    popup.style.display = "none";
     show2FAPopup();
   };
 }
 
-// 2FA popup
-let countdownTimer;
+// ----- 2FA POPUP -----
 function show2FAPopup() {
   const popup = document.getElementById("twoFAPopup");
   popup.style.display = "block";
@@ -140,99 +84,80 @@ function show2FAPopup() {
   document.getElementById("verify2FABtn").onclick = async () => {
     const code = document.getElementById("twoFAInput").value;
     const user = JSON.parse(localStorage.getItem("currentUser"));
+
     try {
       const res = await fetch(`${backendUrl}/api/auth/verify-2fa`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: user.email, code })
+        method:"POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ code, tempToken: user.tempToken }) // ✅ MUST send tempToken
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.msg);
 
-      localStorage.setItem("twoFAVerified", "true");
+      localStorage.setItem("twoFAVerified","true");
       localStorage.setItem("jwtToken", data.token);
-      popup.style.display = "none";
+      popup.style.display="none";
       clearInterval(countdownTimer);
-
-      if (user.email.toLowerCase() === "youngnazzy13@gmail.com") {
-        window.location.href = "admin.html";
-      } else {
-        window.location.href = "index.html";
-      }
-    } catch (err) {
-      alert(err.message);
-    }
+      showUserDashboard(user);
+    } catch(err){ alert(err.message); }
   };
 
   document.getElementById("resend2FABtn").onclick = async () => {
     const user = JSON.parse(localStorage.getItem("currentUser"));
     try {
       const res = await fetch(`${backendUrl}/api/auth/resend-2fa`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: user.email })
+        method:"POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ email:user.email })
       });
       const data = await res.json();
       alert(data.msg);
       startCountdown();
-    } catch (err) {
-      alert(err.message);
-    }
+    } catch(err){ alert(err.message); }
   };
 }
 
-// Countdown timer
-function startCountdown(duration = 300) {
+// ----- COUNTDOWN -----
+function startCountdown(duration=300){
   clearInterval(countdownTimer);
-  const countdownEl = document.getElementById("countdown");
+  const el = document.getElementById("countdown");
   let timeLeft = duration;
-
-  countdownEl.textContent = `Code expires in: ${formatTime(timeLeft)}`;
-  countdownTimer = setInterval(() => {
+  el.textContent = `Code expires in: ${formatTime(timeLeft)}`;
+  countdownTimer = setInterval(()=>{
     timeLeft--;
-    countdownEl.textContent = `Code expires in: ${formatTime(timeLeft)}`;
-    if (timeLeft <= 0) {
-      clearInterval(countdownTimer);
-      countdownEl.textContent = "Code expired. Please resend.";
-    }
-  }, 1000);
+    el.textContent = `Code expires in: ${formatTime(timeLeft)}`;
+    if(timeLeft<=0){ clearInterval(countdownTimer); el.textContent="Code expired. Please resend."; }
+  },1000);
 }
+function formatTime(sec){ return `${Math.floor(sec/60)}:${sec%60<10?"0"+sec%60:sec%60}`; }
 
-function formatTime(seconds) {
-  const min = Math.floor(seconds / 60);
-  const sec = seconds % 60;
-  return `${min}:${sec < 10 ? "0" + sec : sec}`;
-}
-
-// Show dashboard
-function showUserDashboard(user) {
-  document.getElementById("loginForm")?.remove();
+// ----- DASHBOARD -----
+function showUserDashboard(user){
+  document.querySelector(".login-box")?.remove();
   document.getElementById("twoFAPopup")?.remove();
   document.getElementById("termsPopup")?.remove();
 
-  const dashboard = document.getElementById("dashboard") || document.createElement("div");
-  dashboard.id = "dashboard";
-  dashboard.innerHTML = `
+  const dash = document.createElement("div");
+  dash.id="dashboard";
+  dash.innerHTML = `
     <h2>Welcome, ${user.name}</h2>
-    ${user.photo ? `<img src="${backendUrl}${user.photo}" alt="Profile" width="100">` : ""}
+    ${user.photo?`<img src="${backendUrl}${user.photo}" alt="Profile" width="100">`:``}
     <p>Email: ${user.email}</p>
     <button id="logoutBtn">Logout</button>
   `;
-  document.body.appendChild(dashboard);
+  document.body.appendChild(dash);
 
-  document.getElementById("logoutBtn").onclick = () => {
+  document.getElementById("logoutBtn").onclick = ()=>{
     localStorage.clear();
     window.location.reload();
   };
 }
 
-// On page load, show dashboard if already logged in
-document.addEventListener("DOMContentLoaded", () => {
+// ----- AUTO DASHBOARD IF ALREADY LOGGED IN -----
+document.addEventListener("DOMContentLoaded",()=>{
   const user = JSON.parse(localStorage.getItem("currentUser"));
-  const twoFAVerified = localStorage.getItem("twoFAVerified");
-  if (user && twoFAVerified === "true" && window.location.pathname.endsWith("index.html")) {
-    showUserDashboard(user);
-  }
+  const twoFA = localStorage.getItem("twoFAVerified");
+  if(user && twoFA==="true") showUserDashboard(user);
 });
 </script>
 </body>
