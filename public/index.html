@@ -646,6 +646,15 @@
       </div>
     </footer>
 <script>
+// Function to toggle mobile nav
+function toggleMobileNav() {
+  const mobileMenu = document.getElementById("mobileMenu");
+  if (!mobileMenu) return; // prevent error if element not found
+  mobileMenu.classList.toggle("show"); // toggles the 'show' class
+}
+
+// Expose globally if using inline onclick
+window.toggleMobileNav = toggleMobileNav;
 
 const backendUrl = "https://tradexinvestments.onrender.com"; 
 let countdownTimer = null;
