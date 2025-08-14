@@ -647,7 +647,7 @@
     </footer>
 <script>
 
-const backendUrl = "https://tradexinvestments.onrender.com"; // change if needed
+const backendUrl = "https://tradexinvestments.onrender.com"; 
 let countdownTimer = null;
 
 /* ===========================
@@ -742,8 +742,21 @@ document.getElementById("loginSubmit").addEventListener("click", async () => {
       body: JSON.stringify({ email, password })
     });
 
-    const data = await res.json();
+   const text = await res.text(); // get raw response
+    let data;
+    try {
+      data = JSON.parse(text); // parse safely
+    } catch {
+      throw new Error("Invalid JSON from server: " + text);
+    }
+
     if (!res.ok) throw new Error(data.msg || "Login failed");
+
+    localStorage.setItem("currentUser", JSON.stringify(data));
+
+    // Hide login form & overlay
+    document.getElementById("loginForm").style.display = "none";
+    document.getElementById("overlay").style.display = "none";
 
     // data should contain tempToken for 2FA and basic user info
     setSession(data, null); // store in localStorage
