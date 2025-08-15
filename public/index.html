@@ -783,7 +783,7 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
   }
 
   try {
-    const res = await fetch(`${backendUrl}/signup`, {
+    const res = await fetch(`${backendUrl}/auth/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
