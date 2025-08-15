@@ -613,7 +613,7 @@
         <div class="contact-info">
           <p>
             <i class="fas fa-envelope"></i>
-            <a href="support@tradexinvest.net">support@tradexinvest.com</a>
+            <a href="support@tradexinvest.net">support@tradexinvest.net</a>
           </p>
           <p>
             <i class="fas fa-phone"></i>
@@ -854,13 +854,12 @@ function showDashboard(user) {
   } else {
     document.getElementById("openAdmin")?.classList.add("hidden");
   }
-}
+};
 
 document.getElementById("openLogin").onclick = () => openModal("loginModal");
 document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
 
-
- document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
   const backendUrl = "https://tradexinvestments.onrender.com";
 
   // Elements
@@ -880,20 +879,14 @@ document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
     e.preventDefault();
     const email = emailInput?.value.trim();
     const password = passInput?.value.trim();
-    const type = loginType?.value || "user"; // default to "user"
 
     if (!email || !password) {
       alert("Enter email & password");
       return;
     }
 
-    // Choose endpoint based on login type
-    const loginUrl = type === "admin"
-      ? `${backendUrl}/api/admin/login`
-      : `${backendUrl}/api/auth/login`;
-
     try {
-      const res = await fetch(loginUrl, {
+      const res = await fetch(`${backendUrl}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
@@ -902,37 +895,32 @@ document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
       const data = await res.json();
 
       if (!res.ok || data.success === false) {
-        throw new Error(data.message || data.msg || "Invalid login");
+        throw new Error(data.message || "Invalid login");
       }
 
-      if (type === "admin") {
-        // Save admin token and go straight to admin dashboard
-        if (data.token) {
-          localStorage.setItem("jwtToken", data.token);
-        }
-        localStorage.setItem("currentAdmin", JSON.stringify(data));
-        alert("Admin login successful!");
-        window.location.href = "/admin-dashboard.html"; // Change to your admin dashboard page
+      // Admin login
+      if (data.user.role === "admin") {
+        localStorage.setItem("currentAdmin", JSON.stringify(data.user));
+        if (data.token) localStorage.setItem("jwtToken", data.token);
+
+        document.getElementById("dashboardCard").classList.add("hidden");
+        document.getElementById("adminCard").classList.remove("hidden");
+
+        console.log("Admin login successful:", data.user.email);
         return;
       }
 
-      // For user login, continue with terms/2FA flow
+      // User login: handle terms & 2FA
+      localStorage.setItem("currentUser", JSON.stringify({ ...data.user, tempToken: data.tempToken || null }));
       localStorage.setItem("termsAccepted", "false");
       localStorage.setItem("twoFAVerified", "false");
 
-      localStorage.setItem(
-        "currentUser",
-        JSON.stringify({
-          ...data.user,
-          tempToken: data.tempToken || null
-        })
-      );
+      document.getElementById("adminCard").classList.add("hidden");
+      document.getElementById("dashboardCard").classList.remove("hidden");
 
-      if (data.token) {
-        localStorage.setItem("jwtToken", data.token);
-      }
-
-      closeModal?.("loginModal");
+      // Fill user info
+      document.getElementById("welcomeUser").textContent = data.user.name || "User";
+      document.getElementById("welcomeEmail").textContent = data.user.email;
 
       if (data.requiresTerms) {
         openModal?.("termsModal");
@@ -941,11 +929,9 @@ document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
 
       if (data.requires2FA) {
         openModal?.("twoFAModal");
-        startTwofaCountdown(300);
+        startTwofaCountdown?.(300);
         return;
       }
-
-      showDashboard(data.user);
 
     } catch (err) {
       console.error("Login error:", err);
@@ -958,7 +944,7 @@ document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
     localStorage.setItem("termsAccepted", "true");
     closeModal?.("termsModal");
     openModal?.("twoFAModal");
-    startTwofaCountdown(300);
+    startTwofaCountdown?.(300);
   });
 
   // ===== VERIFY 2FA =====
@@ -980,17 +966,18 @@ document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
       const data = await res.json();
 
       if (!res.ok || data.success === false) {
-        throw new Error(data.message || data.msg || "Invalid 2FA code");
+        throw new Error(data.message || "Invalid 2FA code");
       }
 
-      if (data.token) {
-        localStorage.setItem("jwtToken", data.token);
-      }
+      if (data.token) localStorage.setItem("jwtToken", data.token);
       localStorage.setItem("twoFAVerified", "true");
       localStorage.setItem("currentUser", JSON.stringify(data.user));
 
       closeModal?.("twoFAModal");
-      showDashboard(data.user);
+
+      // Fill user dashboard info
+      document.getElementById("welcomeUser").textContent = data.user.name || "User";
+      document.getElementById("welcomeEmail").textContent = data.user.email;
 
     } catch (err) {
       console.error("2FA verification error:", err);
@@ -1011,10 +998,10 @@ document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
       const data = await res.json();
 
       if (!res.ok || data.success === false) {
-        throw new Error(data.message || data.msg || "Failed to resend code");
+        throw new Error(data.message || "Failed to resend code");
       }
 
-      startTwofaCountdown(300);
+      startTwofaCountdown?.(300);
       alert("A new 2FA code has been sent to your email.");
 
     } catch (err) {
@@ -1022,6 +1009,10 @@ document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
       alert(err.message || "Could not resend code");
     }
   });
+
+});
+
+ 
 
   // ===== 2FA COUNTDOWN =====
   function startTwofaCountdown(seconds) {
@@ -1044,7 +1035,7 @@ document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
       if (remaining <= 0) clearInterval(twofaTimer);
     }, 1000);
   }
-});
+;
 
 
 
