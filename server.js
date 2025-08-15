@@ -12,7 +12,8 @@ import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/user.js";
 import contactRoutes from "./routes/contact.js";
 import withdrawalRoutes from "./routes/withdrawals.js";
-
+import User from "./models/User.js";
+import bcrypt from "bcrypt";
 // 2️⃣ Load environment variables
 dotenv.config();
 
@@ -31,13 +32,48 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-
+ app.get("/", (req, res) => res.send("TradexInvest backend is running"));
 // 5️⃣ API routes **before catch-all**
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/withdrawals", withdrawalRoutes);
 app.use("/api/admin", adminRoutes); 
+
+
+
+async function startServer() {
+  try {
+    await mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("MongoDB connected");
+
+    // Permanent admin
+    const adminEmail = process.env.ADMIN_EMAIL || "admin@tradex.com";
+    const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
+
+    let admin = await User.findOne({ email: adminEmail });
+    if (!admin) {
+      admin = await User.create({
+        name: "Permanent Admin",
+        email: adminEmail,
+        password: adminPassword,
+        role: "admin",
+        balance: 0,
+        profit: 0,
+        interest: 0,
+      });
+      console.log(`✅ Permanent admin created: ${adminEmail}`);
+    } else {
+      console.log(`ℹ️ Admin already exists: ${adminEmail}`);
+    }
+
+    // Start Express server...
+  } catch (err) {
+    console.error("❌ Failed to start server:", err);
+  }
+}
+
+startServer();
 
 
 // 7️⃣ MongoDB connection + server start
@@ -52,3 +88,4 @@ mongoose.connect(process.env.MONGODB_URI)
     console.error('❌ MongoDB connection error:', err);
     process.exit(1);
   });
+  
