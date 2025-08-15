@@ -3,52 +3,55 @@ import express from "express";
 import User from "../models/User.js";
 import Investment from "../models/Investment.js";
 import { requireAuth } from "../middleware/authMiddleware.js";
+import Withdrawal from "../models/Withdrawal.js"; // Add this at the top
+
 
 
 const router = express.Router();
-/**
- * GET /api/user/me
- * Returns: { name, email, photo, stats: { investment, profit, interest, available }, withdrawals: [...] }
- * "interest" here is just profit for simplicity; customize if you calculate interest separately.
- */
-router.get("/me", requireAuth, async (req, res) => {
+
+  
+router.post("/transactions", requireAuth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select("name email photo");
-    if (!user) return res.status(404).json({ msg: "User not found" });
+    const { type, amount, method } = req.body;
+    if (!["deposit", "withdraw"].includes(type))
+      return res.status(400).json({ msg: "Invalid type" });
 
-    const inv = await Investment.find({ userId: req.userId, status: "active" });
-    const totalPrincipal = inv.reduce((s, x) => s + x.principal, 0);
-    const totalProfit = inv.reduce((s, x) => s + x.profit, 0);
+    if (!amount || amount <= 0)
+      return res.status(400).json({ msg: "Invalid amount" });
 
-    // Available = principal + profit - pending withdrawals
-    const pending = await Withdrawal.aggregate([
-      { $match: { userId: user._id, status: "pending" } },
-      { $group: { _id: null, amt: { $sum: "$amount" } } }
-    ]);
-    const pendingAmt = pending[0]?.amt || 0;
-
-    const available = Math.max(totalPrincipal + totalProfit - pendingAmt, 0);
-
-    const recentWithdrawals = await Withdrawal.find({ userId: req.userId })
-      .sort({ createdAt: -1 })
-      .limit(10)
-      .select("amount method status createdAt");
-
-    res.json({
-      name: user.name,
-      email: user.email,
-      photo: user.photo,
-      stats: {
-        investment: totalPrincipal,
-        profit: totalProfit,
-        interest: totalProfit, // adjust if you track separately
-        available
-      },
-      withdrawals: recentWithdrawals
+    const TxModel = type === "withdraw" ? Withdrawal : Deposit;
+    const tx = await TxModel.create({
+      userId: req.userId,
+      amount,
+      method: method || "wallet",
+      status: "pending"
     });
+
+    res.json({ msg: `${type} request submitted`, transaction: tx });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+router.get("/transactions/my", requireAuth, async (req, res) => {
+  try {
+    const withdrawals = await Withdrawal.find({ userId: req.userId })
+      .select("type amount status createdAt method")
+      .lean();
+    const deposits = await Deposit.find({ userId: req.userId })
+      .select("type amount status createdAt method")
+      .lean();
+
+    const transactions = [...withdrawals, ...deposits]
+      .map(t => ({ ...t, type: t.type || (t.modelName === "Withdrawal" ? "withdraw" : "deposit") }))
+      .sort((a, b) => b.createdAt - a.createdAt);
+
+    res.json({ transactions });
   } catch (err) {
     res.status(500).json({ msg: "Server error" });
   }
 });
+
+
 
 export default router;

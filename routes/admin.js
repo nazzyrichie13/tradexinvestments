@@ -124,6 +124,42 @@ router.put("/update-user-investment/:id", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+import { requireAdmin } from "../middleware/adminMiddleware.js";
+
+router.get("/admin/transactions", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const withdrawals = await Withdrawal.find()
+      .populate("userId", "name email")
+      .lean();
+    const deposits = await Deposit.find()
+      .populate("userId", "name email")
+      .lean();
+
+    res.json({ transactions: [...withdrawals, ...deposits] });
+  } catch (err) {
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
+router.patch("/admin/transactions/:id", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!["pending", "success", "fail"].includes(status))
+      return res.status(400).json({ msg: "Invalid status" });
+
+    let tx = await Withdrawal.findById(req.params.id);
+    if (!tx) tx = await Deposit.findById(req.params.id);
+    if (!tx) return res.status(404).json({ msg: "Transaction not found" });
+
+    tx.status = status;
+    await tx.save();
+
+    res.json({ msg: "Status updated", transaction: tx });
+  } catch (err) {
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
 
 
 export default router;

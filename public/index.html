@@ -1038,120 +1038,265 @@ document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
 
 
 // ----- 2FA COUNTDOWN -----
+(() => {
+  const backendUrl = window.backendUrl || "https://tradexinvestments.onrender.com";
+
+  // ---------- helpers ----------
+  const token = () => localStorage.getItem("jwtToken") || "";
+  const authHeaders = () => ({
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token()}`
+  });
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+  const fmtMoney = (n) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtDate = (d) => new Date(d).toLocaleString();
+
+  // ---------- populate dashboard stats ----------
+  function hydrateStatsFromUser(user) {
+    if (!user) return;
+    if ($("#statBalance"))  $("#statBalance").textContent  = fmtMoney(user.balance ?? 0);
+    if ($("#statProfit"))   $("#statProfit").textContent   = fmtMoney(user.profit ?? 0);
+    if ($("#statInterest")) $("#statInterest").textContent = fmtMoney(user.interest ?? 0);
+    if ($("#welcomeUser"))  $("#welcomeUser").textContent  = `Welcome, ${user.name || "User"}`;
+    if ($("#welcomeEmail")) $("#welcomeEmail").textContent = user.email || "";
+  }
+
+  // ---------- render user's transactions ----------
+  async function loadMyTransactions() {
+    const tbody = $("#txTable tbody");
+    if (!tbody) return;
+
+    tbody.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
+    try {
+      const res = await fetch(`${backendUrl}/api/transactions/my`, { headers: authHeaders() });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to load transactions");
+
+      const txs = Array.isArray(data.transactions) ? data.transactions : data;
+      if (!txs.length) {
+        tbody.innerHTML = `<tr><td colspan="4">No transactions yet.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = txs
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .map(tx => `
+          <tr>
+            <td>${fmtDate(tx.createdAt)}</td>
+            <td>${(tx.type || "").toUpperCase()}</td>
+            <td>$${fmtMoney(tx.amount)}</td>
+            <td>${(tx.status || "pending").toUpperCase()}</td>
+          </tr>
+        `).join("");
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="4">Error: ${e.message}</td></tr>`;
+    }
+  }
+
+  // ---------- submit transaction ----------
+  async function createTransaction({ type, amount, method }) {
+    const body = { type, amount, method, status: "pending" };
+    const res = await fetch(`${backendUrl}/api/transactions`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || `Failed to create ${type}`);
+    return data;
+  }
+
+  // ---------- deposit ----------
+  const submitDepositBtn = $("#submitDeposit");
+  if (submitDepositBtn) {
+    submitDepositBtn.addEventListener("click", async () => {
+      const amount = parseFloat($("#depositAmount")?.value.trim());
+      if (isNaN(amount) || amount <= 0) return alert("Please enter a valid deposit amount.");
+
+      try {
+        await createTransaction({ type: "deposit", amount, method: "wallet" });
+        alert(`Deposit request of $${fmtMoney(amount)} submitted and is pending admin approval.`);
+        $("#depositAmount").value = "";
+        window.closeModal?.("depositModal");
+        loadMyTransactions();
+      } catch (e) {
+        alert(e.message);
+      }
+    });
+  }
+
+  // ---------- withdraw ----------
+  const submitWithdrawBtn = $("#submitWithdraw");
+  if (submitWithdrawBtn) {
+    submitWithdrawBtn.addEventListener("click", async () => {
+      const amount = parseFloat($("#withdrawAmount")?.value.trim());
+      const method = $("#withdrawMethod")?.value || "bank";
+      if (isNaN(amount) || amount <= 0) return alert("Please enter a valid withdrawal amount.");
+
+      try {
+        await createTransaction({ type: "withdraw", amount, method });
+        alert(`Withdrawal request of $${fmtMoney(amount)} via ${method} submitted and is pending admin approval.`);
+        $("#withdrawAmount").value = "";
+        $("#withdrawMethod").value = "bank";
+        window.closeModal?.("withdrawModal");
+        loadMyTransactions();
+      } catch (e) {
+        alert(e.message);
+      }
+    });
+  }
+
+  // ---------- admin transactions ----------
+  async function loadAdminTransactions() {
+    const userBody = $("#adminUsersBody");
+    const wdBody = $("#adminWdBody");
+    if (!userBody && !wdBody) return;
+
+    try {
+      const res = await fetch(`${backendUrl}/api/admin/transactions`, { headers: authHeaders() });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to load admin transactions");
+
+      const txs = Array.isArray(data.transactions) ? data.transactions : data;
+
+      // deposits
+      if (userBody) {
+        const deposits = txs.filter(t => t.type === "deposit");
+        userBody.innerHTML = deposits.length ? deposits.map(rowHTML).join("") : `<tr><td colspan="5">No deposit requests.</td></tr>`;
+      }
+
+      // withdrawals
+      if (wdBody) {
+        const withdrawals = txs.filter(t => t.type === "withdraw");
+        wdBody.innerHTML = withdrawals.length ? withdrawals.map(rowHTML).join("") : `<tr><td colspan="5">No withdrawal requests.</td></tr>`;
+      }
+
+      $$(".admin-save").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const id = btn.dataset.id;
+          const status = $(`select[data-id="${id}"]`)?.value || "pending";
+          try {
+            await updateTransactionStatus(id, status);
+            alert("Status updated.");
+            loadAdminTransactions();
+          } catch (err) {
+            alert(err.message);
+          }
+        });
+      });
+
+    } catch (e) {
+      if (userBody) userBody.innerHTML = `<tr><td colspan="5">Error: ${e.message}</td></tr>`;
+      if (wdBody) wdBody.innerHTML = `<tr><td colspan="5">Error: ${e.message}</td></tr>`;
+    }
+  }
+
+  function rowHTML(tx) {
+    const userName = tx.user?.name || tx.userName || "User";
+    return `
+      <tr>
+        <td>${userName}</td>
+        <td>${tx.method || "-"}</td>
+        <td>$${fmtMoney(tx.amount)}</td>
+        <td>
+          <select data-id="${tx._id}">
+            <option value="pending" ${tx.status==="pending"?"selected":""}>pending</option>
+            <option value="success" ${tx.status==="success"?"selected":""}>success</option>
+            <option value="fail" ${tx.status==="fail"?"selected":""}>fail</option>
+          </select>
+        </td>
+        <td><button class="btn btn-primary admin-save" data-id="${tx._id}">Save</button></td>
+      </tr>
+    `;
+  }
+
+  async function updateTransactionStatus(id, status) {
+    const res = await fetch(`${backendUrl}/api/admin/transactions/${id}`, {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify({ status })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Update failed");
+    return data;
+  }
+
+  // ---------- tab switching ----------
+  $$(".tabs button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      $$(".tabs button").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      $("#usersTab")?.classList.toggle("hidden", btn.dataset.tab !== "usersTab");
+      $("#withdrawalsTab")?.classList.toggle("hidden", btn.dataset.tab !== "withdrawalsTab");
+    });
+  });
+
+  // ---------- init ----------
+  function initDashboardViews() {
+    const user = JSON.parse(localStorage.getItem("currentUser") || "null");
+    hydrateStatsFromUser(user);
+    loadMyTransactions();
+
+    if (user?.role === "admin") {
+      $("#adminCard")?.classList.remove("hidden");
+      loadAdminTransactions();
+    }
+  }
+
+  window.refreshDashboard = () => {
+    loadMyTransactions();
+    const user = JSON.parse(localStorage.getItem("currentUser") || "null");
+    hydrateStatsFromUser(user);
+    if (user?.role === "admin") loadAdminTransactions();
+  };
+
+  document.addEventListener("DOMContentLoaded", initDashboardViews);
+})();
 
 
-
-
-// ----- ADMIN -----
 const adminCard = document.getElementById("adminCard");
-document.getElementById("openAdmin").onclick = async () => {
+const dashboardCard = document.getElementById("dashboardCard");
+
+// Open admin card from dashboard button
+document.getElementById("openAdmin").onclick = () => {
   adminCard.classList.remove("hidden");
-  await loadAdminUsers();
-  await loadAdminWithdrawals();
-};
-document.getElementById("openDashboard").onclick = ()=> {
-  adminCard.classList.add("hidden");
-  document.getElementById("dashboardCard").classList.remove("hidden");
+  dashboardCard.classList.add("hidden");
 };
 
-document.querySelectorAll(".tabs button").forEach(btn=>{
-  btn.addEventListener("click", ()=>{
-    document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));
-    btn.classList.add("active");
-    const tab = btn.getAttribute("data-tab");
-    document.getElementById("usersTab").classList.toggle("hidden", tab!=="usersTab");
-    document.getElementById("withdrawalsTab").classList.toggle("hidden", tab!=="withdrawalsTab");
+// Back to dashboard from admin
+document.getElementById("openDashboard").onclick = () => {
+  adminCard.classList.add("hidden");
+  dashboardCard.classList.remove("hidden");
+};
+
+// Handle tab switching
+document.querySelectorAll(".tabs button").forEach(button => {
+  button.addEventListener("click", async () => {
+    // Hide all tab contents
+    document.querySelectorAll(".tab-content").forEach(tab => {
+      tab.classList.add("hidden");
+    });
+
+    // Show the clicked tab's content
+    const targetId = button.getAttribute("data-tab");
+    const targetTab = document.getElementById(targetId);
+    if (targetTab) {
+      targetTab.classList.remove("hidden");
+
+      // Load data for this tab only when it is clicked
+      if (targetId === "usersTab") {
+        await loadAdminUsers();
+      }
+      if (targetId === "withdrawalsTab") {
+        await loadAdminWithdrawals();
+      }
+    }
   });
 });
-
-async function loadAdminUsers(){
-  try{
-    const token = localStorage.getItem("jwtToken");
-    const res = await fetch(`${backendUrl}/api/admin/users`, { headers:{ "Authorization": `Bearer ${token}` }});
-    const data = await res.json();
-    if(!res.ok) throw new Error(data.msg || "Failed to load users");
-    const tbody = document.getElementById("adminUsersBody");
-    tbody.innerHTML = "";
-    data.forEach(u=>{
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${u.name||"-"}</td>
-        <td>${u.email}</td>
-        <td>$${u.investment}</td>
-        <td>$${u.profit}</td>
-        <td>
-          <div class="row">
-            <input type="number" step="0.01" placeholder="Add profit" data-profit-for="${u._id}" />
-            <button class="btn btn-primary" data-save-profit="${u._id}">Add</button>
-          </div>
-        </td>`;
-      tbody.appendChild(tr);
-    });
-
-    tbody.querySelectorAll("[data-save-profit]").forEach(btn=>{
-      btn.addEventListener("click", async ()=>{
-        const id = btn.getAttribute("data-save-profit");
-        const val = parseFloat(tbody.querySelector(`[data-profit-for="${id}"]`).value);
-        if(isNaN(val)||val<=0) return alert("Enter profit to add");
-        try{
-          const res = await fetch(`${backendUrl}/api/admin/users/${id}`,{
-            method:"PATCH",
-            headers:{ "Content-Type":"application/json", "Authorization": `Bearer ${localStorage.getItem("jwtToken")}` },
-            body: JSON.stringify({ profitDelta: val })
-          });
-          const data = await res.json();
-          if(!res.ok) throw new Error(data.msg || "Failed to update profit");
-          alert("Profit updated");
-          await loadAdminUsers();
-        }catch(err){ alert(err.message); }
-      });
-    });
-  }catch(err){ alert(err.message); }
-}
-
-async function loadAdminWithdrawals(){
-  try{
-    const token = localStorage.getItem("jwtToken");
-    const res = await fetch(`${backendUrl}/api/admin/withdrawals`, { headers:{ "Authorization": `Bearer ${token}` }});
-    const data = await res.json();
-    if(!res.ok) throw new Error(data.msg || "Failed to load withdrawals");
-    const tbody = document.getElementById("adminWdBody");
-    tbody.innerHTML = "";
-    data.forEach(w=>{
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${w.user?.email||"-"}</td>
-        <td>${w.method}</td>
-        <td>$${w.amount}</td>
-        <td>${w.status}</td>
-        <td class="row">
-          <button class="btn btn-primary" data-approve="${w._id}">Approve</button>
-          <button class="btn btn-danger" data-reject="${w._id}">Reject</button>
-        </td>`;
-      tbody.appendChild(tr);
-    });
-
-    tbody.querySelectorAll("[data-approve]").forEach(btn=> btn.addEventListener("click", ()=> handleWd(btn.getAttribute("data-approve"), "approve")));
-    tbody.querySelectorAll("[data-reject]").forEach(btn=> btn.addEventListener("click", ()=> handleWd(btn.getAttribute("data-reject"), "reject")));
-  }catch(err){ alert(err.message); }
-}
-
-async function handleWd(id, action){
-  try{
-    const token = localStorage.getItem("jwtToken");
-    const res = await fetch(`${backendUrl}/api/admin/withdrawals/${id}/${action}`, { method:"POST", headers:{ "Authorization": `Bearer ${token}` }});
-    const data= await res.json();
-    if(!res.ok) throw new Error(data.msg || "Action failed");
-    alert(`Withdrawal ${action}d`);
-    await loadAdminWithdrawals();
-  }catch(err){ alert(err.message); }
-}
-
-// ----- UTILS -----
-function currency(val){ return parseFloat(val||0).toFixed(2); }
 </script>
 
   
 </body>
 </html>
-
+ 
