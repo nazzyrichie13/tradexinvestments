@@ -1,10 +1,16 @@
 // routes/admin.js
 import express from "express";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+
 import Admin from "../models/Admin.js";
 import User from "../models/User.js";
-import { requireAdmin } from "../middleware/adminMiddleware.js";
-import transporter from "../utils/mailer.js";
+import Withdrawal from "../models/Withdrawal.js";
+import Deposit from "../models/Deposit.js";
 
+import { requireAdmin } from "../middleware/adminMiddleware.js";
+import { requireAuth } from "../middleware/authMiddleware.js";
+import transporter, { sendMail } from "../utils/mailer.js";
 
 const router = express.Router();
 
@@ -64,6 +70,9 @@ router.get("/users", authenticateAdmin, async (req, res) => {
   }
 });
 
+// =========================
+// Withdrawals
+// =========================
 router.get("/withdrawals", requireAuth, requireAdmin, async (req, res) => {
   const list = await Withdrawal.find()
     .sort({ createdAt: -1 })
@@ -71,11 +80,10 @@ router.get("/withdrawals", requireAuth, requireAdmin, async (req, res) => {
   res.json(list);
 });
 
-// POST approve/reject
 router.post("/withdrawals/:id", requireAuth, requireAdmin, async (req, res) => {
   try {
     const { action } = req.body; // 'approve' or 'reject'
-    if (!["approve","reject"].includes(action))
+    if (!["approve", "reject"].includes(action))
       return res.status(400).json({ msg: "Invalid action" });
 
     const withdrawal = await Withdrawal.findById(req.params.id).populate("userId");
@@ -84,10 +92,10 @@ router.post("/withdrawals/:id", requireAuth, requireAdmin, async (req, res) => {
     withdrawal.status = action === "approve" ? "approved" : "rejected";
     await withdrawal.save();
 
-    // Send email notification to user
-    const msg = action === "approve" 
-      ? `Your withdrawal of $${withdrawal.amount} via ${withdrawal.method} has been approved.`
-      : `Your withdrawal of $${withdrawal.amount} via ${withdrawal.method} has been rejected. Please contact support.`;
+    const msg =
+      action === "approve"
+        ? `Your withdrawal of $${withdrawal.amount} via ${withdrawal.method} has been approved.`
+        : `Your withdrawal of $${withdrawal.amount} via ${withdrawal.method} has been rejected. Please contact support.`;
 
     await sendMail(withdrawal.userId.email, msg);
 
@@ -98,6 +106,7 @@ router.post("/withdrawals/:id", requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// =========================
 // Admin: Update User Investment
 // =========================
 router.put("/update-user-investment/:id", async (req, res) => {
@@ -123,8 +132,10 @@ router.put("/update-user-investment/:id", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-import { requireAdmin } from "../middleware/adminMiddleware.js";
 
+// =========================
+// Transactions
+// =========================
 router.get("/admin/transactions", requireAuth, requireAdmin, async (req, res) => {
   try {
     const withdrawals = await Withdrawal.find()
@@ -158,7 +169,5 @@ router.patch("/admin/transactions/:id", requireAuth, requireAdmin, async (req, r
     res.status(500).json({ msg: "Server error" });
   }
 });
-
-
 
 export default router;
