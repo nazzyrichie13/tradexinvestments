@@ -855,9 +855,19 @@ document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
       localStorage.setItem("termsAccepted", "false");
       localStorage.setItem("twoFAVerified", "false");
 
-      // Save partial session info
-      if (data.token) localStorage.setItem("jwtToken", data.token);
-      localStorage.setItem("currentUser", JSON.stringify(data.user));
+      // Save tempToken + user together
+      localStorage.setItem(
+        "currentUser",
+        JSON.stringify({
+          ...data.user,
+          tempToken: data.tempToken || null
+        })
+      );
+
+      // Save JWT token if provided
+      if (data.token) {
+        localStorage.setItem("jwtToken", data.token);
+      }
 
       closeModal?.("loginModal");
 
@@ -912,12 +922,14 @@ document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
         throw new Error(data.message || data.msg || "Invalid 2FA code");
       }
 
-      if (data.token) localStorage.setItem("jwtToken", data.token);
+      if (data.token) {
+        localStorage.setItem("jwtToken", data.token);
+      }
       localStorage.setItem("twoFAVerified", "true");
       localStorage.setItem("currentUser", JSON.stringify(data.user));
 
       closeModal?.("twoFAModal");
-      showDashboard(user);
+      showDashboard(data.user);
 
     } catch (err) {
       console.error("2FA verification error:", err);
@@ -949,6 +961,8 @@ document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
       alert(err.message || "Could not resend code");
     }
   });
+});
+
 
   // ===== 2FA COUNTDOWN =====
   function startTwofaCountdown(seconds) {
@@ -972,7 +986,7 @@ document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
     }, 1000);
   }
 
-});
+
 
 // ----- 2FA COUNTDOWN -----
 
