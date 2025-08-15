@@ -7,14 +7,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { Server } from 'socket.io';
 
-// Routes
-
-import authRoutes from "./routes/auth.js";
-import userRoutes from "./routes/user.js";
-
-
-import contactRoutes from "./routes/contact.js";
-import withdrawalRoutes from "./routes/withdrawals.js";
 
 // Load environment variables
 dotenv.config();
@@ -41,6 +33,12 @@ app.use("/api/user", userRoutes);
 
 app.use("/api/contact", contactRoutes);
 app.use("/api/withdrawals", withdrawalRoutes);
+
+
+import authRoutes from "./routes/auth.js";
+import userRoutes from "./routes/user.js";
+import contactRoutes from "./routes/contact.js";
+import withdrawalRoutes from "./routes/withdrawals.js";
 
 // Test route
 app.get('/', (req, res) => {

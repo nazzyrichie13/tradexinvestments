@@ -811,50 +811,44 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
 function showDashboard(user) {
   console.log("Showing dashboard for:", user);
 
-  // Hide modals if any are open
+  // Hide all modals
   closeModal?.("loginModal");
   closeModal?.("termsModal");
   closeModal?.("twoFAModal");
 
-  // Show dashboard card
+  // Cards
   const dashboardCard = document.getElementById("dashboardCard");
-  if (dashboardCard) {
-    dashboardCard.classList.remove("hidden");
+  const adminCard     = document.getElementById("adminCard");
+
+  // Show proper card based on role
+  if (user.role === "admin") {
+    adminCard?.classList.remove("hidden");
+    dashboardCard?.classList.add("hidden");
+  } else {
+    dashboardCard?.classList.remove("hidden");
+    adminCard?.classList.add("hidden");
+
+    // Fill user stats
+    document.getElementById("welcomeUser").textContent = `Welcome, ${user.name || "User"}`;
+    document.getElementById("welcomeEmail").textContent = user.email || "";
+
+    document.getElementById("statBalance").textContent  = user.balance || 0;
+    document.getElementById("statProfit").textContent   = user.profit || 0;
+    document.getElementById("statInterest").textContent = user.interest || 0;
   }
 
-  // Hide public "Get started" content if needed
-  const publicCard = document.querySelector('#ctaSignup')?.closest('.card');
-  if (publicCard) {
-    publicCard.classList.add("hidden");
-  }
-
-  // Fill in user details
-  document.getElementById("welcomeUser").textContent = `Welcome, ${user?.name || "User"}`;
-  document.getElementById("welcomeEmail").textContent = user?.email || "";
-
-  if (user?.balance !== undefined) {
-    document.getElementById("statBalance").textContent = user.balance;
-  }
-  if (user?.profit !== undefined) {
-    document.getElementById("statProfit").textContent = user.profit;
-  }
-  if (user?.interest !== undefined) {
-    document.getElementById("statInterest").textContent = user.interest;
-  }
-
-  // Update topbar buttons
+  // Topbar buttons
   document.getElementById("openLogin")?.classList.add("hidden");
   document.getElementById("openSignup")?.classList.add("hidden");
   document.getElementById("openDashboard")?.classList.remove("hidden");
   document.getElementById("logoutTop")?.classList.remove("hidden");
 
-  // If admin
-  if (user?.role === "admin") {
+  if (user.role === "admin") {
     document.getElementById("openAdmin")?.classList.remove("hidden");
   } else {
     document.getElementById("openAdmin")?.classList.add("hidden");
   }
-};
+}
 
 document.getElementById("openLogin").onclick = () => openModal("loginModal");
 document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
@@ -862,19 +856,29 @@ document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
 document.addEventListener("DOMContentLoaded", () => {
   const backendUrl = "https://tradexinvestments.onrender.com";
 
-  // Elements
+  // Restore saved user/admin
+  const savedUser = localStorage.getItem("currentUser") || localStorage.getItem("currentAdmin");
+  if (savedUser) {
+    try {
+      const userObj = JSON.parse(savedUser);
+      showDashboard(userObj);
+    } catch (err) {
+      console.error("Failed to parse saved user:", err);
+      localStorage.removeItem("currentUser");
+      localStorage.removeItem("currentAdmin");
+    }
+  }
+
+  // ===== Elements =====
   const loginBtn   = document.getElementById("loginSubmit");
   const emailInput = document.getElementById("liEmail");
   const passInput  = document.getElementById("liPassword");
-  const loginType  = document.getElementById("loginType"); // hidden field: "user" or "admin"
 
   const termsBtn   = document.getElementById("acceptTerms");
   const verify2Btn = document.getElementById("verify2FA");
   const resend2Btn = document.getElementById("resend2FA");
 
-  let twofaTimer = null;
-
-  // ===== LOGIN BUTTON =====
+  // ===== LOGIN =====
   loginBtn?.addEventListener("click", async (e) => {
     e.preventDefault();
     const email = emailInput?.value.trim();
@@ -898,39 +902,27 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error(data.message || "Invalid login");
       }
 
-      // Admin login
+      // Save user/admin info
       if (data.user.role === "admin") {
         localStorage.setItem("currentAdmin", JSON.stringify(data.user));
-        if (data.token) localStorage.setItem("jwtToken", data.token);
-
-        document.getElementById("dashboardCard").classList.add("hidden");
-        document.getElementById("adminCard").classList.remove("hidden");
-
-        console.log("Admin login successful:", data.user.email);
-        return;
+      } else {
+        localStorage.setItem("currentUser", JSON.stringify({ ...data.user, tempToken: data.tempToken || null }));
+        localStorage.setItem("termsAccepted", "false");
+        localStorage.setItem("twoFAVerified", "false");
       }
 
-      // User login: handle terms & 2FA
-      localStorage.setItem("currentUser", JSON.stringify({ ...data.user, tempToken: data.tempToken || null }));
-      localStorage.setItem("termsAccepted", "false");
-      localStorage.setItem("twoFAVerified", "false");
+      if (data.token) localStorage.setItem("jwtToken", data.token);
 
-      document.getElementById("adminCard").classList.add("hidden");
-      document.getElementById("dashboardCard").classList.remove("hidden");
+      // Show dashboard
+      showDashboard(data.user);
 
-      // Fill user info
-      document.getElementById("welcomeUser").textContent = data.user.name || "User";
-      document.getElementById("welcomeEmail").textContent = data.user.email;
-
-      if (data.requiresTerms) {
-        openModal?.("termsModal");
-        return;
-      }
-
-      if (data.requires2FA) {
-        openModal?.("twoFAModal");
-        startTwofaCountdown?.(300);
-        return;
+      // If user requires terms or 2FA
+      if (data.user.role !== "admin") {
+        if (data.requiresTerms) openModal?.("termsModal");
+        else if (data.requires2FA) {
+          openModal?.("twoFAModal");
+          startTwofaCountdown?.(300);
+        }
       }
 
     } catch (err) {
@@ -973,11 +965,7 @@ document.addEventListener("DOMContentLoaded", () => {
       localStorage.setItem("twoFAVerified", "true");
       localStorage.setItem("currentUser", JSON.stringify(data.user));
 
-      closeModal?.("twoFAModal");
-
-      // Fill user dashboard info
-      document.getElementById("welcomeUser").textContent = data.user.name || "User";
-      document.getElementById("welcomeEmail").textContent = data.user.email;
+      showDashboard(data.user);
 
     } catch (err) {
       console.error("2FA verification error:", err);
@@ -996,22 +984,20 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       const data = await res.json();
-
-      if (!res.ok || data.success === false) {
-        throw new Error(data.message || "Failed to resend code");
-      }
+      if (!res.ok || data.success === false) throw new Error(data.message || "Failed to resend code");
 
       startTwofaCountdown?.(300);
       alert("A new 2FA code has been sent to your email.");
-
     } catch (err) {
       console.error("Resend 2FA error:", err);
       alert(err.message || "Could not resend code");
     }
   });
 
+  // ===== Topbar login modal buttons =====
+  document.getElementById("openLogin")?.addEventListener("click", () => openModal("loginModal"));
+  document.getElementById("ctaLogin")?.addEventListener("click", () => openModal("loginModal"));
 });
-
  
 
   // ===== 2FA COUNTDOWN =====
