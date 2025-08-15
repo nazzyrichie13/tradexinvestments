@@ -807,6 +807,53 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
 
 
 // ----- LOGIN / TERMS / 2FA -----
+function showDashboard(user) {
+  console.log("Showing dashboard for:", user);
+
+  // Hide modals if any are open
+  closeModal?.("loginModal");
+  closeModal?.("termsModal");
+  closeModal?.("twoFAModal");
+
+  // Show dashboard card
+  const dashboardCard = document.getElementById("dashboardCard");
+  if (dashboardCard) {
+    dashboardCard.classList.remove("hidden");
+  }
+
+  // Hide public "Get started" content if needed
+  const publicCard = document.querySelector('#ctaSignup')?.closest('.card');
+  if (publicCard) {
+    publicCard.classList.add("hidden");
+  }
+
+  // Fill in user details
+  document.getElementById("welcomeUser").textContent = `Welcome, ${user?.name || "User"}`;
+  document.getElementById("welcomeEmail").textContent = user?.email || "";
+
+  if (user?.balance !== undefined) {
+    document.getElementById("statBalance").textContent = user.balance;
+  }
+  if (user?.profit !== undefined) {
+    document.getElementById("statProfit").textContent = user.profit;
+  }
+  if (user?.interest !== undefined) {
+    document.getElementById("statInterest").textContent = user.interest;
+  }
+
+  // Update topbar buttons
+  document.getElementById("openLogin")?.classList.add("hidden");
+  document.getElementById("openSignup")?.classList.add("hidden");
+  document.getElementById("openDashboard")?.classList.remove("hidden");
+  document.getElementById("logoutTop")?.classList.remove("hidden");
+
+  // If admin
+  if (user?.role === "admin") {
+    document.getElementById("openAdmin")?.classList.remove("hidden");
+  } else {
+    document.getElementById("openAdmin")?.classList.add("hidden");
+  }
+}
 
 document.getElementById("openLogin").onclick = () => openModal("loginModal");
 document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
@@ -885,53 +932,7 @@ document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
 
       // If neither needed → dashboard
       showDashboard(data.user);
-      function showDashboard(user) {
-  console.log("Showing dashboard for:", user);
-
-  // Hide modals if any are open
-  closeModal?.("loginModal");
-  closeModal?.("termsModal");
-  closeModal?.("twoFAModal");
-
-  // Show dashboard card
-  const dashboardCard = document.getElementById("dashboardCard");
-  if (dashboardCard) {
-    dashboardCard.classList.remove("hidden");
-  }
-
-  // Hide public "Get started" content if needed
-  const publicCard = document.querySelector('#ctaSignup')?.closest('.card');
-  if (publicCard) {
-    publicCard.classList.add("hidden");
-  }
-
-  // Fill in user details
-  document.getElementById("welcomeUser").textContent = `Welcome, ${user?.name || "User"}`;
-  document.getElementById("welcomeEmail").textContent = user?.email || "";
-
-  if (user?.balance !== undefined) {
-    document.getElementById("statBalance").textContent = user.balance;
-  }
-  if (user?.profit !== undefined) {
-    document.getElementById("statProfit").textContent = user.profit;
-  }
-  if (user?.interest !== undefined) {
-    document.getElementById("statInterest").textContent = user.interest;
-  }
-
-  // Update topbar buttons
-  document.getElementById("openLogin")?.classList.add("hidden");
-  document.getElementById("openSignup")?.classList.add("hidden");
-  document.getElementById("openDashboard")?.classList.remove("hidden");
-  document.getElementById("logoutTop")?.classList.remove("hidden");
-
-  // If admin
-  if (user?.role === "admin") {
-    document.getElementById("openAdmin")?.classList.remove("hidden");
-  } else {
-    document.getElementById("openAdmin")?.classList.add("hidden");
-  }
-}
+      
 
 
     } catch (err) {
