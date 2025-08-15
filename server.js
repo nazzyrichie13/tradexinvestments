@@ -42,22 +42,25 @@ app.use("/api/withdrawals", withdrawalRoutes);
 app.use("/api/admin", adminRoutes);
 
 // Start server after MongoDB connection
-async function startServer() {
-  try {
-    await mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
-    console.log("✅ MongoDB connected");
 
-    // Permanent admin
-    
 
     // Start Express server
+  // 8️⃣ Start server + connect MongoDB
+async function startServer() {
+  try {
+    if (!process.env.MONGO_URI) {
+      throw new Error('❌ MONGO_URI is not defined in your .env file.');
+    }
+
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log('✅ MongoDB connected');
+
     server.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
     });
   } catch (err) {
-    console.error("❌ Failed to start server:", err);
-    process.exit(1);
+    console.error('❌ Failed to start server:', err);
   }
 }
 
-
+startServer();
