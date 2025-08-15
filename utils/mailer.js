@@ -20,7 +20,7 @@ transporter.verify((error) => {
 
 export const send2FACode = async (toEmail, code) => {
   await transporter.sendMail({
-    from: `"TradexInvest" <${process.env.SMTP_USER}>`,
+    from: `"support@tradexinvest.net" <${process.env.SMTP_USER}>`,
     to: toEmail,
     subject: "Your 2FA Code",
     html: `<p>Your 2FA code is: <strong>${code}</strong></p>`
@@ -29,7 +29,7 @@ export const send2FACode = async (toEmail, code) => {
 
 export const sendMail = async (toEmail, message) => {
   await transporter.sendMail({
-    from: `"TradexInvest" <${process.env.SMTP_USER}>`,
+    from: `"support@tradexinvest.net" <${process.env.SMTP_USER}>`,
     to: toEmail,
     subject: "Notification",
     text: message
