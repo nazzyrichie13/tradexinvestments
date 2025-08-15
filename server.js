@@ -38,10 +38,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/withdrawals", withdrawalRoutes);
 
-// 6️⃣ Catch-all for SPA
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
+
 
 // 7️⃣ MongoDB connection + server start
 mongoose.connect(process.env.MONGODB_URI)
