@@ -48,11 +48,11 @@ app.use("/api/admin", adminRoutes);
   // 8️⃣ Start server + connect MongoDB
 async function startServer() {
   try {
-    if (!process.env.MONGO_URI) {
+    if (!process.env.MONGODB_URI) {
       throw new Error('❌ MONGO_URI is not defined in your .env file.');
     }
 
-    await mongoose.connect(process.env.MONGO_URI);
+    await mongoose.connect(process.env.MONGODB_URI);
     console.log('✅ MongoDB connected');
 
     server.listen(PORT, () => {
