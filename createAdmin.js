@@ -1,44 +1,48 @@
-
 // createAdmin.js
-import dotenv from 'dotenv';
-import mongoose from 'mongoose';
-import bcrypt from 'bcrypt';
-import Admin from './models/Admin.js'; // Adjust path if your Admin model is elsewhere
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+import User from "./models/User.js"; // adjust path if your User model is elsewhere
+import bcrypt from "bcrypt";
 
+// Load environment variables
 dotenv.config();
 
-if (!process.env.MONGODB_URI) {
-  console.error('❌ MONGODB_URI not found in .env');
-  process.exit(1);
-}
-
-(async () => {
+async function createAdmin() {
   try {
     // Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log('✅ MongoDB connected');
+    await mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("✅ Connected to MongoDB");
+
+    const adminEmail = process.env.ADMIN_EMAIL || "admin@tradex.com";
+    const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
 
     // Check if admin already exists
-    const existingAdmin = await Admin.findOne({ email: process.env.ADMIN_EMAIL });
-    if (existingAdmin) {
-      console.log('⚠️ Admin already exists:', existingAdmin.email);
-      process.exit(0);
+    let admin = await User.findOne({ email: adminEmail });
+    if (!admin) {
+      // Hash password before creating admin
+      const hashedPassword = await bcrypt.hash(adminPassword, 10);
+
+      admin = await User.create({
+        name: "Permanent Admin",
+        email: adminEmail,
+        password: hashedPassword,
+        role: "admin",
+        balance: 0,
+        profit: 0,
+        interest: 0,
+      });
+
+      console.log(`✅ Permanent admin created: ${adminEmail}`);
+    } else {
+      console.log(`ℹ️ Admin already exists: ${adminEmail}`);
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASS, 10);
-
-    // Create admin
-    const newAdmin = await Admin.create({
-      email: process.env.ADMIN_EMAIL,
-      password: hashedPassword
-    });
-
-    console.log('✅ Admin created:', newAdmin.email);
-    process.exit(0);
-
+    await mongoose.disconnect();
+    console.log("✅ MongoDB connection closed");
   } catch (err) {
-    console.error('❌ Error creating admin:', err);
+    console.error("❌ Error creating admin:", err);
     process.exit(1);
   }
-})();
+}
+
+createAdmin();

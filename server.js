@@ -48,24 +48,7 @@ async function startServer() {
     console.log("✅ MongoDB connected");
 
     // Permanent admin
-    const adminEmail = process.env.ADMIN_EMAIL || "admin@tradex.com";
-    const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
-
-    let admin = await User.findOne({ email: adminEmail });
-    if (!admin) {
-      admin = await User.create({
-        name: "Permanent Admin",
-        email: adminEmail,
-        password: adminPassword, // Ideally hashed in your User model
-        role: "admin",
-        balance: 0,
-        profit: 0,
-        interest: 0,
-      });
-      console.log(`✅ Permanent admin created: ${adminEmail}`);
-    } else {
-      console.log(`ℹ️ Admin already exists: ${adminEmail}`);
-    }
+    
 
     // Start Express server
     server.listen(PORT, () => {
@@ -77,4 +60,4 @@ async function startServer() {
   }
 }
 
-startServer();
+
