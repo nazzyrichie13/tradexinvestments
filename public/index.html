@@ -776,18 +776,15 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
   const email = document.getElementById("suEmail").value.trim();
   const password = document.getElementById("suPassword").value.trim();
 
-  // Simple validation
   if (!name || !email || !password) {
     alert("Please fill in all fields.");
     return;
   }
 
   try {
-    const res = await fetch(`${backendUrl}/auth/register`, {
+    const res = await fetch(`${backendUrl}/api/auth/register`, { // <-- note the /api/auth/
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, password })
     });
 
@@ -795,7 +792,7 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
 
     if (res.ok) {
       alert("Account created successfully! You can now log in.");
-      document.querySelector('[data-close="signupModal"]').click(); // Close modal
+      document.querySelector('[data-close="signupModal"]').click();
     } else {
       alert(data.message || "Signup failed.");
     }
@@ -804,7 +801,6 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
     alert("Something went wrong. Please try again.");
   }
 });
-
 
 
 // ----- LOGIN / TERMS / 2FA -----
