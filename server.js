@@ -1,3 +1,4 @@
+// 1️⃣ Import everything first
 import express from 'express';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
@@ -7,11 +8,15 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { Server } from 'socket.io';
 
+import authRoutes from "./routes/auth.js";
+import userRoutes from "./routes/user.js";
+import contactRoutes from "./routes/contact.js";
+import withdrawalRoutes from "./routes/withdrawals.js";
 
-// Load environment variables
+// 2️⃣ Load environment variables
 dotenv.config();
 
-// Fix __dirname in ES modules
+// 3️⃣ Fix __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -21,109 +26,24 @@ const io = new Server(server, { cors: { origin: "*" } });
 
 const PORT = process.env.PORT || 10000;
 
-// Middleware
+// 4️⃣ Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }))
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-// Routes
+// 5️⃣ API routes **before catch-all**
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
-
-
 app.use("/api/contact", contactRoutes);
 app.use("/api/withdrawals", withdrawalRoutes);
 
-
-import authRoutes from "./routes/auth.js";
-import userRoutes from "./routes/user.js";
-import contactRoutes from "./routes/contact.js";
-import withdrawalRoutes from "./routes/withdrawals.js";
-
-// Test route
-app.get('/', (req, res) => {
-  res.send('✅ TradexInvest backend running...');
+// 6️⃣ Catch-all for SPA
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Serve static files
-
-
-
-// ====== Chat Schema ======
-const chatSchema = new mongoose.Schema({
-  senderId: String,
-  name: String,
-  email: String,
-  senderType: String,
-  message: String,
-  read: { type: Boolean, default: false },
-  timestamp: { type: Date, default: Date.now },
-});
-const Chat = mongoose.model("Chat", chatSchema);
-
-// ====== Socket.IO ======
-io.on("connection", (socket) => {
-  console.log("Connected:", socket.id);
-
-  socket.on("userInfo", ({ senderId, name, email }) => {
-    socket.data.senderId = senderId;
-    socket.data.name = name;
-    socket.data.email = email;
-  });
-
-  socket.on("sendMessage", async (data) => {
-    const newMsg = new Chat(data);
-    await newMsg.save();
-    io.emit("newMessage", newMsg);
-  });
-
-  socket.on("markAsRead", async (senderId) => {
-    await Chat.updateMany({ senderId, read: false }, { read: true });
-  });
-
-  socket.on("getMessages", async (senderId) => {
-    const messages = await Chat.find({ senderId }).sort({ timestamp: 1 });
-    socket.emit("chatHistory", messages);
-  });
-
-  socket.on("disconnect", () => {
-    console.log("Disconnected:", socket.id);
-  });
-});
-
-// ====== Admin Users List ======
-app.get("/api/users", async (req, res) => {
-  try {
-    const messages = await Chat.aggregate([
-      {
-        $group: {
-          _id: "$senderId",
-          name: { $first: "$name" },
-          email: { $first: "$email" },
-          unreadCount: {
-            $sum: {
-              $cond: [
-                { $and: [{ $eq: ["$senderType", "user"] }, { $eq: ["$read", false] }] },
-                1,
-                0
-              ]
-            }
-          },
-        },
-      },
-    ]);
-    res.json(messages);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch users" });
-  }
-});
-
-// ====== MongoDB connection ======
+// 7️⃣ MongoDB connection + server start
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('✅ MongoDB connected successfully');
