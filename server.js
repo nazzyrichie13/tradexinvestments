@@ -4,15 +4,15 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import http from 'http';
 import path from 'path';
-import { fileURLToPath } from 'url';
+
 import { Server } from 'socket.io';
 
 // Routes
 
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/user.js";
-import adminRoutes from "./routes/admin.js";
-import uploadRoutes from "./routes/upload.js";
+
+
 import contactRoutes from "./routes/contact.js";
 import withdrawalRoutes from "./routes/withdrawals.js";
 
@@ -20,8 +20,6 @@ import withdrawalRoutes from "./routes/withdrawals.js";
 dotenv.config();
 
 // Fix __dirname in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = http.createServer(app);
@@ -37,8 +35,8 @@ app.use(express.urlencoded({ extended: true }))
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
-app.use("/api/admin", adminRoutes);
-app.use("/api", uploadRoutes);
+
+
 app.use("/api/contact", contactRoutes);
 app.use("/api/withdrawals", withdrawalRoutes);
 
@@ -49,12 +47,9 @@ app.get('/', (req, res) => {
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Admin page
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
+
+
 
 // ====== Chat Schema ======
 const chatSchema = new mongoose.Schema({
