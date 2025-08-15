@@ -13,11 +13,10 @@ import userRoutes from "./routes/user.js";
 import contactRoutes from "./routes/contact.js";
 import withdrawalRoutes from "./routes/withdrawals.js";
 import User from "./models/User.js";
-import bcrypt from "bcrypt";
-// 2️⃣ Load environment variables
+
 dotenv.config();
 
-// 3️⃣ Fix __dirname
+// Fix __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -27,25 +26,26 @@ const io = new Server(server, { cors: { origin: "*" } });
 
 const PORT = process.env.PORT || 10000;
 
-// 4️⃣ Middleware
+// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
- app.get("/", (req, res) => res.send("TradexInvest backend is running"));
-// 5️⃣ API routes **before catch-all**
+
+app.get("/", (req, res) => res.send("TradexInvest backend is running"));
+
+// API routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/withdrawals", withdrawalRoutes);
-app.use("/api/admin", adminRoutes); 
+app.use("/api/admin", adminRoutes);
 
-
-
+// Start server after MongoDB connection
 async function startServer() {
   try {
     await mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
-    console.log("MongoDB connected");
+    console.log("✅ MongoDB connected");
 
     // Permanent admin
     const adminEmail = process.env.ADMIN_EMAIL || "admin@tradex.com";
@@ -56,7 +56,7 @@ async function startServer() {
       admin = await User.create({
         name: "Permanent Admin",
         email: adminEmail,
-        password: adminPassword,
+        password: adminPassword, // Ideally hashed in your User model
         role: "admin",
         balance: 0,
         profit: 0,
@@ -67,25 +67,14 @@ async function startServer() {
       console.log(`ℹ️ Admin already exists: ${adminEmail}`);
     }
 
-    // Start Express server...
+    // Start Express server
+    server.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
   } catch (err) {
     console.error("❌ Failed to start server:", err);
+    process.exit(1);
   }
 }
 
 startServer();
-
-
-// 7️⃣ MongoDB connection + server start
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log('✅ MongoDB connected successfully');
-    server.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-    });
-  })
-  .catch(err => {
-    console.error('❌ MongoDB connection error:', err);
-    process.exit(1);
-  });
-  
