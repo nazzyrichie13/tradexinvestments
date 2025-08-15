@@ -329,6 +329,9 @@
           <tbody id="adminUsersBody"></tbody>
         </table>
       </div>
+      <!-- In Admin Users Tab -->
+<tbody id="adminUsersBody"></tbody>
+
 
       <div id="withdrawalsTab" class="hidden">
         <table>
@@ -1029,6 +1032,77 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
     });
     openDashboardBtn.dataset.listenerAdded = "true";
   }
+function adminUserRowHTML(user) {
+  return `
+    <tr>
+      <td>${user.name}</td>
+      <td>${user.email}</td>
+      <td><input type="number" data-id="${user._id}" data-field="balance" value="${user.balance || 0}" class="stat-input"></td>
+      <td><input type="number" data-id="${user._id}" data-field="profit" value="${user.profit || 0}" class="stat-input"></td>
+      <td><input type="number" data-id="${user._id}" data-field="interest" value="${user.interest || 0}" class="stat-input"></td>
+      <td><button class="btn btn-primary admin-stat-save" data-id="${user._id}">Save</button></td>
+    </tr>
+  `;
+}
+
+// Attach Save listeners
+document.addEventListener("click", async (e) => {
+  if (e.target.classList.contains("admin-stat-save")) {
+    const id = e.target.dataset.id;
+    const row = document.querySelector(`input[data-id="${id}"]`).closest("tr");
+    const balance = parseFloat(row.querySelector('input[data-field="balance"]').value);
+    const profit  = parseFloat(row.querySelector('input[data-field="profit"]').value);
+    const interest= parseFloat(row.querySelector('input[data-field="interest"]').value);
+
+    try {
+      await fetch(`${backendUrl}/api/admin/update-user-stats/${id}`, {
+        method: "PATCH",
+        headers: authHeaders(),
+        body: JSON.stringify({ balance, profit, interest })
+      });
+      alert("User stats updated successfully");
+      loadAdminUsers(); // refresh table
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+});
+function adminWithdrawalRowHTML(tx) {
+  return `
+    <tr>
+      <td>${tx.user?.name || tx.userName}</td>
+      <td>${tx.method || "-"}</td>
+      <td>$${fmtMoney(tx.amount)}</td>
+      <td>
+        <select data-id="${tx._id}" class="withdraw-status">
+          <option value="pending" ${tx.status==="pending"?"selected":""}>Pending</option>
+          <option value="success" ${tx.status==="success"?"selected":""}>Accept</option>
+          <option value="fail" ${tx.status==="fail"?"selected":""}>Reject</option>
+        </select>
+      </td>
+      <td><button class="btn btn-primary save-withdraw" data-id="${tx._id}">Save</button></td>
+    </tr>
+  `;
+}
+
+// Event listener for admin withdrawal save
+document.addEventListener("click", async (e) => {
+  if (e.target.classList.contains("save-withdraw")) {
+    const id = e.target.dataset.id;
+    const status = document.querySelector(`select[data-id="${id}"]`).value;
+    try {
+      await fetch(`${backendUrl}/api/admin/transactions/${id}`, {
+        method: "PATCH",
+        headers: authHeaders(),
+        body: JSON.stringify({ status })
+      });
+      alert("Withdrawal status updated");
+      loadAdminWithdrawals(); // refresh table
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+});
 
   // ---------- initialize ----------
   function initDashboard() {
