@@ -34,90 +34,68 @@ const upload = multer({ storage });
 const JWT_SECRET = process.env.JWT_SECRET || "super_secret_jwt_key";
 
 // ---------------- SIGNUP ----------------
-router.post("/signup", upload.single("photo"), async (req, res) => {
-  try {
-    const { email, password, name, role } = req.body;
-    if (!email || !password) {
-      if (req.file) fs.unlinkSync(path.join(uploadDir, req.file.filename));
-      return res.status(400).json({ message: "Email and password are required" });
-    }
-
-    const normalizedEmail = email.toLowerCase();
-    const existingUser = await User.findOne({ email: normalizedEmail });
-    if (existingUser) {
-      if (req.file) fs.unlinkSync(path.join(uploadDir, req.file.filename));
-      return res.status(400).json({ message: "User already exists" });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser = new User({
-      name,
-      email: normalizedEmail,
-      password: hashedPassword,
-      role: role || "user",
-      photo: req.file ? `/uploads/${req.file.filename}` : null,
-    });
-
-    await newUser.save();
-
-    // Generate JWT for immediate login (optional)
-    const token = jwt.sign({ id: newUser._id, role: newUser.role }, JWT_SECRET, { expiresIn: "1d" });
-
-    const safeUser = newUser.toObject();
-    delete safeUser.password;
-
-    res.status(201).json({ message: "User registered successfully", token, user: safeUser });
-  } catch (err) {
-    console.error("Signup error:", err);
-    if (req.file) fs.unlinkSync(path.join(uploadDir, req.file.filename));
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// ---------------- LOGIN (send 2FA + temp token) ----------------
+// ---------------- LOGIN (User or Admin) ----------------
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-    const normalizedEmail = email.toLowerCase();
+    const normalizedEmail = String(email || "").toLowerCase();
 
-    const user = await User.findOne({ email: normalizedEmail });
-    if (!user) return res.status(401).json({ msg: "Invalid email" });
+    // 1) Find user OR admin
+    let account = await User.findOne({ email: normalizedEmail });
+    let accountKind = "user"; // or "admin"
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ msg: "Invalid password" });
+    if (!account) {
+      account = await Admin.findOne({ email: normalizedEmail });
+      accountKind = account ? "admin" : "none";
+    }
+    if (!account) return res.status(401).json({ success: false, message: "Invalid email or password" });
 
-    // Generate 2FA secret if missing
-    if (!user.twoFASecret) {
+    // 2) Check password
+    const isMatch = await bcrypt.compare(password, account.password);
+    if (!isMatch) return res.status(401).json({ success: false, message: "Invalid email or password" });
+
+    // 3) Ensure 2FA secret exists
+    if (!account.twoFASecret) {
       const secret = speakeasy.generateSecret({ length: 20 });
-      user.twoFASecret = secret.base32;
-      await user.save();
+      account.twoFASecret = secret.base32;
+      await account.save();
     }
 
-    // Generate TOTP 2FA code
-    const token2FA = speakeasy.totp({ secret: user.twoFASecret, encoding: "base32" });
+    // 4) Generate TOTP and send it
+    const token2FA = speakeasy.totp({ secret: account.twoFASecret, encoding: "base32" });
 
-    // Send 2FA code via email
     await transporter.sendMail({
       from: `"TradexInvest" <${process.env.EMAIL_USER}>`,
-      to: user.email,
+      to: account.email,
       subject: "Your TradexInvest 2FA Code",
       text: `Your 2FA code is: ${token2FA}`,
     });
 
-    // Generate temporary token for 2FA verification (expires in 10 min)
-    const tempToken = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: "10m" });
+    // 5) Temp token for 2FA verification (10 min)
+    const tempToken = jwt.sign(
+      { id: account._id, email: account.email, kind: accountKind },
+      JWT_SECRET,
+      { expiresIn: "10m" }
+    );
 
+    // 6) Return a **consistent** structure the frontend expects
     res.json({
-      msg: "Check your email for 2FA code",
+      success: true,
+      message: "OTP sent to email",
+      requires2FA: true,
+      requiresTerms: true, // toggle if you later track on server
       tempToken,
-      email: user.email,
-      name: user.name,
-      photo: user.photo || ""
+      user: {
+        id: account._id,
+        email: account.email,
+        name: account.name,
+        role: account.role || (accountKind === "admin" ? "admin" : "user"),
+        photo: account.photo || ""
+      }
     });
   } catch (err) {
     console.error("Login error:", err);
-    res.status(500).json({ msg: "Server error" });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
@@ -125,28 +103,48 @@ router.post("/login", async (req, res) => {
 router.post("/verify-2fa", async (req, res) => {
   try {
     const { code, tempToken } = req.body;
+    if (!code || !tempToken) {
+      return res.status(400).json({ success: false, message: "Code and tempToken are required" });
+    }
 
-    // Decode temporary token
     const decoded = jwt.verify(tempToken, JWT_SECRET);
-    const user = await User.findById(decoded.id);
-    if (!user) return res.status(401).json({ msg: "User not found" });
+    const { id, kind } = decoded;
+
+    const Model = kind === "admin" ? Admin : User;
+    const account = await Model.findById(id);
+    if (!account) return res.status(401).json({ success: false, message: "Account not found" });
 
     const verified = speakeasy.totp.verify({
-      secret: user.twoFASecret,
+      secret: account.twoFASecret,
       encoding: "base32",
       token: code,
       window: 2
     });
+    if (!verified) return res.status(400).json({ success: false, message: "Invalid 2FA code" });
 
-    if (!verified) return res.status(400).json({ msg: "Invalid 2FA code" });
+    // Final JWT (1h)
+    const jwtToken = jwt.sign(
+      { id: account._id, email: account.email, role: account.role || (kind === "admin" ? "admin" : "user") },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
 
-    // Generate final JWT token for full access
-    const jwtToken = jwt.sign({ id: user._id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: "1h" });
-
-    res.json({ msg: "2FA verified", token: jwtToken });
+    res.json({
+      success: true,
+      message: "2FA verified",
+      token: jwtToken,
+      user: {
+        id: account._id,
+        email: account.email,
+        name: account.name,
+        role: account.role || (kind === "admin" ? "admin" : "user"),
+        photo: account.photo || ""
+      }
+    });
   } catch (err) {
     console.error("2FA verify error:", err);
-    res.status(500).json({ msg: "Server error" });
+    const msg = err.name === "TokenExpiredError" ? "2FA session expired, please login again" : "Server error";
+    res.status(500).json({ success: false, message: msg });
   }
 });
 
@@ -154,23 +152,33 @@ router.post("/verify-2fa", async (req, res) => {
 router.post("/resend-2fa", async (req, res) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user) return res.status(401).json({ msg: "User not found" });
+    const normalizedEmail = String(email || "").toLowerCase();
 
-    const token = speakeasy.totp({ secret: user.twoFASecret, encoding: "base32" });
+    let account = await User.findOne({ email: normalizedEmail });
+    if (!account) account = await Admin.findOne({ email: normalizedEmail });
+    if (!account) return res.status(401).json({ success: false, message: "Account not found" });
+
+    if (!account.twoFASecret) {
+      const secret = speakeasy.generateSecret({ length: 20 });
+      account.twoFASecret = secret.base32;
+      await account.save();
+    }
+
+    const token2FA = speakeasy.totp({ secret: account.twoFASecret, encoding: "base32" });
 
     await transporter.sendMail({
       from: `"TradexInvest" <${process.env.EMAIL_USER}>`,
-      to: user.email,
+      to: account.email,
       subject: "Your TradexInvest 2FA Code (Resent)",
-      text: `Your 2FA code is: ${token}`,
+      text: `Your 2FA code is: ${token2FA}`,
     });
 
-    res.json({ msg: "2FA code resent to your email" });
+    res.json({ success: true, message: "2FA code resent to your email" });
   } catch (err) {
     console.error("2FA resend error:", err);
-    res.status(500).json({ msg: "Server error" });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
 
 export default router;

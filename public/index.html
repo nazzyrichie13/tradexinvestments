@@ -206,6 +206,13 @@
 
   /* Tiny helper */
   .right{float:right}
+  #dashboardSection {
+  display: none;
+}
+#termsModal, #twoFAModal {
+  display: none;
+}
+
   </style>
 </head>
 <body>
@@ -760,68 +767,7 @@ function clearSession(){
 document.getElementById("openSignup").onclick = ()=> openModal("signupModal");
 document.getElementById("ctaSignup").onclick  = ()=> openModal("signupModal");
 
-document.getElementById("loginSubmit").addEventListener("click", async () => {
-  const email = document.getElementById("liEmail")?.value.trim();
-  const password = document.getElementById("liPassword")?.value.trim();
 
-  if (!email || !password) {
-    console.log("Login: Missing email or password");
-    return alert("Enter email & password");
-  }
-
-  console.log("Login: Sending credentials", { email });
-
-  try {
-    const res = await fetch(`${backendUrl}/api/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
-    });
-
-    const text = await res.text();
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      console.error("Login: Invalid JSON response", text);
-      throw new Error("Invalid JSON from server");
-    }
-
-    console.log("Login: Response data", data);
-
-    if (res.ok) {
-      // Save login details
-      localStorage.setItem("jwtToken", data.token);
-      localStorage.setItem("currentUser", JSON.stringify(data.user));
-
-      // Close login modal
-      closeModal("loginModal");
-
-      // Step 1: Check Terms acceptance
-      const termsAccepted = localStorage.getItem("termsAccepted") === "true";
-      if (!termsAccepted) {
-        openModal("termsModal");
-        return;
-      }
-
-      // Step 2: Check 2FA verification
-      const twoFAVerified = localStorage.getItem("twoFAVerified") === "true";
-      if (!twoFAVerified) {
-        openModal("twoFAModal");
-        return;
-      }
-
-      // Step 3: Show dashboard
-      showDashboard(data.user);
-
-    } else {
-      alert(data.message || "Login failed");
-    }
-  } catch (err) {
-    console.error("Login: Error", err);
-    alert("An error occurred while logging in");
-  }
-});
 
 /* ===========================
    LOGIN → TERMS → 2FA → DASHBOARD
@@ -832,14 +778,11 @@ document.getElementById("ctaLogin").onclick  = ()=> openModal("loginModal");
 
 
 // ----- LOGIN / TERMS / 2FA -----
-document.addEventListener("DOMContentLoaded", () => {
+
+ document.addEventListener("DOMContentLoaded", () => {
   const backendUrl = "https://tradexinvestments.onrender.com";
 
-let twofaTimer = null;
-  let interestTimer = null;
-  let payoutTimer = null;
-
-  // ========= LOGIN (→ Terms → 2FA → Dashboard) =========
+  // Elements
   const loginBtn   = document.getElementById("loginSubmit");
   const emailInput = document.getElementById("liEmail");
   const passInput  = document.getElementById("liPassword");
@@ -848,12 +791,19 @@ let twofaTimer = null;
   const verify2Btn = document.getElementById("verify2FA");
   const resend2Btn = document.getElementById("resend2FA");
 
+  let twofaTimer = null;
+
+  // ===== LOGIN BUTTON =====
   loginBtn?.addEventListener("click", async (e) => {
     e.preventDefault();
     const email = emailInput?.value.trim();
     const password = passInput?.value.trim();
 
-    if (!email || !password) return alert("Enter email & password");
+    if (!email || !password) {
+      alert("Enter email & password");
+      return;
+    }
+
     try {
       const res = await fetch(`${backendUrl}/api/auth/login`, {
         method: "POST",
@@ -861,33 +811,36 @@ let twofaTimer = null;
         body: JSON.stringify({ email, password })
       });
 
-      const text = await res.text();
-      let data;
-      try { data = JSON.parse(text); }
-      catch { throw new Error("Invalid JSON from server"); }
+      const data = await res.json();
 
-      if (!res.ok) throw new Error(data.message || data.msg || "Login failed");
+      // Handle backend error
+      if (!res.ok || data.success === false) {
+        throw new Error(data.message || data.msg || "Invalid login");
+      }
 
-      // Save session
-      localStorage.setItem("jwtToken", data.token);
+      // Reset flags on fresh login
+      localStorage.setItem("termsAccepted", "false");
+      localStorage.setItem("twoFAVerified", "false");
+
+      // Save partial session info
+      if (data.token) localStorage.setItem("jwtToken", data.token);
       localStorage.setItem("currentUser", JSON.stringify(data.user));
 
-      // Close login and start Terms/2FA sequence
       closeModal?.("loginModal");
-      const termsAccepted = localStorage.getItem("termsAccepted") === "true";
-      const twoFAVerified = localStorage.getItem("twoFAVerified") === "true";
 
-      if (!termsAccepted) {
+      // Flow control based on backend flags
+      if (data.requiresTerms) {
         openModal?.("termsModal");
         return;
       }
-      if (!twoFAVerified) {
+
+      if (data.requires2FA) {
         openModal?.("twoFAModal");
         startTwofaCountdown(300);
         return;
       }
 
-      // Already accepted + verified → show dashboard
+      // If neither needed → dashboard
       showDashboard(data.user);
 
     } catch (err) {
@@ -896,7 +849,7 @@ let twofaTimer = null;
     }
   });
 
-  // ========= TERMS (Accept → open 2FA) =========
+  // ===== ACCEPT TERMS =====
   termsBtn?.addEventListener("click", () => {
     localStorage.setItem("termsAccepted", "true");
     closeModal?.("termsModal");
@@ -904,10 +857,13 @@ let twofaTimer = null;
     startTwofaCountdown(300);
   });
 
-  // ========= 2FA (verify; optional resend) =========
+  // ===== VERIFY 2FA =====
   verify2Btn?.addEventListener("click", async () => {
     const code = document.getElementById("twofaCode")?.value.trim();
-    if (!code) return alert("Enter 2FA code");
+    if (!code) {
+      alert("Enter 2FA code");
+      return;
+    }
 
     try {
       const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
@@ -916,12 +872,16 @@ let twofaTimer = null;
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code, tempToken: user?.tempToken })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || data.msg || "Invalid 2FA code");
 
-      // success: store final token if backend returns it
+      const data = await res.json();
+
+      if (!res.ok || data.success === false) {
+        throw new Error(data.message || data.msg || "Invalid 2FA code");
+      }
+
       if (data.token) localStorage.setItem("jwtToken", data.token);
       localStorage.setItem("twoFAVerified", "true");
+      localStorage.setItem("currentUser", JSON.stringify(data.user));
 
       closeModal?.("twoFAModal");
       showDashboard(user);
@@ -932,7 +892,7 @@ let twofaTimer = null;
     }
   });
 
-  // Optional resend handler (adjust endpoint if different on your backend)
+  // ===== RESEND 2FA =====
   resend2Btn?.addEventListener("click", async () => {
     try {
       const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
@@ -941,34 +901,46 @@ let twofaTimer = null;
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: user?.email })
       });
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || data.msg || "Failed to resend code");
-      // restart countdown after resend
+
+      if (!res.ok || data.success === false) {
+        throw new Error(data.message || data.msg || "Failed to resend code");
+      }
+
       startTwofaCountdown(300);
       alert("A new 2FA code has been sent to your email.");
+
     } catch (err) {
       console.error("Resend 2FA error:", err);
       alert(err.message || "Could not resend code");
     }
   });
 
- 
-  // ========= AUTO-RESUME (if user already verified) =========
-  (function autoResume() {
-    const jwt = localStorage.getItem("jwtToken");
-    const termsOk = localStorage.getItem("termsAccepted") === "true";
-    const twofaOk = localStorage.getItem("twoFAVerified") === "true";
-    const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  // ===== 2FA COUNTDOWN =====
+  function startTwofaCountdown(seconds) {
+    clearInterval(twofaTimer);
+    const display = document.getElementById("twofaTimer");
+    let remaining = seconds;
 
-    if (jwt && termsOk && twofaOk) {
-      showDashboard(user);
-      // make sure all modals are closed
-      closeModal?.("loginModal");
-      closeModal?.("termsModal");
-      closeModal?.("twoFAModal");
-    }
-  })();
+    const updateDisplay = () => {
+      if (display) {
+        const m = String(Math.floor(remaining / 60)).padStart(2, "0");
+        const s = String(remaining % 60).padStart(2, "0");
+        display.textContent = `${m}:${s}`;
+      }
+    };
+
+    updateDisplay();
+    twofaTimer = setInterval(() => {
+      remaining--;
+      updateDisplay();
+      if (remaining <= 0) clearInterval(twofaTimer);
+    }, 1000);
+  }
+
 });
+
 // ----- 2FA COUNTDOWN -----
 
 
