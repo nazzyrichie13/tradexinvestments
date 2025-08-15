@@ -712,7 +712,7 @@ setInterval(updateCountdown, 1000); // Update every
 // Expose globally if using inline onclick
 window.toggleMobileNav = toggleMobileNav;
 
-const backendUrl = "https://tradexinvestments.onrender.com"; 
+
 let countdownTimer = null;
 
 /* ===========================
@@ -768,16 +768,48 @@ document.getElementById("openSignup").onclick = ()=> openModal("signupModal");
 document.getElementById("ctaSignup").onclick  = ()=> openModal("signupModal");
 
 
+const backendUrl = "https://tradexinvestments.onrender.com"; // Change to your backend
 
-/* ===========================
-   LOGIN → TERMS → 2FA → DASHBOARD
-=========================== */
-document.getElementById("openLogin").onclick = ()=> openModal("loginModal");
-document.getElementById("ctaLogin").onclick  = ()=> openModal("loginModal");
+document.getElementById("signupSubmit").addEventListener("click", async () => {
+  const name = document.getElementById("suName").value.trim();
+  const email = document.getElementById("suEmail").value.trim();
+  const password = document.getElementById("suPassword").value.trim();
+
+  // Simple validation
+  if (!name || !email || !password) {
+    alert("Please fill in all fields.");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${backendUrl}/signup`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ name, email, password })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      alert("Account created successfully! You can now log in.");
+      document.querySelector('[data-close="signupModal"]').click(); // Close modal
+    } else {
+      alert(data.message || "Signup failed.");
+    }
+  } catch (err) {
+    console.error("Signup error:", err);
+    alert("Something went wrong. Please try again.");
+  }
+});
 
 
 
 // ----- LOGIN / TERMS / 2FA -----
+
+// document.getElementById("openSignup").onclick = ()=> openModal("loginModal");
+// document.getElementById("ctaSignup").onclick  = ()=> openModal("loginModal");
 
  document.addEventListener("DOMContentLoaded", () => {
   const backendUrl = "https://tradexinvestments.onrender.com";
