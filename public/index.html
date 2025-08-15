@@ -362,9 +362,10 @@
 <!-- Login Modal -->
 <div id="loginModal" class="modal">
   <h3>Login</h3>
-  <input id="liEmail" placeholder="Email" />
+  <input type="email" id="liEmail" placeholder="Email" />
   <div style="height:8px"></div>
-  <input id="liPassword" placeholder="Password" type="password" />
+  <input  id="liPassword" placeholder="Password" type="password" />
+  <input type="hidden" id="loginType" value="admin"> 
   <div class="actions">
     <button class="btn" data-close="loginModal">Cancel</button>
     <button id="loginSubmit" class="btn btn-primary">Login</button>
@@ -866,6 +867,7 @@ document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
   const loginBtn   = document.getElementById("loginSubmit");
   const emailInput = document.getElementById("liEmail");
   const passInput  = document.getElementById("liPassword");
+  const loginType  = document.getElementById("loginType"); // hidden field: "user" or "admin"
 
   const termsBtn   = document.getElementById("acceptTerms");
   const verify2Btn = document.getElementById("verify2FA");
@@ -878,14 +880,20 @@ document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
     e.preventDefault();
     const email = emailInput?.value.trim();
     const password = passInput?.value.trim();
+    const type = loginType?.value || "user"; // default to "user"
 
     if (!email || !password) {
       alert("Enter email & password");
       return;
     }
 
+    // Choose endpoint based on login type
+    const loginUrl = type === "admin"
+      ? `${backendUrl}/api/admin/login`
+      : `${backendUrl}/api/auth/login`;
+
     try {
-      const res = await fetch(`${backendUrl}/api/auth/login`, {
+      const res = await fetch(loginUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
@@ -893,16 +901,25 @@ document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
 
       const data = await res.json();
 
-      // Handle backend error
       if (!res.ok || data.success === false) {
         throw new Error(data.message || data.msg || "Invalid login");
       }
 
-      // Reset flags on fresh login
+      if (type === "admin") {
+        // Save admin token and go straight to admin dashboard
+        if (data.token) {
+          localStorage.setItem("jwtToken", data.token);
+        }
+        localStorage.setItem("currentAdmin", JSON.stringify(data));
+        alert("Admin login successful!");
+        window.location.href = "/admin-dashboard.html"; // Change to your admin dashboard page
+        return;
+      }
+
+      // For user login, continue with terms/2FA flow
       localStorage.setItem("termsAccepted", "false");
       localStorage.setItem("twoFAVerified", "false");
 
-      // Save tempToken + user together
       localStorage.setItem(
         "currentUser",
         JSON.stringify({
@@ -911,14 +928,12 @@ document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
         })
       );
 
-      // Save JWT token if provided
       if (data.token) {
         localStorage.setItem("jwtToken", data.token);
       }
 
       closeModal?.("loginModal");
 
-      // Flow control based on backend flags
       if (data.requiresTerms) {
         openModal?.("termsModal");
         return;
@@ -930,10 +945,7 @@ document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
         return;
       }
 
-      // If neither needed → dashboard
       showDashboard(data.user);
-      
-
 
     } catch (err) {
       console.error("Login error:", err);
@@ -1010,8 +1022,6 @@ document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
       alert(err.message || "Could not resend code");
     }
   });
-});
-
 
   // ===== 2FA COUNTDOWN =====
   function startTwofaCountdown(seconds) {
@@ -1034,6 +1044,7 @@ document.getElementById("ctaLogin").onclick  = () => openModal("loginModal");
       if (remaining <= 0) clearInterval(twofaTimer);
     }, 1000);
   }
+});
 
 
 
