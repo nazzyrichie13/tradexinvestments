@@ -1184,9 +1184,7 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
   const $ = (sel) => document.querySelector(sel);
 
   // Open/Close Modal
-  $("#openAdminLogin")?.addEventListener("click", () => $("#adminLoginModal")?.classList.remove("hidden"));
-  function closeModal(id) { $(`#${id}`)?.classList.add("hidden"); }
-
+  $("#openAdminLogin")?.addEventListener("click", () => openModal("adminLoginModal"));
   // Admin Login
   $("#adminLoginSubmit")?.addEventListener("click", async () => {
     const email = $("#adminEmail").value.trim().toLowerCase();
