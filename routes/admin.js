@@ -1,78 +1,53 @@
-// routes/admin.js
 import express from "express";
-import User from "../models/User.js";
 import Admin from "../models/Admin.js";
+import User from "../models/User.js";
 import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { requireAdmin } from "../middleware/adminMiddleware.js";
-
 
 const router = express.Router();
 
-
-
-// Admin login
-
-
-
-
-
+// =========================
+// Admin Login
+// =========================
 router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ success: false, message: "Email & password required" });
 
-  if (!email || !password) return res.status(400).json({ message: "Email and password required" });
+    const adminUser = await Admin.findOne({ email });
+    if (!adminUser) return res.status(401).json({ success: false, message: "Invalid credentials" });
 
-  const admin = await Admin.findOne({ email });
-  if (!admin) return res.status(401).json({ message: "Invalid email or password" });
+    const isMatch = await bcrypt.compare(password, adminUser.password);
+    if (!isMatch) return res.status(401).json({ success: false, message: "Invalid credentials" });
 
-  const isMatch = await bcrypt.compare(password, admin.password);
-  if (!isMatch) return res.status(401).json({ message: "Invalid email or password" });
-
-  // create token
-  const token = jwt.sign({ id: admin._id, role: admin.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
-
-  res.json({ success: true, token, role: admin.role, email: admin.email, name: admin.name });
+    const token = jwt.sign({ id: adminUser._id, role: adminUser.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    res.json({ success: true, user: adminUser, token });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
-
-
-
-
-
-
-
-// --- Middleware to check admin token ---
-export const  requireAdmin = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ message: "No token provided" });
-
-  const token = authHeader.split(" ")[1];
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    if (decoded.role !== "admin") return res.status(403).json({ message: "Forbidden" });
-    req.adminId = decoded.id;
-    next();
-  } catch (err) {
-    res.status(401).json({ message: "Invalid token" });
-  }
-};
-
-// --- Get all users ---
+// =========================
+// Get all users (admin)
 router.get("/users", requireAdmin, async (req, res) => {
   try {
-    const users = await User.find().select("-password"); // exclude password
+    const users = await User.find({});
     res.json({ success: true, users });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// --- Update user stats ---
+// =========================
+// Update user stats (admin)
 router.patch("/update-user-stats/:id", requireAdmin, async (req, res) => {
-  const { balance, profit, interest } = req.body;
   try {
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    const { id } = req.params;
+    const { balance, profit, interest } = req.body;
+
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
     if (balance != null) user.amount = balance;
     if (profit != null) user.profit = profit;
@@ -81,9 +56,45 @@ router.patch("/update-user-stats/:id", requireAdmin, async (req, res) => {
     await user.save();
     res.json({ success: true, user });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
+// =========================
+// Get all transactions (deposits & withdrawals)
+router.get("/transactions", requireAdmin, async (req, res) => {
+  try {
+    const users = await User.find({});
+    const transactions = [];
+
+    users.forEach(u => {
+      if (u.amount > 0) transactions.push({ type: "deposit", user: u, amount: u.amount });
+      if (u.outcome > 0) transactions.push({ type: "withdraw", user: u, amount: u.outcome });
+    });
+
+    res.json({ success: true, transactions });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// =========================
+// Update withdrawal status
+router.patch("/transactions/:id", requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    user.outcomeStatus = status;
+    await user.save();
+
+    res.json({ success: true, user });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
 export default router;
