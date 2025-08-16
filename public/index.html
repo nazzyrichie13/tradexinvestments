@@ -1186,10 +1186,6 @@ const authHeaders = () => ({
   "Authorization": `Bearer ${localStorage.getItem("adminToken") || ""}`
 });
 
-// --- Open Admin Login Modal ---ss
-// $("#openAdminLogin").addEventListener("click", () => {
-//   $("#adminLoginModal").classList.remove("hidden");
-// });
 $("#openAdminLogin")?.addEventListener("click", () => openModal("adminLoginModal"));
 
 // --- Close Modal Function ---
@@ -1198,23 +1194,27 @@ function closeModal(id) {
 }
 
 // --- Admin Login Submit ---
+// --- Admin Login Submit ---
 $("#adminLoginSubmit").addEventListener("click", async () => {
   const email = $("#adminEmail").value.trim().toLowerCase();
   const password = $("#adminPassword").value.trim();
   if (!email || !password) return alert("Enter admin email & password");
 
   try {
-    const res = await fetch(`${backendUrl}/api/auth/login`, {
+    // 🔹 Use /api/admin/login instead of /api/auth/login
+    const res = await fetch(`${backendUrl}/api/admin/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password })
     });
-    const data = await res.json();
-    if (!res.ok || data.success === false) throw new Error(data.message || "Invalid login");
 
-    if (data.user.role === "admin") {
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Invalid login");
+
+    // Admin only
+    if (data.role === "admin") {
       localStorage.setItem("adminToken", data.token);
-      localStorage.setItem("currentAdmin", JSON.stringify(data.user));
+      localStorage.setItem("currentAdmin", JSON.stringify({ email: data.email, name: data.name }));
       showAdminDashboard();
       closeModal("adminLoginModal");
     } else {
