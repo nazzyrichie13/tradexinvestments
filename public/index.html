@@ -1133,6 +1133,9 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
   // ---------- topbar toggle ----------
   $("#openAdmin")?.addEventListener("click", () => { $("#adminCard")?.classList.remove("hidden"); $("#dashboardCard")?.classList.add("hidden"); });
   $("#openDashboard")?.addEventListener("click", () => { $("#adminCard")?.classList.add("hidden"); $("#dashboardCard")?.classList.remove("hidden"); });
+
+
+})();
 document.getElementById("openAdminLogin")?.addEventListener("click", () => {
   openModal("adminLoginModal");
 });
@@ -1164,8 +1167,6 @@ document.getElementById("adminLoginSubmit")?.addEventListener("click", async () 
     alert(err.message || "Login failed");
   }
 });
-
-})();
 </script>
 
   
