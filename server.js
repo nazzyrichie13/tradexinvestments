@@ -42,9 +42,18 @@ app.use("/api/withdrawals", withdrawalRoutes);
 app.use("/api/admin", adminRoutes);
 
 // Start server after MongoDB connection
+// Start server after MongoDB connection
 const PORT = process.env.PORT || 10000;
+
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch(err => console.error("❌ MongoDB connection error:", err));
-    // Start Express server
-  // 8️⃣ Start server + connect MongoDB
+  .then(() => {
+    console.log("✅ MongoDB connected");
+
+    // 🚀 Start Express server once DB is ready
+    server.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
+  })
+  .catch(err => {
+    console.error("❌ MongoDB connection error:", err);
+  });
