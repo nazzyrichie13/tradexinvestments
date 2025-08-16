@@ -83,8 +83,11 @@ router.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, account.password);
     if (!isMatch) return res.status(401).json({ success: false, message: "Invalid email or password" });
 
-    // 3) Ensure 2FA secret exists
-    if (!account.twoFASecret) {
+    // Ensure account.role exists
+    const role = account.role || kind;
+
+    // 3) Ensure 2FA secret exists for users
+    if (role === "user" && !account.twoFASecret) {
       const secret = speakeasy.generateSecret({ length: 20 });
       account.twoFASecret = secret.base32;
       await account.save();
@@ -95,7 +98,7 @@ router.post("/login", async (req, res) => {
     let requires2FA = false;
     let requiresTerms = false;
 
-    if (account.role === "user") {
+    if (role === "user") {
       const token2FA = speakeasy.totp({ secret: account.twoFASecret, encoding: "base32" });
 
       await transporter.sendMail({
@@ -110,18 +113,23 @@ router.post("/login", async (req, res) => {
       requiresTerms = true;
     }
 
+    // JWT for admin login
+    const jwtToken = role === "admin"
+      ? jwt.sign({ id: account._id, email: account.email, role }, JWT_SECRET, { expiresIn: "1h" })
+      : null;
+
     res.json({
       success: true,
       message: "Login successful",
       requires2FA,
       requiresTerms,
       tempToken,
-      token: account.role === "admin" ? jwt.sign({ id: account._id, email: account.email, role: "admin" }, JWT_SECRET, { expiresIn: "1h" }) : null,
+      token: jwtToken,
       user: {
         id: account._id,
         name: account.name,
         email: account.email,
-        role: account.role,
+        role,
       },
     });
 
@@ -147,7 +155,7 @@ router.post("/verify-2fa", async (req, res) => {
     const verified = speakeasy.totp.verify({ secret: account.twoFASecret, encoding: "base32", token: code, window: 2 });
     if (!verified) return res.status(400).json({ success: false, message: "Invalid 2FA code" });
 
-    const jwtToken = jwt.sign({ id: account._id, email: account.email, role: account.role }, JWT_SECRET, { expiresIn: "1h" });
+    const jwtToken = jwt.sign({ id: account._id, email: account.email, role: account.role || kind }, JWT_SECRET, { expiresIn: "1h" });
 
     res.json({
       success: true,
@@ -157,7 +165,7 @@ router.post("/verify-2fa", async (req, res) => {
         id: account._id,
         name: account.name,
         email: account.email,
-        role: account.role,
+        role: account.role || kind,
       },
     });
 
