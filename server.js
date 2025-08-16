@@ -13,7 +13,7 @@ import userRoutes from "./routes/user.js";
 import contactRoutes from "./routes/contact.js";
 import withdrawalRoutes from "./routes/withdrawals.js";
 import User from "./models/User.js";
-
+import connectDB from "./db.js"; 
 dotenv.config();
 
 // Fix __dirname
@@ -42,25 +42,7 @@ app.use("/api/withdrawals", withdrawalRoutes);
 app.use("/api/admin", adminRoutes);
 
 // Start server after MongoDB connection
-
+connectDB()
 
     // Start Express server
   // 8️⃣ Start server + connect MongoDB
-async function startServer() {
-  try {
-    if (!process.env.MONGODB_URI) {
-      throw new Error('❌ MONGO_URI is not defined in your .env file.');
-    }
-
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log('✅ MongoDB connected');
-
-    server.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-    });
-  } catch (err) {
-    console.error('❌ Failed to start server:', err);
-  }
-}
-
-startServer();
