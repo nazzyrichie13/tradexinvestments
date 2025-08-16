@@ -5,7 +5,7 @@ import Admin from "../models/Admin.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { requireAdmin } from "../middleware/adminMiddleware.js";
-import jwt from "jsonwebtoken";
+
 
 const router = express.Router();
 
@@ -39,7 +39,7 @@ router.post("/login", async (req, res) => {
 
 
 
-/
+
 
 // --- Middleware to check admin token ---
 const requireAdmin = (req, res, next) => {
