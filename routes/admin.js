@@ -42,7 +42,7 @@ router.post("/login", async (req, res) => {
 
 
 // --- Middleware to check admin token ---
-const requireAdmin = (req, res, next) => {
+export const  requireAdmin = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.status(401).json({ message: "No token provided" });
 
