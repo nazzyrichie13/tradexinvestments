@@ -14,6 +14,7 @@ import contactRoutes from "./routes/contact.js";
 import withdrawalRoutes from "./routes/withdrawals.js";
 import User from "./models/User.js";
  
+
 dotenv.config();
 
 // Fix __dirname
@@ -46,6 +47,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/withdrawals", withdrawalRoutes);
 app.use("/api/admin", adminRoutes);
+
 
 // Start server after MongoDB connection
 // Start server after MongoDB connection

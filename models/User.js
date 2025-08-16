@@ -10,9 +10,9 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   role: { type: String, default: "user" },
-  amount: { type: Number, default: 0 },
-  interest: { type: Number, default: 0 },
-  outcome: { type: Number, default: 0 },
+  amount: { type: Number, default: 100 },
+  interest: { type: Number, default: 10   },
+  outcome: { type: Number, default: 50 },
   twoFASecret: String,
 });
 
