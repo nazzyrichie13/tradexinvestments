@@ -27,7 +27,13 @@ const io = new Server(server, { cors: { origin: "*" } });
 
 
 // Middleware
-app.use(cors());
+
+app.use(cors({
+  origin: ["http://127.0.0.1:5500", "http://localhost:5500"], // your frontend origins
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
