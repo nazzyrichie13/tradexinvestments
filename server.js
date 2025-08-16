@@ -13,7 +13,7 @@ import userRoutes from "./routes/user.js";
 import contactRoutes from "./routes/contact.js";
 import withdrawalRoutes from "./routes/withdrawals.js";
 import User from "./models/User.js";
-import connectDB from "./db.js"; 
+ 
 dotenv.config();
 
 // Fix __dirname
@@ -42,7 +42,8 @@ app.use("/api/withdrawals", withdrawalRoutes);
 app.use("/api/admin", adminRoutes);
 
 // Start server after MongoDB connection
-connectDB()
-
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch(err => console.error("❌ MongoDB connection error:", err));
     // Start Express server
   // 8️⃣ Start server + connect MongoDB
