@@ -213,12 +213,12 @@
   display: none;
 }
 /* CSS */
-#adminLoginModal {
+/* #adminLoginModal {
   display: none;
 }
 #adminLoginModal.active {
   display: block;
-}
+} */
 
 
   </style>
@@ -239,6 +239,8 @@
   </ul> 
    <div class="nav">
     <p class="logo">TradeXInvest</p>
+    
+
     </div>
     
 
@@ -251,8 +253,9 @@
       <button id="openLogin" class="pill">Login</button>
       <button id="openSignup" class="pill">Sign Up</button>
       <button id="openDashboard" class="pill hidden">Dashboard</button>
-      <button id="openAdmin" class="pill hidden">Admin</button>
+      <button id="openAdminLogin" class="pill ">Admin</button>
       <button id="logoutTop" class="pill hidden">Logout</button>
+      
     </div>
   </div>
 </div>
@@ -369,16 +372,16 @@
     <button id="signupSubmit" class="btn btn-primary">Sign Up</button>
   </div>
 </div>
-<button id="openAdminLogin">Admin Login</button>
+<!-- Admin Login Button (hidden for regular users) -->
 
-<!-- Admin Login Modal -->
-<div id="adminLoginModal" class="modal hidden">
+<div id="adminLoginModal" class="modal ">
   <h3>Admin Login</h3>
-  <input id="adminEmail" placeholder="Email" type="email" />
-  <input id="adminPassword" placeholder="Password" type="password" />
+  <input id="adminEmail" type="email" placeholder="Admin Email" />
+  <input id="adminPassword" type="password" placeholder="Password" />
   <button id="adminLoginSubmit">Login</button>
   <button onclick="closeModal('adminLoginModal')">Cancel</button>
 </div>
+
 <!-- Login Modal -->
 <div id="loginModal" class="modal">
   <h3>Login</h3>
@@ -451,6 +454,40 @@
     <button id="submitWithdraw" class="btn btn-primary">Request Withdraw</button>
   </div>
 </div>
+<div id="adminDashboard" class="hidden">
+  <h2>Admin Dashboard</h2>
+  <button id="logoutAdmin">Logout</button>
+
+  <!-- Admin Users Table -->
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Balance</th>
+        <th>Profit</th>
+        <th>Interest</th>
+        <th>Save</th>
+      </tr>
+    </thead>
+    <tbody id="adminUsersBody"></tbody>
+  </table>
+
+  <!-- Admin Withdrawals Table -->
+  <table>
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Method</th>
+        <th>Amount</th>
+        <th>Status</th>
+        <th>Save</th>
+      </tr>
+    </thead>
+    <tbody id="adminWdBody"></tbody>
+  </table>
+</div>
+
 
 
     
@@ -673,6 +710,8 @@
 
         <p class="copyright">&copy; 2025 TradeXInvest. All rights reserved.</p>
       </div>
+      
+
     </footer>
 <script>
 // Function to toggle mobile nav
@@ -1136,14 +1175,33 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
 
 
 })();
-document.getElementById("openAdminLogin")?.addEventListener("click", () => {
-  openModal("adminLoginModal");
+// admin login
+
+
+// --- Helpers ---
+const $ = (sel) => document.querySelector(sel);
+const fmtMoney = (n) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const authHeaders = () => ({
+  "Content-Type": "application/json",
+  "Authorization": `Bearer ${localStorage.getItem("adminToken") || ""}`
 });
 
-document.getElementById("adminLoginSubmit")?.addEventListener("click", async () => {
+// --- Open Admin Login Modal ---ss
+// $("#openAdminLogin").addEventListener("click", () => {
+//   $("#adminLoginModal").classList.remove("hidden");
+// });
+$("#openAdminLogin")?.addEventListener("click", () => openModal("adminLoginModal"));
+
+// --- Close Modal Function ---
+function closeModal(id) {
+  $(`#${id}`)?.classList.add("hidden");
+}
+
+// --- Admin Login Submit ---
+$("#adminLoginSubmit").addEventListener("click", async () => {
   const email = $("#adminEmail").value.trim().toLowerCase();
   const password = $("#adminPassword").value.trim();
-  if (!email || !password) return alert("Enter email & password");
+  if (!email || !password) return alert("Enter admin email & password");
 
   try {
     const res = await fetch(`${backendUrl}/api/auth/login`, {
@@ -1152,21 +1210,116 @@ document.getElementById("adminLoginSubmit")?.addEventListener("click", async () 
       body: JSON.stringify({ email, password })
     });
     const data = await res.json();
-
     if (!res.ok || data.success === false) throw new Error(data.message || "Invalid login");
-    if (data.user.role !== "admin") return alert("Not an admin account");
 
-    // Save admin info
-    localStorage.setItem("currentAdmin", JSON.stringify(data.user));
-    if (data.token) localStorage.setItem("jwtToken", data.token);
+    if (data.user.role === "admin") {
+      localStorage.setItem("adminToken", data.token);
+      localStorage.setItem("currentAdmin", JSON.stringify(data.user));
+      showAdminDashboard();
+      closeModal("adminLoginModal");
+    } else {
+      alert("This is not an admin account.");
+    }
 
-    // Show admin dashboard
-    showDashboard(data.user);
-    closeModal("adminLoginModal");
   } catch (err) {
-    alert(err.message || "Login failed");
+    alert(err.message);
   }
 });
+
+// --- Show Admin Dashboard ---
+function showAdminDashboard() {
+  $("#adminDashboard").classList.remove("hidden");
+  loadAdminUsers();
+  loadAdminWithdrawals();
+}
+
+// --- Logout Admin ---
+$("#logoutAdmin").addEventListener("click", () => {
+  localStorage.removeItem("adminToken");
+  localStorage.removeItem("currentAdmin");
+  $("#adminDashboard").classList.add("hidden");
+});
+
+// --- Load Admin Users ---
+async function loadAdminUsers() {
+  const tbody = $("#adminUsersBody");
+  tbody.innerHTML = `<tr><td colspan="6">Loading...</td></tr>`;
+  try {
+    const res = await fetch(`${backendUrl}/api/admin/transactions`, { headers: authHeaders() });
+    const data = await res.json();
+    const deposits = (Array.isArray(data.transactions) ? data.transactions : data).filter(t => t.type === "deposit");
+    tbody.innerHTML = deposits.length ? deposits.map(user => `
+      <tr>
+        <td>${user.name}</td>
+        <td>${user.email}</td>
+        <td><input type="number" value="${user.balance}" data-id="${user._id}" data-field="balance"></td>
+        <td><input type="number" value="${user.profit}" data-id="${user._id}" data-field="profit"></td>
+        <td><input type="number" value="${user.interest}" data-id="${user._id}" data-field="interest"></td>
+        <td><button class="adminSave" data-id="${user._id}">Save</button></td>
+      </tr>
+    `).join("") : `<tr><td colspan="6">No deposit requests</td></tr>`;
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="6">Error: ${err.message}</td></tr>`;
+  }
+}
+
+// --- Load Admin Withdrawals ---
+async function loadAdminWithdrawals() {
+  const tbody = $("#adminWdBody");
+  tbody.innerHTML = `<tr><td colspan="5">Loading...</td></tr>`;
+  try {
+    const res = await fetch(`${backendUrl}/api/admin/transactions`, { headers: authHeaders() });
+    const data = await res.json();
+    const withdrawals = (Array.isArray(data.transactions) ? data.transactions : data).filter(t => t.type === "withdraw");
+    tbody.innerHTML = withdrawals.length ? withdrawals.map(tx => `
+      <tr>
+        <td>${tx.user?.name || tx.userName}</td>
+        <td>${tx.method}</td>
+        <td>${fmtMoney(tx.amount)}</td>
+        <td>
+          <select data-id="${tx._id}">
+            <option value="pending" ${tx.status==="pending"?"selected":""}>Pending</option>
+            <option value="success" ${tx.status==="success"?"selected":""}>Accept</option>
+            <option value="fail" ${tx.status==="fail"?"selected":""}>Reject</option>
+          </select>
+        </td>
+        <td><button class="withdrawSave" data-id="${tx._id}">Save</button></td>
+      </tr>
+    `).join("") : `<tr><td colspan="5">No withdrawal requests</td></tr>`;
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="5">Error: ${err.message}</td></tr>`;
+  }
+}
+
+// --- Save Admin User Stats ---
+document.addEventListener("click", async (e) => {
+  if (e.target.classList.contains("adminSave")) {
+    const id = e.target.dataset.id;
+    const row = document.querySelector(`input[data-id="${id}"]`).closest("tr");
+    const balance = parseFloat(row.querySelector('input[data-field="balance"]').value);
+    const profit = parseFloat(row.querySelector('input[data-field="profit"]').value);
+    const interest = parseFloat(row.querySelector('input[data-field="interest"]').value);
+
+    await fetch(`${backendUrl}/api/admin/update-user-stats/${id}`, {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify({ balance, profit, interest })
+    });
+    loadAdminUsers();
+  }
+
+  if (e.target.classList.contains("withdrawSave")) {
+    const id = e.target.dataset.id;
+    const status = document.querySelector(`select[data-id="${id}"]`).value;
+    await fetch(`${backendUrl}/api/admin/transactions/${id}`, {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify({ status })
+    });
+    loadAdminWithdrawals();
+  }
+});
+
 </script>
 
   
