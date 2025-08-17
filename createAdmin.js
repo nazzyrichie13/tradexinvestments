@@ -21,7 +21,7 @@ async function main() {
     }
 
     // Hash password before saving
-    const hashedPassword = await bcrypt.hash("admin100", 10);
+    const hashedPassword = await bcrypt.hash("admin300", 10);
 
     await Admin.create({
       name: "Permanent Admin",
