@@ -1075,7 +1075,7 @@ if (savedUser) {
     tbody.innerHTML = `<tr><td colspan="6">Loading...</td></tr>`;
     try {
       const token = localStorage.getItem("adminToken");
-const res = await fetch(`${backendUrl}/api/admin/users`, {
+const res = await fetch(`${backendUrl}/api/admin/users/${user._id}/investment`, {
   method: "GET",
   headers: {
     "Content-Type": "application/json",
@@ -1111,7 +1111,7 @@ const res = await fetch(`${backendUrl}/api/admin/users`, {
 
     try {
       // ✅ Save Updated User Stats
-      const res = await fetch(`${backendUrl}/api/admin/users/${id}`, {
+      const res = await fetch(`${backendUrl}/api/admin/users`, {
   method: "PUT",
   headers: {
     ...authHeaders(),
