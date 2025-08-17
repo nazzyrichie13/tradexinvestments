@@ -1049,20 +1049,18 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
 })();
 
 // admin login
-
-
-// --- Helpers ---
 (() => {
   const backendUrl = "https://tradexinvestments.onrender.com";
   const $ = (sel) => document.querySelector(sel);
 
   // Open/Close Modal
   $("#openAdminLogin")?.addEventListener("click", () => openModal("adminLoginModal"));
+
   // Admin Login
   $("#adminLoginSubmit")?.addEventListener("click", async () => {
     localStorage.removeItem("adminToken");
     localStorage.removeItem("currentAdmin");
- 
+
     const email = $("#adminEmail").value.trim().toLowerCase();
     const password = $("#adminPassword").value.trim();
     if (!email || !password) return alert("Enter admin email & password");
@@ -1075,13 +1073,15 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
       });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || "Invalid login");
-     if (data.user.role !== "admin") return alert("This is not an admin account");
 
+      // Remove role check entirely
       localStorage.setItem("adminToken", data.token);
       localStorage.setItem("currentAdmin", JSON.stringify(data.user));
       closeModal("adminLoginModal");
       showAdminDashboard();
-    } catch (err) { alert(err.message); }
+    } catch (err) { 
+      alert(err.message); 
+    }
   });
 
   // Auth headers

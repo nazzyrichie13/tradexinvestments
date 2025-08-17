@@ -1,4 +1,5 @@
 // routes/auth.js
+// routes/auth.js
 import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -10,200 +11,123 @@ import transporter from "../utils/mailer.js";
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "super_secret_jwt_key";
 
+// =========================
+// USER REGISTRATION
+// =========================
 router.post("/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // 1. Check required fields
     if (!name || !email || !password) {
       return res.status(400).json({ message: "All fields are required." });
     }
 
-    // 2. Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(409).json({ message: "Email already registered." });
-    }
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) return res.status(409).json({ message: "Email already registered." });
 
-    // 3. Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 4. Create new user
-    const newUser = new User({
-      name,
-      email,
-      password: hashedPassword
-    });
-
+    const newUser = new User({ name, email: email.toLowerCase(), password: hashedPassword });
     await newUser.save();
 
-    // 5. Generate JWT token (optional)
-    const token = jwt.sign(
-      { id: newUser._id, email: newUser.email },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    const token = jwt.sign({ id: newUser._id, email: newUser.email }, JWT_SECRET, { expiresIn: "7d" });
 
-    // 6. Respond with success and user info
     res.status(201).json({
-      message: "Account created successfully!",
-      user: {
-        id: newUser._id,
-        name: newUser.name,
-        email: newUser.email
-      },
-      token
+      message: "User account created successfully!",
+      user: { id: newUser._id, name: newUser.name, email: newUser.email },
+      token,
     });
-
   } catch (err) {
-    console.error("Signup error:", err);
+    console.error("User signup error:", err);
     res.status(500).json({ message: "Server error during signup." });
   }
 });
 
-// -------- LOGIN (User or Admin) --------
-router.post("/login", async (req, res) => {
+// =========================
+// USER LOGIN
+// =========================
+router.post("/user-login", async (req, res) => {
   try {
     const { email, password } = req.body;
-    const normalizedEmail = String(email || "").toLowerCase();
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) return res.status(401).json({ success: false, message: "Invalid email or password" });
 
-    // 1) Find account
-    let account = await User.findOne({ email: normalizedEmail });
-    let kind = "user";
-
-    if (!account) {
-      account = await Admin.findOne({ email: normalizedEmail });
-      kind = account ? "admin" : null;
-    }
-
-    if (!account) return res.status(401).json({ success: false, message: "Invalid email or password" });
-
-    // 2) Check password
-    const isMatch = await bcrypt.compare(password, account.password);
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ success: false, message: "Invalid email or password" });
 
-    // Ensure account.role exists
-    const role = account.role || kind;
-
-    // 3) Ensure 2FA secret exists for users
-    if (role === "user" && !account.twoFASecret) {
+    // 2FA setup for user
+    if (!user.twoFASecret) {
       const secret = speakeasy.generateSecret({ length: 20 });
-      account.twoFASecret = secret.base32;
-      await account.save();
+      user.twoFASecret = secret.base32;
+      await user.save();
     }
 
-    // 4) Send 2FA code if user (skip for admin)
-    let tempToken = null;
-    let requires2FA = false;
-    let requiresTerms = false;
+    const code = speakeasy.totp({ secret: user.twoFASecret, encoding: "base32" });
 
-    if (role === "user") {
-      const token2FA = speakeasy.totp({ secret: account.twoFASecret, encoding: "base32" });
-
-      await transporter.sendMail({
-        from: `"TradexInvest" <${process.env.EMAIL_USER}>`,
-        to: account.email,
-        subject: "Your TradexInvest 2FA Code",
-        text: `Your 2FA code is: ${token2FA}`,
-      });
-
-      tempToken = jwt.sign({ id: account._id, email: account.email, kind }, JWT_SECRET, { expiresIn: "10m" });
-      requires2FA = true;
-      requiresTerms = true;
-    }
-
-    // JWT for admin login
-    const jwtToken = role === "admin"
-      ? jwt.sign({ id: account._id, email: account.email, role }, JWT_SECRET, { expiresIn: "1h" })
-      : null;
-
-    res.json({
-      success: true,
-      message: "Login successful",
-      requires2FA,
-      requiresTerms,
-      tempToken,
-      token: jwtToken,
-      user: {
-        id: account._id,
-        name: account.name,
-        email: account.email,
-        role,
-      },
+    await transporter.sendMail({
+      from: `"TradexInvest" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: "Your TradexInvest 2FA Code",
+      text: `Your 2FA code is: ${code}`,
     });
 
+    const tempToken = jwt.sign({ id: user._id, kind: "user" }, JWT_SECRET, { expiresIn: "10m" });
+
+    res.json({ success: true, requires2FA: true, tempToken });
   } catch (err) {
-    console.error("Login error:", err);
+    console.error("User login error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
-// -------- VERIFY 2FA --------
+// =========================
+// ADMIN LOGIN
+// =========================
+router.post("/admin-login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const admin = await Admin.findOne({ email: email.toLowerCase() });
+    if (!admin) return res.status(401).json({ success: false, message: "Invalid email or password" });
+
+    const isMatch = await bcrypt.compare(password, admin.password);
+    if (!isMatch) return res.status(401).json({ success: false, message: "Invalid email or password" });
+
+    const token = jwt.sign({ id: admin._id, email: admin.email }, JWT_SECRET, { expiresIn: "1h" });
+
+    res.json({
+      success: true,
+      message: "Admin login successful",
+      token,
+      admin: { id: admin._id, name: admin.name, email: admin.email },
+    });
+  } catch (err) {
+    console.error("Admin login error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// =========================
+// USER 2FA VERIFY
+// =========================
 router.post("/verify-2fa", async (req, res) => {
   try {
     const { code, tempToken } = req.body;
     if (!code || !tempToken) return res.status(400).json({ success: false, message: "Code and tempToken required" });
 
     const decoded = jwt.verify(tempToken, JWT_SECRET);
-    const { id, kind } = decoded;
+    if (decoded.kind !== "user") return res.status(400).json({ success: false, message: "Invalid token for 2FA" });
 
-    const Model = kind === "admin" ? Admin : User;
-    const account = await Model.findById(id);
-    if (!account) return res.status(401).json({ success: false, message: "Account not found" });
+    const user = await User.findById(decoded.id);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    const verified = speakeasy.totp.verify({ secret: account.twoFASecret, encoding: "base32", token: code, window: 2 });
+    const verified = speakeasy.totp.verify({ secret: user.twoFASecret, encoding: "base32", token: code, window: 2 });
     if (!verified) return res.status(400).json({ success: false, message: "Invalid 2FA code" });
 
-    const jwtToken = jwt.sign({ id: account._id, email: account.email, role: account.role || kind }, JWT_SECRET, { expiresIn: "1h" });
+    const jwtToken = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: "7d" });
 
-    res.json({
-      success: true,
-      message: "2FA verified",
-      token: jwtToken,
-      user: {
-        id: account._id,
-        name: account.name,
-        email: account.email,
-        role: account.role || kind,
-      },
-    });
-
+    res.json({ success: true, token: jwtToken, user: { id: user._id, name: user.name, email: user.email } });
   } catch (err) {
     console.error("2FA verify error:", err);
-    const msg = err.name === "TokenExpiredError" ? "2FA session expired, please login again" : "Server error";
-    res.status(500).json({ success: false, message: msg });
-  }
-});
-
-// -------- RESEND 2FA --------
-router.post("/resend-2fa", async (req, res) => {
-  try {
-    const { email } = req.body;
-    const normalizedEmail = String(email || "").toLowerCase();
-
-    let account = await User.findOne({ email: normalizedEmail });
-    if (!account) account = await Admin.findOne({ email: normalizedEmail });
-    if (!account) return res.status(401).json({ success: false, message: "Account not found" });
-
-    if (!account.twoFASecret) {
-      const secret = speakeasy.generateSecret({ length: 20 });
-      account.twoFASecret = secret.base32;
-      await account.save();
-    }
-
-    const token2FA = speakeasy.totp({ secret: account.twoFASecret, encoding: "base32" });
-
-    await transporter.sendMail({
-      from: `"TradexInvest" <${process.env.EMAIL_USER}>`,
-      to: account.email,
-      subject: "Your TradexInvest 2FA Code (Resent)",
-      text: `Your 2FA code is: ${token2FA}`,
-    });
-
-    res.json({ success: true, message: "2FA code resent to your email" });
-  } catch (err) {
-    console.error("2FA resend error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
