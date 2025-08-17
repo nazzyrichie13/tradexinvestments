@@ -877,7 +877,6 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
     "Authorization": `Bearer ${token()}`
   });
   const $ = (sel) => document.querySelector(sel);
-  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
   const fmtMoney = (n) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmtDate = (d) => new Date(d).toLocaleString();
 
@@ -892,7 +891,7 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
   }
 
   // ---------- transactions ----------
-  async function loadTransactions(user) {
+  async function loadTransactions() {
     const tbody = $("#txTable tbody");
     if (!tbody) return;
     tbody.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
@@ -916,159 +915,44 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
     }
   }
 
-  // ---------- admin functions ----------
-  async function loadAdminUsers() {
-    const tbody = $("#adminUsersBody");
-    if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="5">Loading...</td></tr>`;
-    try {
-      const res = await fetch(`${backendUrl}/api/admin/transactions`, { headers: authHeaders() });
-      const data = await res.json();
-      const deposits = (Array.isArray(data.transactions) ? data.transactions : data).filter(t => t.type === "deposit");
-      tbody.innerHTML = deposits.length
-        ? deposits.map(adminUserRowHTML).join("")
-        : `<tr><td colspan="5">No deposit requests.</td></tr>`;
-    } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="5">Error: ${e.message}</td></tr>`;
-    }
-  }
-
-  async function loadAdminWithdrawals() {
-    const tbody = $("#adminWdBody");
-    if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="5">Loading...</td></tr>`;
-    try {
-      const res = await fetch(`${backendUrl}/api/admin/transactions`, { headers: authHeaders() });
-      const data = await res.json();
-      const withdrawals = (Array.isArray(data.transactions) ? data.transactions : data).filter(t => t.type === "withdraw");
-      tbody.innerHTML = withdrawals.length
-        ? withdrawals.map(adminWithdrawalRowHTML).join("")
-        : `<tr><td colspan="5">No withdrawal requests.</td></tr>`;
-    } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="5">Error: ${e.message}</td></tr>`;
-    }
-  }
-
   // ---------- dashboard ----------
   function showDashboard(user) {
-  if (!user) return console.warn("No user provided");
+    if (!user) return console.warn("No user provided");
 
-  // Close any open modals
-  window.closeModal?.("loginModal");
-  window.closeModal?.("termsModal");
-  window.closeModal?.("twoFAModal");
+    window.closeModal?.("loginModal");
+    window.closeModal?.("termsModal");
+    window.closeModal?.("twoFAModal");
 
-  const dashboardCard = $("#dashboardCard");
-  const adminCard = $("#adminCard");
-
-  if (user.role === "admin") {
-    // Show admin dashboard
-    adminCard?.classList.remove("hidden");
-    dashboardCard?.classList.add("hidden");
-    loadAdminUsers();
-    loadAdminWithdrawals();
-  } else {
-    // Show user dashboard
+    const dashboardCard = $("#dashboardCard");
     dashboardCard?.classList.remove("hidden");
-    adminCard?.classList.add("hidden");
     hydrateStatsFromUser(user);
+
     $("#depositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
     $("#withdrawBtn")?.addEventListener("click", () => window.openModal?.("withdrawModal"));
-    loadTransactions(user);
-  }
 
-  // ---------- topbar buttons ----------
-  $("#openLogin")?.classList.add("hidden");
-  $("#openSignup")?.classList.add("hidden");
-  $("#openDashboard")?.classList.remove("hidden");
-  $("#logoutTop")?.classList.remove("hidden");
+    loadTransactions();
 
-  const adminBtn = $("#openAdmin");
-  if (user.role === "admin") {
-    adminBtn?.classList.remove("hidden");
-  } else {
-    adminBtn?.classList.add("hidden");
-  }
+    // ---------- topbar buttons ----------
+    $("#openLogin")?.classList.add("hidden");
+    $("#openSignup")?.classList.add("hidden");
+    $("#openDashboard")?.classList.remove("hidden");
+    $("#logoutTop")?.classList.remove("hidden");
 
-  // ---------- logout ----------
-  const logoutBtn = $("#logoutTop");
-  if (logoutBtn && !logoutBtn.dataset.listenerAdded) {
-    logoutBtn.addEventListener("click", () => {
-      localStorage.removeItem("jwtToken");
-      localStorage.removeItem("currentUser");
-      localStorage.removeItem("currentAdmin");
-      dashboardCard?.classList.add("hidden");
-      adminCard?.classList.add("hidden");
-      $("#openLogin")?.classList.remove("hidden");
-      $("#openSignup")?.classList.remove("hidden");
-      $("#openDashboard")?.classList.add("hidden");
-      logoutBtn.classList.add("hidden");
-    });
-    logoutBtn.dataset.listenerAdded = "true";
-  }
-}
-
-  // ---------- admin row HTML ----------
-  function adminUserRowHTML(user) {
-    return `<tr>
-      <td>${user.name}</td>
-      <td>${user.email}</td>
-      <td><input type="number" data-id="${user._id}" data-field="balance" value="${user.balance || 0}" class="stat-input"></td>
-      <td><input type="number" data-id="${user._id}" data-field="profit" value="${user.profit || 0}" class="stat-input"></td>
-      <td><input type="number" data-id="${user._id}" data-field="interest" value="${user.interest || 0}" class="stat-input"></td>
-      <td><button class="btn btn-primary admin-stat-save" data-id="${user._id}">Save</button></td>
-    </tr>`;
-  }
-
-  function adminWithdrawalRowHTML(tx) {
-    return `<tr>
-      <td>${tx.user?.name || tx.userName}</td>
-      <td>${tx.method || "-"}</td>
-      <td>$${fmtMoney(tx.amount)}</td>
-      <td>
-        <select data-id="${tx._id}" class="withdraw-status">
-          <option value="pending" ${tx.status==="pending"?"selected":""}>Pending</option>
-          <option value="success" ${tx.status==="success"?"selected":""}>Accept</option>
-          <option value="fail" ${tx.status==="fail"?"selected":""}>Reject</option>
-        </select>
-      </td>
-      <td><button class="btn btn-primary save-withdraw" data-id="${tx._id}">Save</button></td>
-    </tr>`;
-  }
-
-  // ---------- event delegation ----------
-  document.addEventListener("click", async (e) => {
-    if (e.target.classList.contains("admin-stat-save")) {
-      const id = e.target.dataset.id;
-      const row = document.querySelector(`input[data-id="${id}"]`).closest("tr");
-      const balance = parseFloat(row.querySelector('input[data-field="balance"]').value);
-      const profit = parseFloat(row.querySelector('input[data-field="profit"]').value);
-      const interest = parseFloat(row.querySelector('input[data-field="interest"]').value);
-      try {
-        await fetch(`${backendUrl}/api/admin/update-user-stats/${id}`, {
-          method: "PATCH",
-          headers: authHeaders(),
-          body: JSON.stringify({ balance, profit, interest })
-        });
-        alert("User stats updated successfully");
-        loadAdminUsers();
-      } catch (err) { alert(err.message); }
+    // ---------- logout ----------
+    const logoutBtn = $("#logoutTop");
+    if (logoutBtn && !logoutBtn.dataset.listenerAdded) {
+      logoutBtn.addEventListener("click", () => {
+        localStorage.removeItem("jwtToken");
+        localStorage.removeItem("currentUser");
+        dashboardCard?.classList.add("hidden");
+        $("#openLogin")?.classList.remove("hidden");
+        $("#openSignup")?.classList.remove("hidden");
+        $("#openDashboard")?.classList.add("hidden");
+        logoutBtn.classList.add("hidden");
+      });
+      logoutBtn.dataset.listenerAdded = "true";
     }
-
-    if (e.target.classList.contains("save-withdraw")) {
-      const id = e.target.dataset.id;
-      const status = document.querySelector(`select[data-id="${id}"]`).value;
-      try {
-        await fetch(`${backendUrl}/api/admin/transactions/${id}`, {
-          method: "PATCH",
-          headers: authHeaders(),
-          body: JSON.stringify({ status })
-        });
-        alert("Withdrawal status updated");
-        loadAdminWithdrawals();
-      } catch (err) { alert(err.message); }
-    }
-  });
+  }
 
   // ---------- login & 2FA ----------
   document.addEventListener("DOMContentLoaded", () => {
@@ -1079,7 +963,7 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
     const verify2Btn = $("#verify2FA");
     const resend2Btn = $("#resend2FA");
 
-    const savedUser = localStorage.getItem("currentAdmin") || localStorage.getItem("currentUser");
+    const savedUser = localStorage.getItem("currentUser");
     if (savedUser) showDashboard(JSON.parse(savedUser));
 
     loginBtn?.addEventListener("click", async (e) => {
@@ -1097,15 +981,9 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
         const data = await res.json();
         if (!res.ok || data.success === false) throw new Error(data.message || "Invalid login");
 
-        if (data.user.role === "admin") {
-          localStorage.setItem("currentAdmin", JSON.stringify(data.user));
-          if (data.token) localStorage.setItem("jwtToken", data.token);
-          showDashboard(data.user);
-        } else {
-          localStorage.setItem("currentUser", JSON.stringify({ ...data.user, tempToken: data.tempToken }));
-          if (data.requiresTerms) openModal?.("termsModal");
-          else if (data.requires2FA) openModal?.("twoFAModal") && startTwofaCountdown?.(300);
-        }
+        localStorage.setItem("currentUser", JSON.stringify({ ...data.user, tempToken: data.tempToken }));
+        if (data.requiresTerms) openModal?.("termsModal");
+        else if (data.requires2FA) openModal?.("twoFAModal") && startTwofaCountdown?.(300);
       } catch (err) { alert(err.message || "Login failed"); }
     });
 
@@ -1168,13 +1046,8 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
     updateDisplay();
     twofaTimer = setInterval(() => { remaining--; updateDisplay(); if(remaining <= 0) clearInterval(twofaTimer); }, 1000);
   }
-
-  // ---------- topbar toggle ----------
-  $("#openAdmin")?.addEventListener("click", () => { $("#adminCard")?.classList.remove("hidden"); $("#dashboardCard")?.classList.add("hidden"); });
-  $("#openDashboard")?.addEventListener("click", () => { $("#adminCard")?.classList.add("hidden"); $("#dashboardCard")?.classList.remove("hidden"); });
-
-
 })();
+
 // admin login
 
 
