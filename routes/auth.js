@@ -168,26 +168,26 @@ router.get("/admin/users", requireAdmin, async (req, res) => {
 });
 // Update User Investment (amount & interest)
 // =========================
-// router.put("/admin/users/:id/investment", requireAdmin, async (req, res) => {
-//   try {
-//     const { balance, profit, interest } = req.body;
+router.put("/admin/users/:id/investment", requireAdmin, async (req, res) => {
+  try {
+    const { balance, profit, interest } = req.body;
 
-//     const user = await User.findByIdAndUpdate(
-//       req.params.id,
-//       { $set: { balance, profit, interest } }, // ✅ now matches frontend
-//       { new: true }
-//     );
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { $set: { balance, profit, interest } }, // ✅ now matches frontend
+      { new: true }
+    );
 
-//     if (!user) {
-//       return res.status(404).json({ error: "User not found" });
-//     }
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
-//     res.json({ success: true, user });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ error: "Failed to update investment" });
-//   }
-// });
+    res.json({ success: true, user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update investment" });
+  }
+});
 
 // =========================
 // Get All Withdrawals
