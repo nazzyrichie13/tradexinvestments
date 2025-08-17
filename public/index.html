@@ -1072,7 +1072,7 @@ if (savedUser) {
     const tbody = $("#adminUsersBody");
     tbody.innerHTML = `<tr><td colspan="6">Loading...</td></tr>`;
     try {
-      const res = await fetch(`${backendUrl}/api/admin/users`, { headers: authHeaders() });
+      const res = await fetch(`${backendUrl}/admin/users`, { headers: authHeaders() });
       const data = await res.json();
       if (!data.success) throw new Error(data.message || "Failed to load users");
 
@@ -1102,7 +1102,7 @@ if (savedUser) {
 
       try {
         // ✅ Save Updated User Stats (now matches backend route)
-const res = await fetch(`${backendUrl}/api/admin/users/${id}/investment`, {
+const res = await fetch(`${backendUrl}/api/admin/users/:id/investment`, {
   method: "PUT",
   headers: authHeaders(),
   body: JSON.stringify({ amount: balance, profit, interest }) // adjust fields to match User schema
@@ -1123,7 +1123,7 @@ const res = await fetch(`${backendUrl}/api/admin/users/${id}/investment`, {
     if (!tbody) return;
     tbody.innerHTML = `<tr><td colspan="5">Loading...</td></tr>`;
     try {
-      const res = await fetch(`${backendUrl}/api/admin/withdrawals`, { headers: authHeaders() });
+      const res = await fetch(`${backendUrl}/api/admin/withdrawals/:id/confirm`, { headers: authHeaders() });
       const data = await res.json();
       if (!data.success) throw new Error(data.message || "Failed to load withdrawals");
 

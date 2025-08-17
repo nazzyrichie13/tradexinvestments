@@ -138,19 +138,22 @@ router.post("/verify-2fa", async (req, res) => {
 });
 // =========================
 // Middleware: Protect Admin Routes
-// =========================
 function requireAdmin(req, res, next) {
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) return res.status(403).json({ error: "No token provided" });
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.role !== "admin") {
+      return res.status(403).json({ error: "Not authorized as admin" });
+    }
     req.admin = decoded;
     next();
   } catch (err) {
     return res.status(401).json({ error: "Invalid or expired token" });
   }
 }
+
 
 // =========================
 // Get All Users (Investments, Withdrawals etc.)
@@ -161,6 +164,19 @@ router.get("/admin/users", requireAdmin, async (req, res) => {
     res.json({ success: true, users });
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
+// =========================
+// Get All Withdrawals
+// =========================
+import Withdrawal from "../models/Withdrawal.js";  // make sure you import this at top
+
+router.get("/admin/withdrawals", requireAdmin, async (req, res) => {
+  try {
+    const withdrawals = await Withdrawal.find().populate("user", "name email");
+    res.json({ success: true, withdrawals });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch withdrawals" });
   }
 });
 
