@@ -1075,7 +1075,7 @@ if (savedUser) {
     tbody.innerHTML = `<tr><td colspan="6">Loading...</td></tr>`;
     try {
       const token = localStorage.getItem("adminToken");
-const res = await fetch(`${backendUrl}/api/admin/users/${user._id}/investment`, {
+const res = await fetch(`${backendUrl}/api/admin/users`, {
   method: "GET",
   headers: {
     "Content-Type": "application/json",
@@ -1111,7 +1111,7 @@ const res = await fetch(`${backendUrl}/api/admin/users/${user._id}/investment`, 
 
     try {
       // ✅ Save Updated User Stats
-      const res = await fetch(`${backendUrl}/api/admin/users`, {
+      const res = await fetch(`${backendUrl}/api/admin/users/${user._id}/investment`, {
   method: "PUT",
   headers: {
     ...authHeaders(),
@@ -1178,47 +1178,6 @@ loadAdminUsers();
     tableBody.innerHTML += row;
   });
 }
-async function editUser(id) {
-  const res = await fetch(`${backendUrl}/api/admin/users/${id}`, {
-    headers: authHeaders(),
-  });
-  const user = await res.json();
-
-  document.querySelector("#editUserId").value = user._id;
-  document.querySelector("#editBalance").value = user.balance || 0;
-  document.querySelector("#editProfit").value = user.profit || 0;
-  document.querySelector("#editInterest").value = user.interest || 0;
-
-  openModal("editUserModal"); // show modal
-}
-document.querySelector("#updateUserForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const id = document.querySelector("#editUserId").value;
-  const balance = document.querySelector("#editBalance").value;
-  const profit = document.querySelector("#editProfit").value;
-  const interest = document.querySelector("#editInterest").value;
-
-  try {
-    const res = await fetch(`${backendUrl}/api/admin/users/${id}/investment`, {
-      method: "PUT",
-      headers: {
-        ...authHeaders(),
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ balance, profit, interest })
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Update failed");
-
-    alert("User updated successfully!");
-    closeModal("editUserModal");
-    loadAdminUsers();
-  } catch (err) {
-    alert("Error updating user: " + err.message);
-  }
-});
 
 
   // 🔹 Approve/Reject Withdrawal
