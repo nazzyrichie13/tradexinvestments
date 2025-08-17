@@ -73,7 +73,12 @@ router.post("/user-login", async (req, res) => {
 
     const tempToken = jwt.sign({ id: user._id, kind: "user" }, JWT_SECRET, { expiresIn: "10m" });
 
-    res.json({ success: true, requires2FA: true, tempToken });
+    res.json({
+      success: true,
+      requires2FA: true,
+      tempToken,
+      requiresTerms: !user.acceptedTerms // ✅ send to frontend
+    });
   } catch (err) {
     console.error("User login error:", err);
     res.status(500).json({ success: false, message: "Server error" });

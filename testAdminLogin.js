@@ -1,40 +1,49 @@
 // testAdminLogin.js
+// testAdminLogin.js
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
-import Admin from "./models/Admin.js";
+import jwt from "jsonwebtoken";
+import Admin from "./models/Admin.js"; // adjust path if needed
 
 dotenv.config();
 
-const emailToTest = "Yankeeplaystore@gmail.com"; // your admin email
-const passwordToTest = "admin123";               // the plain password you think is correct
+const MONGO_URI = process.env.MONGO_URI;
+const JWT_SECRET = process.env.JWT_SECRET || "super_secret_jwt_key";
 
-async function testLogin() {
+const runTest = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log("✅ MongoDB connected");
+    await mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Connected to MongoDB");
 
-    // find admin by email
-    const admin = await Admin.findOne({ email: emailToTest });
+    const email = "marcelthompson703@gmail.com";
+    const plainPassword = "Admin123!";
+
+    // 1️⃣ Check if admin already exists
+    let admin = await Admin.findOne({ email: email.toLowerCase() });
     if (!admin) {
-      console.log("❌ Admin not found in database");
-      return;
-    }
-
-    console.log("Admin found:", admin.email);
-
-    // check password
-    const isMatch = await bcrypt.compare(passwordToTest, admin.password);
-    if (isMatch) {
-      console.log("✅ Password matches! Login should work");
+      const hashedPassword = await bcrypt.hash(plainPassword, 10);
+      admin = new Admin({ name: "Test Admin", email, password: hashedPassword });
+      await admin.save();
+      console.log("New admin created with known password!");
     } else {
-      console.log("❌ Password does NOT match! Check what was hashed in DB");
+      console.log("Admin already exists, using existing record.");
     }
-  } catch (err) {
-    console.error("Error:", err);
-  } finally {
-    mongoose.connection.close();
-  }
-}
 
-testLogin();
+    // 2️⃣ Attempt login
+    const isMatch = await bcrypt.compare(plainPassword, admin.password);
+    if (!isMatch) throw new Error("Password mismatch");
+
+    const token = jwt.sign({ id: admin._id, email: admin.email }, JWT_SECRET, { expiresIn: "1h" });
+    console.log("Login successful!");
+    console.log("JWT Token:", token);
+    console.log("Admin info:", { id: admin._id, name: admin.name, email: admin.email });
+
+    process.exit(0);
+  } catch (err) {
+    console.error("Test failed:", err);
+    process.exit(1);
+  }
+};
+
+runTest();

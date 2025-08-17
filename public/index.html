@@ -290,7 +290,10 @@
 
   <!-- Dashboard / right column -->
   <div class="grid">
-    <div id="dashboardCard" class="card hidden">
+    <div id="adminDashboard" class="card hidden">
+      
+  <h2>Admin Dashboard</h2>
+  <button id="logoutAdmin">Logout</button>
       <div class="row" style="justify-content:space-between;align-items:center">
         <div>
           <h2 id="welcomeUser">Welcome</h2>
@@ -454,40 +457,6 @@
     <button id="submitWithdraw" class="btn btn-primary">Request Withdraw</button>
   </div>
 </div>
-<div id="adminDashboard" class="hidden">
-  <h2>Admin Dashboard</h2>
-  <button id="logoutAdmin">Logout</button>
-
-  <!-- Admin Users Table -->
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Balance</th>
-        <th>Profit</th>
-        <th>Interest</th>
-        <th>Save</th>
-      </tr>
-    </thead>
-    <tbody id="adminUsersBody"></tbody>
-  </table>
-
-  <!-- Admin Withdrawals Table -->
-  <table>
-    <thead>
-      <tr>
-        <th>User</th>
-        <th>Method</th>
-        <th>Amount</th>
-        <th>Status</th>
-        <th>Save</th>
-      </tr>
-    </thead>
-    <tbody id="adminWdBody"></tbody>
-  </table>
-</div>
-
 
 
     
@@ -985,7 +954,8 @@ if (savedUser) {
         const res = await fetch(`${backendUrl}/api/auth/user-login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password })
+          body: JSON.stringify({ email, password }),
+        
         });
         const data = await res.json();
         if (!res.ok || data.success === false) throw new Error(data.message || "Invalid login");

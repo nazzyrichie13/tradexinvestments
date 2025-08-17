@@ -1,38 +1,47 @@
-// createAdmin.js
-// createAdmin.js
 import mongoose from "mongoose";
-import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
-import Admin from "./models/Admin.js";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+import Admin from "./models/Admin.js"; // adjust path if needed
 
 dotenv.config();
 
-const MONGO_URI = process.env.MONGO_URI || "your_mongo_connection_string";
+const JWT_SECRET = process.env.JWT_SECRET || "super_secret_jwt_key";
+const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/tradexinvest";
 
-const createAdmin = async () => {
+const run = async () => {
   try {
-    await mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+    // 1️⃣ Connect to MongoDB
+    await mongoose.connect(MONGO_URI);
     console.log("Connected to MongoDB");
 
-    const email = "Yankeeplaystore@gmail.com";  // set your admin email
-    const password = "Olajide321@"; // set your admin password
-    const name = "Admin"; // optional, default is "Admin"
+    // 2️⃣ Admin credentials
+    const email = "example@gmail.com";
+    const plainPassword = "Adminpassword";
 
-    // Check if admin already exists
-    const existingAdmin = await Admin.findOne({ email });
-    if (existingAdmin) {
-      console.log("Admin already exists");
-      return process.exit(0);
+    // 3️⃣ Check if admin exists
+    let admin = await Admin.findOne({ email: email.toLowerCase() });
+
+    if (!admin) {
+      // 4️⃣ Hash password & create admin
+      const hashedPassword = await bcrypt.hash(plainPassword, 10);
+      admin = new Admin({ name: "Main Admin", email, password: hashedPassword });
+      await admin.save();
+      console.log("✅ New admin created with known password!");
+    } else {
+      console.log("ℹ️ Admin already exists, using existing record.");
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // 5️⃣ Optional: Test login and generate JWT
+    const isMatch = await bcrypt.compare(plainPassword, admin.password);
+    if (!isMatch) throw new Error("Password mismatch");
 
-    // Create admin
-    const admin = new Admin({ name, email, password: hashedPassword });
-    await admin.save();
+    const token = jwt.sign({ id: admin._id, email: admin.email }, JWT_SECRET, { expiresIn: "1h" });
 
-    console.log("Admin created successfully!");
+    console.log("Login test successful!");
+    console.log("JWT Token:", token);
+    console.log("Admin info:", { id: admin._id, name: admin.name, email: admin.email });
+
     process.exit(0);
   } catch (err) {
     console.error("Error creating admin:", err);
@@ -40,4 +49,4 @@ const createAdmin = async () => {
   }
 };
 
-createAdmin();
+run();
