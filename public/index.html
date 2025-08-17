@@ -1099,30 +1099,35 @@ const res = await fetch(`${backendUrl}/api/admin/users`, {
   }
 
   // 🔹 Save Updated User Stats
-  document.addEventListener("click", async (e) => {
-    if (e.target.classList.contains("adminSave")) {
-      const id = e.target.dataset.id;
-      const row = e.target.closest("tr");
-      const balance = parseFloat(row.querySelector('input[data-field="balance"]').value);
-      const profit = parseFloat(row.querySelector('input[data-field="profit"]').value);
-      const interest = parseFloat(row.querySelector('input[data-field="interest"]').value);
+ document.addEventListener("click", async (e) => {
+  if (e.target.classList.contains("adminSave")) {
+    const id = e.target.dataset.id; // this should be the user's ID
+    const row = e.target.closest("tr");
+    const balance = parseFloat(row.querySelector('input[data-field="balance"]').value);
+    const profit = parseFloat(row.querySelector('input[data-field="profit"]').value);
+    const interest = parseFloat(row.querySelector('input[data-field="interest"]').value);
 
-      try {
-        // ✅ Save Updated User Stats (now matches backend route)
-const res = await fetch(`${backendUrl}/api/admin/withdrawals/${withdrawal._id}/confirm`, {
-  method: "PUT",
-  headers: authHeaders(),
-  body: JSON.stringify({ amount: balance, profit, interest }) // adjust fields to match User schema
-});
-        const data = await res.json();
-        if (!res.ok || !data.success) throw new Error(data.message || "Update failed");
-        alert("User updated successfully!");
-        loadAdminUsers();
-      } catch (err) {
-        alert("Error updating user: " + err.message);
-      }
+    try {
+      // ✅ Save Updated User Stats
+      const res = await fetch(`${backendUrl}/api/admin/users/${id}`, {
+        method: "PUT",
+        headers: {
+          ...authHeaders(),
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ balance, profit, interest })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Update failed");
+
+      alert("User updated successfully!");
+      loadAdminUsers(); // reload updated users
+    } catch (err) {
+      alert("Error updating user: " + err.message);
     }
-  });
+  }
+});
 
   // 🔹 Load Withdrawals into Admin Panel
   async function loadWithdrawals() {
