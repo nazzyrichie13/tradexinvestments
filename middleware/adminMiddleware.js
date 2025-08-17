@@ -1,10 +1,12 @@
 // middleware/adminMiddleware.js
 
 
-export const requireAdmin = (req, res, next) => {
-  // Make sure req.userRole is set in requireAuth
-  if (!req.userRole || req.userRole !== "admin") {
-    return res.status(403).json({ msg: "Admin access required" });
-  }
-  next();
-};
+import mongoose from "mongoose";
+
+const adminSchema = new mongoose.Schema({
+  name: { type: String, default: "Admin" },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+});
+
+export default mongoose.model("Admin", adminSchema);

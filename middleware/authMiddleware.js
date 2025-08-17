@@ -1,5 +1,6 @@
 // middleware/authMiddleware.js
 
+// middleware/auth.js
 import jwt from "jsonwebtoken";
 
 export const requireAuth = (req, res, next) => {
@@ -10,11 +11,17 @@ export const requireAuth = (req, res, next) => {
 
     const payload = jwt.verify(token, process.env.JWT_SECRET);
     req.userId = payload.id;
-    req.userRole = payload.role; // ⚡ important for admin routes
+    req.isAdmin = payload.isAdmin || false; // ✅ comes from token
     next();
   } catch (e) {
     return res.status(401).json({ msg: "Invalid or expired token" });
   }
 };
 
-
+// for admin-only routes
+export const requireAdmin = (req, res, next) => {
+  if (!req.isAdmin) {
+    return res.status(403).json({ msg: "Admins only" });
+  }
+  next();
+};
