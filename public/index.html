@@ -329,7 +329,7 @@
 </div>
 
 <!-- ================= Edit User Modal ================= -->
-<div id="editUserModal" class="modal hidden">
+<div id="updateUserForm" class="modal hidden">
   <div class="modal-content">
     <h3>Edit User</h3>
     <label>Name <input type="text" id="editName" /></label>
@@ -341,20 +341,7 @@
     <button onclick="closeModal('editUserModal')" class="btn">Cancel</button>
   </div>
 </div>
-<form id="updateUserForm">
-  <input type="hidden" id="editUserId" />
 
-  <label>Balance</label>
-  <input type="number" id="editBalance" />
-
-  <label>Profit</label>
-  <input type="number" id="editProfit" />
-
-  <label>Interest (%)</label>
-  <input type="number" id="editInterest" />
-
-  <button type="submit">Update</button>
-</form>
 
 
     
@@ -1124,7 +1111,7 @@ const res = await fetch(`${backendUrl}/api/admin/users`, {
 
     try {
       // ✅ Save Updated User Stats
-      const res = await fetch(`${backendUrl}/api/admin/users/${id}/investment`, {
+      const res = await fetch(`${backendUrl}/api/admin/users/${id}`, {
   method: "PUT",
   headers: {
     ...authHeaders(),
