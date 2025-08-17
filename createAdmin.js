@@ -1,6 +1,5 @@
 // createAdmin.js
 // createAdmin.js
-// createAdmin.js
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
@@ -8,34 +7,37 @@ import Admin from "./models/Admin.js";
 
 dotenv.config();
 
-async function main() {
+const MONGO_URI = process.env.MONGO_URI || "your_mongo_connection_string";
+
+const createAdmin = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log("✅ MongoDB connected");
+    await mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Connected to MongoDB");
+
+    const email = "Yankeeplaystore@gmail.com";  // set your admin email
+    const password = "Olajide321@"; // set your admin password
+    const name = "Admin"; // optional, default is "Admin"
 
     // Check if admin already exists
-    const existing = await Admin.findOne({ email: "Yankeeplaystore@gmail.com" });
-    if (existing) {
-      console.log("ℹ️ Admin already exists:", existing.email);
-      return;
+    const existingAdmin = await Admin.findOne({ email });
+    if (existingAdmin) {
+      console.log("Admin already exists");
+      return process.exit(0);
     }
 
-    // Hash password before saving
-    const hashedPassword = await bcrypt.hash("admin300", 10);
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    await Admin.create({
-      name: "Permanent Admin",
-      email: "Yankeeplaystore@gmail.com",
-      password: hashedPassword,
-      role: "admin"
-    });
+    // Create admin
+    const admin = new Admin({ name, email, password: hashedPassword });
+    await admin.save();
 
-    console.log("✅ Permanent admin created: Yankeeplaystore@gmail.com");
+    console.log("Admin created successfully!");
+    process.exit(0);
   } catch (err) {
-    console.error("❌ Error:", err);
-  } finally {
-    mongoose.connection.close();
+    console.error("Error creating admin:", err);
+    process.exit(1);
   }
-}
+};
 
-main();
+createAdmin();

@@ -964,7 +964,16 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
     const resend2Btn = $("#resend2FA");
 
     const savedUser = localStorage.getItem("currentUser");
-    if (savedUser) showDashboard(JSON.parse(savedUser));
+if (savedUser) {
+  try {
+    const userObj = JSON.parse(savedUser);
+    showDashboard(userObj);
+  } catch (err) {
+    console.error("Invalid JSON in localStorage:", err);
+    localStorage.removeItem("currentUser"); // optional: clean it
+  }
+}
+
 
     loginBtn?.addEventListener("click", async (e) => {
       e.preventDefault();
@@ -973,7 +982,7 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
       if (!email || !password) return alert("Enter email & password");
 
       try {
-        const res = await fetch(`${backendUrl}/api/auth/login`, {
+        const res = await fetch(`${backendUrl}/api/auth/user-login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password })
@@ -1066,7 +1075,7 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
     if (!email || !password) return alert("Enter admin email & password");
 
     try {
-      const res = await fetch(`${backendUrl}/api/admin/login`, {
+      const res = await fetch(`${backendUrl}/api/auth/admin-login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
@@ -1076,9 +1085,9 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
 
       // Remove role check entirely
       localStorage.setItem("adminToken", data.token);
-      localStorage.setItem("currentAdmin", JSON.stringify(data.user));
-      closeModal("adminLoginModal");
-      showAdminDashboard();
+localStorage.setItem("currentAdmin", JSON.stringify(data.admin));
+closeModal("adminLoginModal");
+showAdminDashboard();
     } catch (err) { 
       alert(err.message); 
     }
