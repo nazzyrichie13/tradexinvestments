@@ -3,6 +3,9 @@
   // other fields for your app
   // models/User.js
 
+import mongoose from "mongoose";
+
+
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
@@ -14,3 +17,6 @@ const userSchema = new mongoose.Schema({
   twoFASecret: String,
   acceptedTerms: { type: Boolean, default: false } // ✅ new field
 });
+
+
+export default mongoose.model("User", userSchema);
