@@ -341,6 +341,21 @@
     <button onclick="closeModal('editUserModal')" class="btn">Cancel</button>
   </div>
 </div>
+<form id="updateUserForm">
+  <input type="hidden" id="editUserId" />
+
+  <label>Balance</label>
+  <input type="number" id="editBalance" />
+
+  <label>Profit</label>
+  <input type="number" id="editProfit" />
+
+  <label>Interest (%)</label>
+  <input type="number" id="editInterest" />
+
+  <button type="submit">Update</button>
+</form>
+
 
     
   </div>
@@ -1156,7 +1171,68 @@ loadAdminUsers();
       tbody.innerHTML = `<tr><td colspan="5">Error: ${err.message}</td></tr>`;
     }
   }
-  
+  function renderAdminUsers(users) {
+  const tableBody = document.querySelector("#adminUsersTable tbody");
+  tableBody.innerHTML = "";
+
+  users.forEach((user) => {
+    const row = `
+      <tr>
+        <td>${user.name}</td>
+        <td>${user.email}</td>
+        <td>${user.balance ?? 0}</td>
+        <td>${user.profit ?? 0}</td>
+        <td>${user.interest ?? 0}%</td>
+        <td>
+          <button onclick="editUser('${user._id}')">Edit</button>
+        </td>
+      </tr>
+    `;
+    tableBody.innerHTML += row;
+  });
+}
+async function editUser(id) {
+  const res = await fetch(`${backendUrl}/api/admin/users/${id}`, {
+    headers: authHeaders(),
+  });
+  const user = await res.json();
+
+  document.querySelector("#editUserId").value = user._id;
+  document.querySelector("#editBalance").value = user.balance || 0;
+  document.querySelector("#editProfit").value = user.profit || 0;
+  document.querySelector("#editInterest").value = user.interest || 0;
+
+  openModal("editUserModal"); // show modal
+}
+document.querySelector("#updateUserForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const id = document.querySelector("#editUserId").value;
+  const balance = document.querySelector("#editBalance").value;
+  const profit = document.querySelector("#editProfit").value;
+  const interest = document.querySelector("#editInterest").value;
+
+  try {
+    const res = await fetch(`${backendUrl}/api/admin/users/${id}/investment`, {
+      method: "PUT",
+      headers: {
+        ...authHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ balance, profit, interest })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Update failed");
+
+    alert("User updated successfully!");
+    closeModal("editUserModal");
+    loadAdminUsers();
+  } catch (err) {
+    alert("Error updating user: " + err.message);
+  }
+});
+
 
   // 🔹 Approve/Reject Withdrawal
   document.addEventListener("click", async (e) => {

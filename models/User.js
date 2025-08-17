@@ -11,9 +11,10 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   role: { type: String, default: "user" },
-  amount: { type: Number, default: 0 },
-  interest: { type: Number, default: 0 },
-  outcome: { type: Number, default: 0 },
+   balance: { type: Number, default: 0 },   // ✅ balance added
+    profit: { type: Number, default: 0 },    // ✅ profit added
+    interest: { type: Number, default: 0 },  // ✅ interest added
+
   twoFASecret: String,
   acceptedTerms: { type: Boolean, default: false } // ✅ new field
 });
