@@ -1018,7 +1018,7 @@ if (savedUser) {
 
 // admin login
 (() => {
-  const backendUrl = "https://tradexinvest.onrender.com";
+  const backendUrl = "https://tradexinvestments.onrender.com";
   const $ = (sel) => document.querySelector(sel);
 
   // 🔹 Open Admin Login Modal
@@ -1072,7 +1072,7 @@ if (savedUser) {
     const tbody = $("#adminUsersBody");
     tbody.innerHTML = `<tr><td colspan="6">Loading...</td></tr>`;
     try {
-      const res = await fetch(`${backendUrl}api/admin/users`, { headers: authHeaders() });
+      const res = await fetch(`${backendUrl}api/auth/admin/users`, { headers: authHeaders() });
       const data = await res.json();
       if (!data.success) throw new Error(data.message || "Failed to load users");
 
