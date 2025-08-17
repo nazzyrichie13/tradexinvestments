@@ -786,7 +786,7 @@ document.getElementById("openSignup").onclick = ()=> openModal("signupModal");
 document.getElementById("ctaSignup").onclick  = ()=> openModal("signupModal");
 
 
-const backendUrl = "https://tradexinvestments.onrender.com"; // Change to your backend
+const backendUrl = "https://tradexinvest.onrender.com"; // Change to your backend
 
 document.getElementById("signupSubmit").addEventListener("click", async () => {
   const name = document.getElementById("suName").value.trim();
@@ -826,7 +826,7 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
 
 
 (() => {
-  const backendUrl = "https://tradexinvestments.onrender.com";
+  const backendUrl = "https://tradexinvest.onrender.com";
 
   // ---------- helpers ----------
   const token = () => localStorage.getItem("jwtToken") || "";
@@ -1018,7 +1018,7 @@ if (savedUser) {
 
 // admin login
 (() => {
-  const backendUrl = "https://tradexinvestments.onrender.com";
+  const backendUrl = "https://tradexinvest.onrender.com";
   const $ = (sel) => document.querySelector(sel);
 
   // 🔹 Open Admin Login Modal
