@@ -1187,6 +1187,9 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
   $("#openAdminLogin")?.addEventListener("click", () => openModal("adminLoginModal"));
   // Admin Login
   $("#adminLoginSubmit")?.addEventListener("click", async () => {
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("currentAdmin");
+ 
     const email = $("#adminEmail").value.trim().toLowerCase();
     const password = $("#adminPassword").value.trim();
     if (!email || !password) return alert("Enter admin email & password");
