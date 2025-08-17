@@ -300,6 +300,8 @@
     <button data-tab="usersTab" class="btn active">Users</button>
     <button data-tab="withdrawalsTab" class="btn">Withdrawals</button>
   </div>
+  
+
 
   <!-- Users Tab -->
   <div id="usersTab">
@@ -766,6 +768,24 @@ function setSession(user, jwt){
 function clearSession(){
   localStorage.clear();
 }
+const tabButtons = document.querySelectorAll('.tabs .btn');
+  const tabContents = document.querySelectorAll('.tab-content');
+
+  tabButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      const target = button.dataset.tab;
+
+      // Remove 'active' from all buttons
+      tabButtons.forEach(btn => btn.classList.remove('active'));
+      // Hide all tab contents
+      tabContents.forEach(content => (content.style.display = 'none'));
+
+      // Add 'active' to clicked button
+      button.classList.add('active');
+      // Show the selected tab content
+      document.getElementById(target).style.display = 'block';
+    });
+  });
 
 /* ===========================
    SLIDERS
@@ -1111,20 +1131,17 @@ const res = await fetch(`${backendUrl}/api/admin/users`, {
 
     try {
       // ✅ Save Updated User Stats
-      const res = await fetch(`${backendUrl}/api/admin/users/${id}/investment`, {
-  method: "PUT",
-  headers: {
-    ...authHeaders(),
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({ balance, profit, interest }) // ✅ matches backend
-});
+      const response = await fetch(`${backendURI}/api/admin/user/${id}/investment`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}` // if using JWT
+    },
+    body: JSON.stringify({ amount, interest, profit })
+  });
 
-const data = await res.json();
-if (!res.ok) throw new Error(data.error || "Update failed");
-
-alert("User updated successfully!");
-loadAdminUsers();
+  const data = await response.json();
+  console.log(data); // should
 
     } catch (err) {
       alert("Error updating user: " + err.message);
