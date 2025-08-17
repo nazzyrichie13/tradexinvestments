@@ -136,5 +136,66 @@ router.post("/verify-2fa", async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+// =========================
+// Middleware: Protect Admin Routes
+// =========================
+function requireAdmin(req, res, next) {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(403).json({ error: "No token provided" });
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.admin = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: "Invalid or expired token" });
+  }
+}
+
+// =========================
+// Get All Users (Investments, Withdrawals etc.)
+// =========================
+router.get("/admin/users", requireAdmin, async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
+
+// =========================
+// Update User Investment
+// =========================
+router.put("/admin/users/:id/investment", requireAdmin, async (req, res) => {
+  try {
+    const { amount, interest } = req.body;
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { $set: { amount, interest } },
+      { new: true }
+    );
+    res.json({ success: true, user });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update investment" });
+  }
+});
+
+// =========================
+// Confirm Withdrawal
+// =========================
+router.put("/admin/withdrawals/:id/confirm", requireAdmin, async (req, res) => {
+  try {
+    const withdrawal = await Withdrawal.findByIdAndUpdate(
+      req.params.id,
+      { $set: { status: "Confirmed" } },
+      { new: true }
+    );
+    res.json({ success: true, withdrawal });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to confirm withdrawal" });
+  }
+});
+
 
 export default router;
