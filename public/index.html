@@ -1073,7 +1073,7 @@ if (savedUser) {
     tbody.innerHTML = `<tr><td colspan="6">Loading...</td></tr>`;
     try {
       const token = localStorage.getItem("adminToken");
-const res = await fetch(`${backendUrl}/api/auth/admin/users`, {
+const res = await fetch(`${backendUrl}/api/admin/users`, {
   method: "GET",
   headers: {
     "Content-Type": "application/json",
