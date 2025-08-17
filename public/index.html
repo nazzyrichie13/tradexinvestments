@@ -1072,7 +1072,14 @@ if (savedUser) {
     const tbody = $("#adminUsersBody");
     tbody.innerHTML = `<tr><td colspan="6">Loading...</td></tr>`;
     try {
-      const res = await fetch(`${backendUrl}api/auth/admin/users`, { headers: authHeaders() });
+      const token = localStorage.getItem("adminToken");
+const res = await fetch(`${backendUrl}/api/auth/admin/users`, {
+  method: "GET",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,  // 🔥 include token
+  },
+});
       const data = await res.json();
       if (!data.success) throw new Error(data.message || "Failed to load users");
 
