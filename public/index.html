@@ -1055,9 +1055,10 @@ if (savedUser) {
 
   // 🔹 Auth headers helper
   const authHeaders = () => ({
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${localStorage.getItem("adminToken") || ""}`
-  });
+  "Content-Type": "application/json",
+  "Authorization": `Bearer ${localStorage.getItem("adminToken") || ""}`
+});
+
 
   // 🔹 Show Admin Dashboard
   function showAdminDashboard() {
@@ -1100,11 +1101,12 @@ if (savedUser) {
       const interest = parseFloat(row.querySelector('input[data-field="interest"]').value);
 
       try {
-        const res = await fetch(`${backendUrl}/api/admin/update-user-stats/${id}`, {
-          method: "PATCH",
-          headers: authHeaders(),
-          body: JSON.stringify({ balance, profit, interest })
-        });
+        // ✅ Save Updated User Stats (now matches backend route)
+const res = await fetch(`${backendUrl}/api/admin/users/${id}/investment`, {
+  method: "PUT",
+  headers: authHeaders(),
+  body: JSON.stringify({ amount: balance, profit, interest }) // adjust fields to match User schema
+});
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.message || "Update failed");
         alert("User updated successfully!");
@@ -1141,6 +1143,7 @@ if (savedUser) {
       tbody.innerHTML = `<tr><td colspan="5">Error: ${err.message}</td></tr>`;
     }
   }
+  
 
   // 🔹 Approve/Reject Withdrawal
   document.addEventListener("click", async (e) => {
@@ -1149,10 +1152,14 @@ if (savedUser) {
       const action = e.target.classList.contains("approveWd") ? "approve" : "reject";
 
       try {
-        const res = await fetch(`${backendUrl}/api/admin/withdrawals/${id}/${action}`, {
-          method: "PATCH",
-          headers: authHeaders()
-        });
+        const actionRoute = action === "approve" 
+  ? `${backendUrl}/api/admin/withdrawals/${id}/confirm`
+  : `${backendUrl}/api/admin/withdrawals/${id}/reject`;
+
+const res = await fetch(actionRoute, {
+  method: "PUT",
+  headers: authHeaders()
+});
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.message || "Action failed");
         alert(`Withdrawal ${action}d!`);

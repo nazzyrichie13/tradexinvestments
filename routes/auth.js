@@ -158,7 +158,7 @@ function requireAdmin(req, res, next) {
 router.get("/admin/users", requireAdmin, async (req, res) => {
   try {
     const users = await User.find();
-    res.json(users);
+    res.json({ success: true, users });
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch users" });
   }
