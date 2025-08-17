@@ -290,70 +290,59 @@
 
   <!-- Dashboard / right column -->
   <div class="grid">
-    <div id="adminDashboard" class="card hidden">
-      
+    <!-- ================= Admin Dashboard ================= -->
+<div id="adminDashboard" class="card hidden">
   <h2>Admin Dashboard</h2>
-  <button id="logoutAdmin">Logout</button>
-      <div class="row" style="justify-content:space-between;align-items:center">
-        <div>
-          <h2 id="welcomeUser">Welcome</h2>
-          <p id="welcomeEmail" class="muted"></p>
-        </div>
-        <div>
-          <button id="depositBtn" class="btn btn-primary">Deposit</button>
-          <button id="withdrawBtn" class="btn right">Withdraw</button>
-        </div>
-      </div>
+  <button id="logoutAdmin" class="btn">Logout</button>
 
-      <div class="stats" style="margin-top:10px">
-        <div class="stat">
-          <div class="label">Investment Balance</div>
-          <div class="value">$<span id="statBalance">0</span></div>
-        </div>
-        <div class="stat">
-          <div class="label">Total Profit</div>
-          <div class="value">$<span id="statProfit">0</span></div>
-        </div>
-        <div class="stat">
-          <div class="label">Total Interest</div>
-          <div class="value">$<span id="statInterest">0</span></div>
-        </div>
-      </div>
+  <!-- Tabs -->
+  <div class="tabs">
+    <button data-tab="usersTab" class="btn active">Users</button>
+    <button data-tab="withdrawalsTab" class="btn">Withdrawals</button>
+  </div>
 
-      <div style="margin-top:16px">
-        <h3>Recent Transactions</h3>
-        <table id="txTable">
-          <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
+  <!-- Users Tab -->
+  <div id="usersTab">
+    <h3>Manage Users</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th><th>Email</th><th>Balance</th><th>Profit</th><th>Interest</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="adminUsersBody"></tbody>
+    </table>
+  </div>
 
-    <!-- Admin panel -->
-    <div id="adminCard" class="card hidden">
-      <h2>Admin</h2>
-      <div class="tabs">
-        <button data-tab="usersTab" class="btn active">Users</button>
-        <button data-tab="withdrawalsTab" class="btn">Withdrawals</button>
-      </div>
+  <!-- Withdrawals Tab -->
+  <div id="withdrawalsTab" class="hidden">
+    <h3>Manage Withdrawals</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>User</th><th>Method</th><th>Amount</th><th>Status</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="adminWdBody"></tbody>
+    </table>
+  </div>
+</div>
 
-      <div id="usersTab">
-        <table>
-          <thead><tr><th>Name</th><th>Email</th><th>Balance</th><th>Profit</th><th style="width:200px">Actions</th></tr></thead>
-          <tbody id="adminUsersBody"></tbody>
-        </table>
-      </div>
-      <!-- In Admin Users Tab -->
-<tbody id="adminUsersBody"></tbody>
+<!-- ================= Edit User Modal ================= -->
+<div id="editUserModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>Edit User</h3>
+    <label>Name <input type="text" id="editName" /></label>
+    <label>Email <input type="email" id="editEmail" /></label>
+    <label>Balance <input type="number" id="editBalance" /></label>
+    <label>Profit <input type="number" id="editProfit" /></label>
+    <label>Interest <input type="number" id="editInterest" /></label>
+    <button id="saveUserBtn" class="btn">Save</button>
+    <button onclick="closeModal('editUserModal')" class="btn">Cancel</button>
+  </div>
+</div>
 
-
-      <div id="withdrawalsTab" class="hidden">
-        <table>
-          <thead><tr><th>User</th><th>Method</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="adminWdBody"></tbody>
-        </table>
-      </div>
-    </div>
+    
   </div>
 </div>
 
@@ -1032,10 +1021,10 @@ if (savedUser) {
   const backendUrl = "https://tradexinvestments.onrender.com";
   const $ = (sel) => document.querySelector(sel);
 
-  // Open/Close Modal
+  // 🔹 Open Admin Login Modal
   $("#openAdminLogin")?.addEventListener("click", () => openModal("adminLoginModal"));
 
-  // Admin Login
+  // 🔹 Admin Login
   $("#adminLoginSubmit")?.addEventListener("click", async () => {
     localStorage.removeItem("adminToken");
     localStorage.removeItem("currentAdmin");
@@ -1053,42 +1042,46 @@ if (savedUser) {
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || "Invalid login");
 
-      // Remove role check entirely
+      // ✅ Save token & admin info
       localStorage.setItem("adminToken", data.token);
-localStorage.setItem("currentAdmin", JSON.stringify(data.admin));
-closeModal("adminLoginModal");
-showAdminDashboard();
+      localStorage.setItem("currentAdmin", JSON.stringify(data.admin));
+
+      closeModal("adminLoginModal");
+      showAdminDashboard();
     } catch (err) { 
-      alert(err.message); 
+      alert("Login failed: " + err.message); 
     }
   });
 
-  // Auth headers
+  // 🔹 Auth headers helper
   const authHeaders = () => ({
     "Content-Type": "application/json",
     "Authorization": `Bearer ${localStorage.getItem("adminToken") || ""}`
   });
 
-  // Show Admin Dashboard & Load Users
+  // 🔹 Show Admin Dashboard
   function showAdminDashboard() {
     $("#adminDashboard").classList.remove("hidden");
     loadAdminUsers();
+    loadWithdrawals();
   }
 
-  // Load Users
+  // 🔹 Load Users into Admin Panel
   async function loadAdminUsers() {
     const tbody = $("#adminUsersBody");
     tbody.innerHTML = `<tr><td colspan="6">Loading...</td></tr>`;
     try {
       const res = await fetch(`${backendUrl}/api/admin/users`, { headers: authHeaders() });
       const data = await res.json();
+      if (!data.success) throw new Error(data.message || "Failed to load users");
+
       tbody.innerHTML = data.users.map(u => `
         <tr>
           <td>${u.name}</td>
           <td>${u.email}</td>
-          <td><input type="number" data-id="${u._id}" data-field="balance" value="${u.amount}"></td>
-          <td><input type="number" data-id="${u._id}" data-field="profit" value="${u.profit}"></td>
-          <td><input type="number" data-id="${u._id}" data-field="interest" value="${u.interest}"></td>
+          <td><input type="number" data-id="${u._id}" data-field="balance" value="${u.amount || 0}"></td>
+          <td><input type="number" data-id="${u._id}" data-field="profit" value="${u.profit || 0}"></td>
+          <td><input type="number" data-id="${u._id}" data-field="interest" value="${u.interest || 0}"></td>
           <td><button class="adminSave" data-id="${u._id}">Save</button></td>
         </tr>
       `).join("");
@@ -1097,25 +1090,80 @@ showAdminDashboard();
     }
   }
 
-  // Save user stats
+  // 🔹 Save Updated User Stats
   document.addEventListener("click", async (e) => {
     if (e.target.classList.contains("adminSave")) {
       const id = e.target.dataset.id;
-      const row = document.querySelector(`input[data-id="${id}"]`).closest("tr");
+      const row = e.target.closest("tr");
       const balance = parseFloat(row.querySelector('input[data-field="balance"]').value);
       const profit = parseFloat(row.querySelector('input[data-field="profit"]').value);
       const interest = parseFloat(row.querySelector('input[data-field="interest"]').value);
 
-      await fetch(`${backendUrl}/api/admin/update-user-stats/${id}`, {
-        method: "PATCH",
-        headers: authHeaders(),
-        body: JSON.stringify({ balance, profit, interest })
-      });
-      loadAdminUsers();
+      try {
+        const res = await fetch(`${backendUrl}/api/admin/update-user-stats/${id}`, {
+          method: "PATCH",
+          headers: authHeaders(),
+          body: JSON.stringify({ balance, profit, interest })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || "Update failed");
+        alert("User updated successfully!");
+        loadAdminUsers();
+      } catch (err) {
+        alert("Error updating user: " + err.message);
+      }
     }
   });
 
-  // Logout
+  // 🔹 Load Withdrawals into Admin Panel
+  async function loadWithdrawals() {
+    const tbody = $("#adminWdBody");
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="5">Loading...</td></tr>`;
+    try {
+      const res = await fetch(`${backendUrl}/api/admin/withdrawals`, { headers: authHeaders() });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || "Failed to load withdrawals");
+
+      tbody.innerHTML = data.withdrawals.map(w => `
+        <tr>
+          <td>${w.user?.email || "Unknown"}</td>
+          <td>${w.method}</td>
+          <td>$${w.amount}</td>
+          <td>${w.status}</td>
+          <td>
+            <button class="approveWd" data-id="${w._id}">Approve</button>
+            <button class="rejectWd" data-id="${w._id}">Reject</button>
+          </td>
+        </tr>
+      `).join("");
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="5">Error: ${err.message}</td></tr>`;
+    }
+  }
+
+  // 🔹 Approve/Reject Withdrawal
+  document.addEventListener("click", async (e) => {
+    if (e.target.classList.contains("approveWd") || e.target.classList.contains("rejectWd")) {
+      const id = e.target.dataset.id;
+      const action = e.target.classList.contains("approveWd") ? "approve" : "reject";
+
+      try {
+        const res = await fetch(`${backendUrl}/api/admin/withdrawals/${id}/${action}`, {
+          method: "PATCH",
+          headers: authHeaders()
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || "Action failed");
+        alert(`Withdrawal ${action}d!`);
+        loadWithdrawals();
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
+    }
+  });
+
+  // 🔹 Logout
   $("#logoutAdmin")?.addEventListener("click", () => {
     localStorage.removeItem("adminToken");
     localStorage.removeItem("currentAdmin");
@@ -1123,8 +1171,6 @@ showAdminDashboard();
   });
 
 })();
-
-
 </script>
 
   
