@@ -1161,7 +1161,7 @@ document.addEventListener("click", async (e) => {
   const backendURI = "https://tradexinvestments.onrender.com";
 
   try {
-    const response = await fetch(`${backendURI}/api/admin/user/${id}/investment`, {
+    const response = await fetch(`${backendURI}/admin/user/${id}/investment`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
