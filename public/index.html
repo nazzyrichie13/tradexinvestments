@@ -1131,6 +1131,7 @@ const res = await fetch(`${backendUrl}/api/admin/users`, {
 
     try {
       // ✅ Save Updated User Stats
+      const backendURI = "https://tradexinvestments.onrender.com";
       const response = await fetch(`${backendURI}/api/admin/user/${id}/investment`, {
     method: 'PUT',
     headers: {
