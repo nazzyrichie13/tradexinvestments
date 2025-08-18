@@ -43,7 +43,7 @@ app.get("/", (req, res) => res.send("TradexInvest backend is running"));
 
 // API routes
 
-
+app.use("/api", authRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/contact", contactRoutes);
