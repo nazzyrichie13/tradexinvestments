@@ -30,7 +30,7 @@ const io = new Server(server, { cors: { origin: "*" } });
 // Middleware
 
 app.use(cors({
-  origin: ["http://127.0.0.1:5500", "http://localhost:5500"], // your frontend origins
+  origin: ["https://www.tradexinvest.net"], // your frontend origins
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
