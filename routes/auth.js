@@ -174,20 +174,22 @@ router.put("/user/:id/investment", requireAdmin, async (req, res) => {
       return res.status(400).json({ error: "Missing fields" });
     }
 
-    const updatedUser = await User.findByIdAndUpdate(
-      id,
-      { balance, interest, profit },
-      { new: true }
-    );
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-    if (!updatedUser) return res.status(404).json({ error: "User not found" });
+    user.investment.balance = balance;
+    user.investment.profit = profit;
+    user.investment.interest = interest;
 
-    res.json({ success: true, user: updatedUser });
+    await user.save();
+
+    res.json({ success: true, user });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to update investment" });
   }
 });
+
 
 // Get all withdrawals
 router.get("/admin/withdrawals", requireAdmin, async (req, res) => {
