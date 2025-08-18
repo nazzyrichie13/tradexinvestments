@@ -7,6 +7,7 @@ import speakeasy from "speakeasy";
 import Admin from "../models/Admin.js";
 import User from "../models/User.js";
 import transporter from "../utils/mailer.js";
+import Withdrawal from "../models/Withdrawal.js";
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "super_secret_jwt_key";
@@ -136,8 +137,7 @@ router.post("/verify-2fa", async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
-// =========================
-// Middleware: Protect Admin Routes
+// Middleware
 function requireAdmin(req, res, next) {
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) return res.status(403).json({ error: "No token provided" });
@@ -154,10 +154,7 @@ function requireAdmin(req, res, next) {
   }
 }
 
-
-// =========================
-// Get All Users (Investments, Withdrawals etc.)
-// =========================
+// Get all users
 router.get("/admin/users", requireAdmin, async (req, res) => {
   try {
     const users = await User.find();
@@ -166,34 +163,33 @@ router.get("/admin/users", requireAdmin, async (req, res) => {
     res.status(500).json({ error: "Failed to fetch users" });
   }
 });
-// Update User Investment (amount & interest)
-// =========================
-router.put("/admin/users/:id/investment", requireAdmin, async (req, res) => {
-  try {
-    const { balance, profit, interest } = req.body;
 
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { $set: { balance, profit, interest } }, // ✅ now matches frontend
+// Update user investment
+router.put("/admin/user/:id/investment", requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { balance, interest, profit } = req.body;
+
+    if (balance == null || interest == null || profit == null) {
+      return res.status(400).json({ error: "Missing fields" });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { balance, interest, profit },
       { new: true }
     );
 
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
+    if (!updatedUser) return res.status(404).json({ error: "User not found" });
 
-    res.json({ success: true, user });
+    res.json({ success: true, user: updatedUser });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to update investment" });
   }
 });
 
-// =========================
-// Get All Withdrawals
-// =========================
-import Withdrawal from "../models/Withdrawal.js";  // make sure you import this at top
-
+// Get all withdrawals
 router.get("/admin/withdrawals", requireAdmin, async (req, res) => {
   try {
     const withdrawals = await Withdrawal.find().populate("user", "name email");
@@ -203,44 +199,7 @@ router.get("/admin/withdrawals", requireAdmin, async (req, res) => {
   }
 });
 
-// =========================
-// Update User Investment
-// =========================
-
-
-app.put('/API/admin/user/:id/investment', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { balance, interest, profit } = req.body;
-
-    // Validate body
-    if (amount == null || interest == null || profit == null) {
-      return res.status(400).json({ error: 'Missing fields' });
-    }
-
-    // Update user
-    const updatedUser = await User.findByIdAndUpdate(
-      id,
-      { balance, interest, profit },
-      { new: true } // returns the updated document
-    );
-
-    if (!updatedUser) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // ✅ Send JSON response
-    res.json({ success: true, user: updatedUser });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-
-// =========================
-// Confirm Withdrawal
-// =========================
+// Confirm withdrawal
 router.put("/admin/withdrawals/:id/confirm", requireAdmin, async (req, res) => {
   try {
     const withdrawal = await Withdrawal.findByIdAndUpdate(
@@ -253,6 +212,5 @@ router.put("/admin/withdrawals/:id/confirm", requireAdmin, async (req, res) => {
     res.status(500).json({ error: "Failed to confirm withdrawal" });
   }
 });
-
 
 export default router;
