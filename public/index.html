@@ -317,7 +317,7 @@
   </div>
 
   <!-- Withdrawals Tab -->
-  <div id="withdrawalsTab" class="hidden">
+  <div id="withdrawalsTable" class="hidden">
     <h3>Manage Withdrawals</h3>
     <table>
       <thead>
@@ -1154,6 +1154,12 @@ async function loadWithdrawals() {
       return;
     }
 
+    const tbody = document.querySelector("#withdrawalsTable tbody");
+    if (!tbody) {
+      console.error("No table found with ID 'withdrawalsTable'");
+      return;
+    }
+
     const res = await fetch(`${backendUrl}/api/admin/withdrawals`, {
       headers: { "Authorization": `Bearer ${token}` }
     });
@@ -1161,11 +1167,15 @@ async function loadWithdrawals() {
     const data = await res.json();
     console.log("Withdrawals response:", data);
 
-    const withdrawals = data.withdrawals || data; // handle both styles
-    if (!withdrawals || !Array.isArray(withdrawals)) throw new Error("Invalid withdrawals response");
-
-    const tbody = document.querySelector("#withdrawalsTable tbody");
+    const withdrawals = data.withdrawals || data;
     tbody.innerHTML = "";
+
+    if (!withdrawals || withdrawals.length === 0) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td colspan="5" style="text-align:center;">No withdrawals yet</td>`;
+      tbody.appendChild(tr);
+      return;
+    }
 
     withdrawals.forEach(w => {
       const tr = document.createElement("tr");
@@ -1187,18 +1197,19 @@ async function loadWithdrawals() {
   }
 }
 
+
+
   // 🔹 Save Updated User Stats
- document.addEventListener("click", async (e) => {
+document.addEventListener("click", async (e) => {
   if (!e.target.classList.contains("adminSave")) return;
 
   const id = e.target.dataset.id; // MongoDB _id
   const row = e.target.closest("tr");
 
-  // Safely parse inputs
-row.querySelector('input[data-field="balance"]').value = data.user.investment.balance;
-row.querySelector('input[data-field="profit"]').value = data.user.investment.profit;
-row.querySelector('input[data-field="interest"]').value = data.user.investment.interest;
-
+  // Get the values from the inputs
+  const balance = parseFloat(row.querySelector('input[data-field="balance"]').value);
+  const profit = parseFloat(row.querySelector('input[data-field="profit"]').value);
+  const interest = parseFloat(row.querySelector('input[data-field="interest"]').value);
 
   // Get JWT token stored after admin login
   const token = localStorage.getItem("adminToken");
@@ -1219,17 +1230,16 @@ row.querySelector('input[data-field="interest"]').value = data.user.investment.i
       body: JSON.stringify({ balance, profit, interest })
     });
 
-    // ✅ parse JSON from backend
-    const data = await response.json();
+    const data = await response.json(); // ✅ data is now defined here
 
     if (!response.ok) {
       throw new Error(data.error || "Failed to update user");
     }
 
-    // ✅ Success: update row in table
+    // ✅ Success: update row in table with the returned data
     row.querySelector('input[data-field="balance"]').value = data.user.investment.balance;
-row.querySelector('input[data-field="profit"]').value = data.user.investment.profit;
-row.querySelector('input[data-field="interest"]').value = data.user.investment.interest;
+    row.querySelector('input[data-field="profit"]').value = data.user.investment.profit;
+    row.querySelector('input[data-field="interest"]').value = data.user.investment.interest;
 
     alert("User investment updated successfully!");
 
@@ -1238,6 +1248,7 @@ row.querySelector('input[data-field="interest"]').value = data.user.investment.i
     alert("Error updating user: " + err.message);
   }
 });
+
 
 
 
