@@ -1139,6 +1139,50 @@ const res = await fetch(`${backendUrl}/api/admin/users`, {
       tbody.innerHTML = `<tr><td colspan="6">Error: ${err.message}</td></tr>`;
     }
   }
+  async function loadWithdrawals() {
+  try {
+    const token = localStorage.getItem("adminToken"); // stored when admin logged in
+    if (!token) {
+      alert("You must log in as admin first!");
+      return;
+    }
+
+    const response = await fetch(`${backendUrl}/api/admin/withdrawals`, {
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to load withdrawals: ${response.status}`);
+    }
+
+    const withdrawals = await response.json();
+
+    // Target the withdrawals table body
+    const tbody = document.querySelector("#withdrawalsTable tbody");
+    tbody.innerHTML = "";
+
+    withdrawals.forEach(w => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${w.user?.name || "Unknown"}</td>
+        <td>${w.method}</td>
+        <td>${w.amount}</td>
+        <td>${w.status}</td>
+        <td>
+          <button class="approveBtn" data-id="${w._id}">Approve</button>
+          <button class="rejectBtn" data-id="${w._id}">Reject</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+  } catch (err) {
+    console.error("Error loading withdrawals:", err);
+  }
+}
+
 
   // 🔹 Save Updated User Stats
  document.addEventListener("click", async (e) => {

@@ -5,19 +5,22 @@
 
 import mongoose from "mongoose";
 
-
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   role: { type: String, default: "user" },
-   balance: { type: Number, default: 0 },   // ✅ balance added
-    profit: { type: Number, default: 0 },    // ✅ profit added
-    interest: { type: Number, default: 0 },  // ✅ interest added
+  
+  investment: {
+    balance: { type: Number, default: 0 },
+    profit: { type: Number, default: 0 },
+    interest: { type: Number, default: 0 },
+  },
 
   twoFASecret: String,
-  acceptedTerms: { type: Boolean, default: false } // ✅ new field
+  acceptedTerms: { type: Boolean, default: false },
 });
+
 
 
 export default mongoose.model("User", userSchema);
