@@ -345,84 +345,6 @@
 </div>
 
 
-
-    
-  </div>
-</div>
-
-<!-- ===== Overlay + Modals ===== -->
-<div id="overlay"></div>
-
-<!-- Signup Modal -->
-<div id="signupModal" class="modal">
-  <h3>Create account</h3>
-  <div class="row">
-    <input id="suName" placeholder="Full name" class="grow" />
-    <input id="suEmail" placeholder="Email" class="grow" />
-  </div>
-  <div class="row" style="margin-top:10px">
-    <input id="suPassword" placeholder="Password" type="password" class="grow" />
-  </div>
-  <div class="actions">
-    <button class="btn" data-close="signupModal">Cancel</button>
-    <button id="signupSubmit" class="btn btn-primary">Sign Up</button>
-  </div>
-</div>
-<!-- Admin Login Button (hidden for regular users) -->
-
-<div id="adminLoginModal" class="modal ">
-  <h3>Admin Login</h3>
-  <input id="adminEmail" type="email" placeholder="Admin Email" />
-  <input id="adminPassword" type="password" placeholder="Password" />
-  <button id="adminLoginSubmit">Login</button>
-  <button onclick="closeModal('adminLoginModal')">Cancel</button>
-</div>
-
-<!-- Login Modal -->
-<div id="loginModal" class="modal">
-  <h3>Login</h3>
-  <input type="email" id="liEmail" placeholder="Email" />
-  <div style="height:8px"></div>
-  <input  id="liPassword" placeholder="Password" type="password" />
-  <input type="hidden" id="loginType" value="admin"> 
-  <div class="actions">
-    <button class="btn" data-close="loginModal">Cancel</button>
-    <button id="loginSubmit" class="btn btn-primary">Login</button>
-  </div>
-</div>
-
-<!-- Terms Modal -->
-<!-- Terms Modal -->
-<div id="termsModal" class="modal">
-  <h3>Terms & Conditions</h3>
-  <div style="max-height:220px;overflow:auto;border:1px solid #1f2937;border-radius:10px;padding:12px">
-    <p class="muted">By continuing, you agree to our terms regarding investments, risk disclosure, and platform policies.</p>
-    <ul class="muted">
-      <li>Investments involve risk of loss.</li>
-      <li>Profits shown are indicative and not guaranteed.</li>
-      <li>We may require identity verification for withdrawals.</li>
-    </ul>
-  </div>
-  <div class="actions">
-    <button class="btn" data-close="termsModal">Decline</button>
-    <button id="acceptTermsBtn" class="btn btn-primary">I Accept</button>
-  </div>
-</div>
-
-<!-- 2FA Modal -->
-<div id="twoFAModal" class="modal">
-  <h3>Two-Factor Verification</h3>
-  <p class="muted" id="twofaHint">We’ve emailed a 6-digit code to your address.</p>
-  <input id="twofaCode" placeholder="Enter 2FA code" />
-  <div class="row" style="align-items:center;margin-top:8px">
-    <div id="countdown" class="muted">Code expires in 5:00</div>
-    <button id="resend2FA" class="btn right">Resend code</button>
-  </div>
-  <div class="actions">
-    <button class="btn" data-close="twoFAModal">Cancel</button>
-    <button id="verify2FA" class="btn btn-primary">Verify</button>
-  </div>
-</div>
 <div class="grid">
 <!-- Dashboard Card -->
 <div id="dashboardCard" class="hidden p-6 bg-white shadow rounded-lg max-w-4xl mx-auto mt-8">
@@ -501,6 +423,84 @@
 
 </div>
 
+
+    
+  </div>
+</div>
+
+<!-- ===== Overlay + Modals ===== -->
+<div id="overlay"></div>
+
+<!-- Signup Modal -->
+<div id="signupModal" class="modal">
+  <h3>Create account</h3>
+  <div class="row">
+    <input id="suName" placeholder="Full name" class="grow" />
+    <input id="suEmail" placeholder="Email" class="grow" />
+  </div>
+  <div class="row" style="margin-top:10px">
+    <input id="suPassword" placeholder="Password" type="password" class="grow" />
+  </div>
+  <div class="actions">
+    <button class="btn" data-close="signupModal">Cancel</button>
+    <button id="signupSubmit" class="btn btn-primary">Sign Up</button>
+  </div>
+</div>
+<!-- Admin Login Button (hidden for regular users) -->
+
+<div id="adminLoginModal" class="modal ">
+  <h3>Admin Login</h3>
+  <input id="adminEmail" type="email" placeholder="Admin Email" />
+  <input id="adminPassword" type="password" placeholder="Password" />
+  <button id="adminLoginSubmit">Login</button>
+  <button onclick="closeModal('adminLoginModal')">Cancel</button>
+</div>
+
+<!-- Login Modal -->
+<div id="loginModal" class="modal">
+  <h3>Login</h3>
+  <input type="email" id="liEmail" placeholder="Email" />
+  <div style="height:8px"></div>
+  <input  id="liPassword" placeholder="Password" type="password" />
+  <input type="hidden" id="loginType" value="admin"> 
+  <div class="actions">
+    <button class="btn" data-close="loginModal">Cancel</button>
+    <button id="loginSubmit" class="btn btn-primary">Login</button>
+  </div>
+</div>
+
+<!-- Terms Modal -->
+<!-- Terms Modal -->
+<div id="termsModal" class="modal">
+  <h3>Terms & Conditions</h3>
+  <div style="max-height:220px;overflow:auto;border:1px solid #1f2937;border-radius:10px;padding:12px">
+    <p class="muted">By continuing, you agree to our terms regarding investments, risk disclosure, and platform policies.</p>
+    <ul class="muted">
+      <li>Investments involve risk of loss.</li>
+      <li>Profits shown are indicative and not guaranteed.</li>
+      <li>We may require identity verification for withdrawals.</li>
+    </ul>
+  </div>
+  <div class="actions">
+    <button class="btn" data-close="termsModal">Decline</button>
+    <button id="acceptTermsBtn" class="btn btn-primary">I Accept</button>
+  </div>
+</div>
+
+<!-- 2FA Modal -->
+<div id="twoFAModal" class="modal">
+  <h3>Two-Factor Verification</h3>
+  <p class="muted" id="twofaHint">We’ve emailed a 6-digit code to your address.</p>
+  <input id="twofaCode" placeholder="Enter 2FA code" />
+  <div class="row" style="align-items:center;margin-top:8px">
+    <div id="countdown" class="muted">Code expires in 5:00</div>
+    <button id="resend2FA" class="btn right">Resend code</button>
+  </div>
+  <div class="actions">
+    <button class="btn" data-close="twoFAModal">Cancel</button>
+    <button id="verify2FA" class="btn btn-primary">Verify</button>
+  </div>
+</div>
 
 
 
