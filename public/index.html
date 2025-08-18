@@ -1127,13 +1127,13 @@ const res = await fetch(`${backendUrl}/api/admin/users`, {
 
       tbody.innerHTML = data.users.map(u => `
         <tr>
-          <td>${u.name}</td>
-          <td>${u.email}</td>
-          <td><input type="number" data-id="${u._id}" data-field="balance" value="${u.amount || 0}"></td>
-          <td><input type="number" data-id="${u._id}" data-field="profit" value="${u.profit || 0}"></td>
-          <td><input type="number" data-id="${u._id}" data-field="interest" value="${u.interest || 0}"></td>
-          <td><button class="adminSave" data-id="${u._id}">Save</button></td>
-        </tr>
+    <td>${u.name}</td>
+    <td>${u.email}</td>
+    <td><input type="number" data-id="${u._id}" data-field="balance" value="${u.investment?.balance || 0}"></td>
+    <td><input type="number" data-id="${u._id}" data-field="profit" value="${u.investment?.profit || 0}"></td>
+    <td><input type="number" data-id="${u._id}" data-field="interest" value="${u.investment?.interest || 0}"></td>
+    <td><button class="adminSave" data-id="${u._id}">Save</button></td>
+  </tr>
       `).join("");
     } catch (err) {
       tbody.innerHTML = `<tr><td colspan="6">Error: ${err.message}</td></tr>`;
