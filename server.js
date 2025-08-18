@@ -38,34 +38,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-app.put('/api/admin/user/:id/investment', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { amount, interest, profit } = req.body;
 
-    // Validate body
-    if (amount == null || interest == null || profit == null) {
-      return res.status(400).json({ error: 'Missing fields' });
-    }
-
-    // Update user
-    const updatedUser = await User.findByIdAndUpdate(
-      id,
-      { amount, interest, profit },
-      { new: true }
-    );
-
-    if (!updatedUser) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // ✅ Send JSON response
-    res.json({ success: true, user: updatedUser });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
 app.get("/", (req, res) => res.send("TradexInvest backend is running"));
 
 // API routes
