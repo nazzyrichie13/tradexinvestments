@@ -1111,6 +1111,7 @@ if (savedUser) {
 
   // 🔹 Load Users into Admin Panel
 async function loadAdminUsers() {
+  const backendUrl = "https://tradexinvestments.onrender.com";
   const tbody = $("#adminUsersBody");
   tbody.innerHTML = `<tr><td colspan="6">Loading...</td></tr>`;
   try {
