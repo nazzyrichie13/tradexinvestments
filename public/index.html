@@ -1110,56 +1110,59 @@ if (savedUser) {
   }
 
   // 🔹 Load Users into Admin Panel
-  async function loadAdminUsers() {
-    const tbody = $("#adminUsersBody");
-    tbody.innerHTML = `<tr><td colspan="6">Loading...</td></tr>`;
-    try {
-      const token = localStorage.getItem("adminToken");
-const res = await fetch(`${backendUrl}/api/admin/users`, {
-  method: "GET",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,  // 🔥 include token
-  },
-});
-      const data = await res.json();
-      if (!data.success) throw new Error(data.message || "Failed to load users");
-
-      tbody.innerHTML = data.users.map(u => `
-        <tr>
-    <td>${u.name}</td>
-    <td>${u.email}</td>
-    <td><input type="number" data-id="${u._id}" data-field="balance" value="${u.investment?.balance || 0}"></td>
-    <td><input type="number" data-id="${u._id}" data-field="profit" value="${u.investment?.profit || 0}"></td>
-    <td><input type="number" data-id="${u._id}" data-field="interest" value="${u.investment?.interest || 0}"></td>
-    <td><button class="adminSave" data-id="${u._id}">Save</button></td>
-  </tr>
-      `).join("");
-    } catch (err) {
-      tbody.innerHTML = `<tr><td colspan="6">Error: ${err.message}</td></tr>`;
-    }
-  }
-  async function loadWithdrawals() {
+async function loadAdminUsers() {
+  const tbody = $("#adminUsersBody");
+  tbody.innerHTML = `<tr><td colspan="6">Loading...</td></tr>`;
   try {
-    const token = localStorage.getItem("adminToken"); // stored when admin logged in
+    const token = localStorage.getItem("adminToken");
+    const res = await fetch(`${backendUrl}/api/admin/users`, {
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
+    });
+
+    const data = await res.json();
+    console.log("Users response:", data);
+
+    const users = data.users || data; // support both array or {users:[]}
+    if (!users || !Array.isArray(users)) throw new Error("Invalid users response");
+
+    tbody.innerHTML = users.map(u => `
+      <tr>
+        <td>${u.name}</td>
+        <td>${u.email}</td>
+        <td><input type="number" data-id="${u._id}" data-field="balance" value="${u.investment?.balance || 0}"></td>
+        <td><input type="number" data-id="${u._id}" data-field="profit" value="${u.investment?.profit || 0}"></td>
+        <td><input type="number" data-id="${u._id}" data-field="interest" value="${u.investment?.interest || 0}"></td>
+        <td><button class="adminSave" data-id="${u._id}">Save</button></td>
+      </tr>
+    `).join("");
+
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="6">Error: ${err.message}</td></tr>`;
+  }
+}
+
+
+async function loadWithdrawals() {
+  try {
+    const token = localStorage.getItem("adminToken");
     if (!token) {
       alert("You must log in as admin first!");
       return;
     }
 
-    const response = await fetch(`${backendUrl}/api/admin/withdrawals`, {
-      headers: {
-        "Authorization": `Bearer ${token}`
-      }
+    const res = await fetch(`${backendUrl}/api/admin/withdrawals`, {
+      headers: { "Authorization": `Bearer ${token}` }
     });
 
-    if (!response.ok) {
-      throw new Error(`Failed to load withdrawals: ${response.status}`);
-    }
+    const data = await res.json();
+    console.log("Withdrawals response:", data);
 
-    const withdrawals = await response.json();
+    const withdrawals = data.withdrawals || data; // handle both styles
+    if (!withdrawals || !Array.isArray(withdrawals)) throw new Error("Invalid withdrawals response");
 
-    // Target the withdrawals table body
     const tbody = document.querySelector("#withdrawalsTable tbody");
     tbody.innerHTML = "";
 
@@ -1182,7 +1185,6 @@ const res = await fetch(`${backendUrl}/api/admin/users`, {
     console.error("Error loading withdrawals:", err);
   }
 }
-
 
   // 🔹 Save Updated User Stats
  document.addEventListener("click", async (e) => {
