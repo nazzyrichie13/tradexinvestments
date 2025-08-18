@@ -41,64 +41,341 @@
   </section>
 
   <script>
-  function toggleMobileNav() {
-    const menu = document.getElementById("mobileMenu");
-    menu.classList.toggle("show");
+document.addEventListener("DOMContentLoaded", () => {
+  // ---------- Safe $ ----------
+  window.$ = window.$ || ((selector) => document.querySelector(selector));
+
+  const backendUrl = "https://www.tradexinvest.net";
+
+  // ---------- Overlay & Modals ----------
+  const overlay = $("#overlay");
+
+  function openModal(id){
+    overlay.style.display = "block";
+    $(`#${id}`).style.display = "block";
+  }
+  function closeModal(id){
+    const el = $(`#${id}`);
+    if(el) el.style.display = "none";
+    const anyOpen = [...document.querySelectorAll(".modal")].some(m => m.style.display === "block");
+    if(!anyOpen) overlay.style.display = "none";
   }
 
-  document.addEventListener("DOMContentLoaded", () => {
-    const contactForm = document.getElementById("contactForm");
-
-    if (!contactForm) return; // Avoid errors if form not found
-
-    contactForm.addEventListener("submit", async function (e) {
-      e.preventDefault();
-
-      const name = this.name.value.trim();
-      const email = this.email.value.trim();
-      const message = this.message.value.trim();
-
-      // Basic validation
-      if (!name || !email || !message) {
-        alert("Please fill in all fields.");
-        return;
-      }
-
-      // Simple email format check
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        alert("Please enter a valid email address.");
-        return;
-      }
-
-      try {
-        const response = await fetch(
-          "https://www.tradexinvest.net .com/api/contact",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, email, message }),
-          }
-        );
-
-        const data = await response.json();
-
-        if (response.ok) {
-          alert(data.message || "Message sent successfully!");
-          this.reset();
-        } else {
-          alert(`Error: ${data.message || "Failed to send message"}`);
-        }
-      } catch (err) {
-        alert("Network error. Please try again later.");
-        console.error(err);
-      }
-    });
+  overlay?.addEventListener("click", () => {
+    document.querySelectorAll(".modal").forEach(m => m.style.display = "none");
+    overlay.style.display = "none";
   });
+  document.querySelectorAll("[data-close]").forEach(btn => {
+    btn.addEventListener("click", () => closeModal(btn.dataset.close));
+  });
+
+  // ---------- Open Modal Buttons ----------
+  const modalButtons = [
+    {btn:"openLogin", modal:"loginModal"},
+    {btn:"ctaLogin", modal:"loginModal"},
+    {btn:"openSignup", modal:"signupModal"},
+    {btn:"ctaSignup", modal:"signupModal"},
+    {btn:"openAdminLogin", modal:"adminLoginModal"},
+    {btn:"ctaAdminLogin", modal:"adminLoginModal"}
+  ];
+  modalButtons.forEach(o => {
+    const el = $(`#${o.btn}`);
+    el?.addEventListener("click", () => openModal(o.modal));
+  });
+
+  // ---------- Session & Helpers ----------
+  function setSession(user, jwt){
+    if(user) localStorage.setItem("currentUser", JSON.stringify(user));
+    if(jwt) localStorage.setItem("jwtToken", jwt);
+  }
+  function clearSession(){
+    localStorage.clear();
+  }
+  const authHeaders = () => ({
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${localStorage.getItem("jwtToken") || ""}`
+  });
+  const adminHeaders = () => ({
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${localStorage.getItem("adminToken") || ""}`
+  });
+  const fmtMoney = n => Number(n||0).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+  const fmtDate = d => new Date(d).toLocaleString();
+
+  // ---------- User Dashboard ----------
+  function hydrateStats(user){
+    if(!user) return;
+    $("#statBalance") && ($("#statBalance").textContent = fmtMoney(user.investment?.balance || 0));
+    $("#statProfit") && ($("#statProfit").textContent = fmtMoney(user.investment?.profit || 0));
+    $("#statInterest") && ($("#statInterest").textContent = fmtMoney(user.investment?.interest || 0));
+    $("#welcomeUser") && ($("#welcomeUser").textContent = `Welcome, ${user.name || "User"}`);
+    $("#welcomeEmail") && ($("#welcomeEmail").textContent = user.email || "");
+  }
+
+  async function loadTransactions(){
+    const tbody = $("#txTable tbody");
+    if(!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
+    try {
+      const res = await fetch(`${backendUrl}/api/transactions/my`, {headers: authHeaders()});
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.message || "Failed to load transactions");
+      const txs = Array.isArray(data.transactions) ? data.transactions : (data && data._id ? [data] : []);
+      if(!txs.length){ tbody.innerHTML=`<tr><td colspan="4">No transactions yet.</td></tr>`; return; }
+      tbody.innerHTML = txs
+        .sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt))
+        .map(tx=>`<tr>
+          <td>${fmtDate(tx.createdAt)}</td>
+          <td>${(tx.type||"").toUpperCase()}</td>
+          <td>$${fmtMoney(tx.amount)}</td>
+          <td>${(tx.status||"pending").toUpperCase()}</td>
+        </tr>`).join("");
+    } catch(e){
+      tbody.innerHTML = `<tr><td colspan="4">Error: ${e.message}</td></tr>`;
+    }
+  }
+
+  function showUserDashboard(user){
+    if(!user) return;
+    closeModal("loginModal");
+    closeModal("signupModal");
+    closeModal("termsModal");
+    closeModal("twoFAModal");
+
+    $("#dashboardCard")?.classList.remove("hidden");
+    hydrateStats(user);
+    loadTransactions();
+
+    $("#depositBtn")?.addEventListener("click", () => openModal("depositModal"));
+    $("#withdrawBtn")?.addEventListener("click", () => openModal("withdrawModal"));
+
+    $("#openLogin")?.classList.add("hidden");
+    $("#openSignup")?.classList.add("hidden");
+    $("#openDashboard")?.classList.remove("hidden");
+    $("#logoutTop")?.classList.remove("hidden");
+
+    const logoutBtn = $("#logoutTop");
+    if(logoutBtn && !logoutBtn.dataset.listenerAdded){
+      logoutBtn.addEventListener("click", ()=>{
+        localStorage.removeItem("jwtToken");
+        localStorage.removeItem("currentUser");
+        $("#dashboardCard")?.classList.add("hidden");
+        $("#openLogin")?.classList.remove("hidden");
+        $("#openSignup")?.classList.remove("hidden");
+        $("#openDashboard")?.classList.add("hidden");
+        logoutBtn.classList.add("hidden");
+      });
+      logoutBtn.dataset.listenerAdded = "true";
+    }
+  }
+
+  // ---------- Auto-show user if logged in ----------
+  const savedUser = localStorage.getItem("currentUser");
+  if(savedUser){
+    try { showUserDashboard(JSON.parse(savedUser)); }
+    catch{ localStorage.removeItem("currentUser"); }
+  }
+
+  // ---------- Signup ----------
+  $("#signupSubmit")?.addEventListener("click", async ()=>{
+    const name = $("#suName")?.value.trim();
+    const email = $("#suEmail")?.value.trim();
+    const password = $("#suPassword")?.value.trim();
+    if(!name || !email || !password){ alert("Fill all fields."); return; }
+    try{
+      const res = await fetch(`${backendUrl}/api/auth/register`, {
+        method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({name,email,password})
+      });
+      const data = await res.json();
+      if(res.ok){ alert("Account created!"); closeModal("signupModal"); }
+      else alert(data.message || "Signup failed");
+    }catch(err){ console.error(err); alert("Something went wrong"); }
+  });
+
+  // ---------- User Login ----------
+  $("#loginSubmit")?.addEventListener("click", async ()=>{
+    const email = $("#liEmail")?.value.trim();
+    const password = $("#liPassword")?.value.trim();
+    if(!email || !password){ alert("Enter email & password"); return; }
+    try{
+      const res = await fetch(`${backendUrl}/api/auth/user-login`, {
+        method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({email,password})
+      });
+      const data = await res.json();
+      if(!res.ok || !data.success) throw new Error(data.message || "Login failed");
+
+      if(data.requiresTerms){
+        localStorage.setItem("tempToken", data.tempToken);
+        openModal("termsModal");
+        return;
+      }
+      if(data.requires2FA){
+        localStorage.setItem("tempToken", data.tempToken);
+        openModal("twoFAModal");
+        startTwofaCountdown(300);
+        alert("2FA code sent to your email.");
+      }
+
+    }catch(err){ console.error(err); alert(err.message); }
+  });
+
+  // ---------- Accept Terms ----------
+  $("#acceptTermsBtn")?.addEventListener("click", async ()=>{
+    const tempToken = localStorage.getItem("tempToken");
+    if(!tempToken){ alert("No temp session"); return; }
+    try{
+      const res = await fetch(`${backendUrl}/api/auth/accept-terms`, {
+        method:"POST", headers:{"Content-Type":"application/json", "Authorization":`Bearer ${tempToken}`}
+      });
+      const data = await res.json();
+      if(!res.ok || !data.success) throw new Error(data.message || "Could not accept terms");
+      closeModal("termsModal");
+      openModal("twoFAModal");
+      startTwofaCountdown(300);
+      alert("Terms accepted. Enter 2FA code.");
+    }catch(err){ console.error(err); alert(err.message); }
+  });
+
+  $("#verify2FA")?.addEventListener("click", async () => {
+  const code = $("#twofaCode")?.value.trim();
+  const tempToken = localStorage.getItem("tempToken");
+  if (!code || !tempToken) return alert("Enter 2FA code");
+
+  try {
+    const res = await fetch(`${backendUrl}/api/auth/verify-2fa`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${tempToken}` },
+      body: JSON.stringify({ code })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.message || "Invalid 2FA code");
+
+    localStorage.setItem("jwtToken", data.token);
+    localStorage.removeItem("tempToken");
+
+    // Fetch updated user
+    const user = await fetchCurrentUser();
+    if (user) showUserDashboard(user);
+
+    // Close 2FA modal
+    closeModal("twoFAModal");
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
+  }
+});
+
+  async function fetchCurrentUser() {
+  const token = localStorage.getItem("jwtToken");
+  if (!token) return null;
+
+  try {
+    const res = await fetch(`${backendUrl}/api/auth/me`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (res.ok && data.user) {
+      localStorage.setItem("currentUser", JSON.stringify(data.user));
+      return data.user;
+    }
+    return null;
+  } catch (err) {
+    console.error("Failed to fetch current user:", err);
+    return null;
+  }
+}
+
+
+  // ---------- 2FA Timer ----------
+  let twofaTimer;
+  function startTwofaCountdown(seconds){
+    clearInterval(twofaTimer);
+    const display = $("#twofaTimer");
+    let remaining = seconds;
+    const update = ()=>{ if(display) display.textContent=`${String(Math.floor(remaining/60)).padStart(2,"0")}:${String(remaining%60).padStart(2,"0")}`; };
+    update();
+    twofaTimer = setInterval(()=>{ remaining--; update(); if(remaining<=0) clearInterval(twofaTimer); }, 1000);
+  }
+
+  // ---------- Admin Login ----------
+  $("#adminLoginSubmit")?.addEventListener("click", async ()=>{
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("currentAdmin");
+    const email = $("#adminEmail")?.value.trim();
+    const password = $("#adminPassword")?.value.trim();
+    if(!email || !password){ alert("Enter admin email & password"); return; }
+    try{
+      const res = await fetch(`${backendUrl}/api/auth/admin-login`, {
+        method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({email,password})
+      });
+      const data = await res.json();
+      if(!res.ok || !data.success) throw new Error(data.message || "Invalid login");
+      localStorage.setItem("adminToken", data.token);
+      localStorage.setItem("currentAdmin", JSON.stringify(data.admin));
+      closeModal("adminLoginModal");
+      showAdminDashboard();
+    }catch(err){ alert("Admin login failed: "+err.message); }
+  });
+
+  function showAdminDashboard(){
+    $("#adminDashboard")?.classList.remove("hidden");
+    loadAdminUsers();
+    loadWithdrawals();
+  }
+
+  async function loadAdminUsers(){
+    const tbody = $("#adminUsersBody");
+    if(!tbody) return;
+    tbody.innerHTML=`<tr><td colspan="6">Loading...</td></tr>`;
+    try{
+      const res = await fetch(`${backendUrl}/api/admin/users`, {headers:adminHeaders()});
+      const data = await res.json();
+      const users = data.users || [];
+      tbody.innerHTML = users.map(u=>`<tr>
+        <td>${u.name}</td><td>${u.email}</td>
+        <td><input type="number" data-id="${u._id}" data-field="balance" value="${u.investment?.balance||0}"></td>
+        <td><input type="number" data-id="${u._id}" data-field="profit" value="${u.investment?.profit||0}"></td>
+        <td><input type="number" data-id="${u._id}" data-field="interest" value="${u.investment?.interest||0}"></td>
+        <td><button class="adminSave" data-id="${u._id}">Save</button></td>
+      </tr>`).join("");
+    }catch(err){ tbody.innerHTML=`<tr><td colspan="6">Error: ${err.message}</td></tr>`; }
+  }
+
+  document.addEventListener("click", async (e)=>{
+    if(e.target.classList.contains("adminSave")){
+      const id = e.target.dataset.id;
+      const row = e.target.closest("tr");
+      const balance = parseFloat(row.querySelector('input[data-field="balance"]').value);
+      const profit = parseFloat(row.querySelector('input[data-field="profit"]').value);
+      const interest = parseFloat(row.querySelector('input[data-field="interest"]').value);
+      try{
+        const res = await fetch(`${backendUrl}/api/admin/user/${id}/investment`, {
+          method:"PUT", headers:adminHeaders(), body:JSON.stringify({balance,profit,interest})
+        });
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.message || "Failed");
+        alert("User updated!");
+      }catch(err){ alert("Error updating: "+err.message); }
+    }
+  });
+
+  async function loadWithdrawals(){
+    const tbody = $("#adminWithdrawalsBody");
+    if(!tbody) return;
+    tbody.innerHTML=`<tr><td colspan="5">Loading...</td></tr>`;
+    try{
+      const res = await fetch(`${backendUrl}/api/admin/withdrawals`, {headers:adminHeaders()});
+      const data = await res.json();
+      const withdrawals = data.withdrawals || [];
+      if(!withdrawals.length){ tbody.innerHTML=`<tr><td colspan="5">No withdrawals</td></tr>`; return; }
+      tbody.innerHTML = withdrawals.map(w=>`<tr>
+        <td>${w.userName}</td><td>${w.method}</td><td>$${fmtMoney(w.amount)}</td><td>${w.status}</td><td>${fmtDate(w.createdAt)}</td>
+      </tr>`).join("");
+    }catch(err){ tbody.innerHTML=`<tr><td colspan="5">Error: ${err.message}</td></tr>`; }
+  }
+
+}); // End DOMContentLoaded
 </script>
 
-
-
-  
 </body>
 </html>
