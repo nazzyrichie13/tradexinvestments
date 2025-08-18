@@ -1,6 +1,8 @@
 // middleware/authMiddleware.js
 
 // middleware/auth.js
+
+import Admin from "../models/Admin.js";
 import jwt from "jsonwebtoken";
 
 export const requireAuth = (req, res, next) => {
