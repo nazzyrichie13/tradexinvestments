@@ -1,15 +1,4 @@
 // 1️⃣ Import everything first
-
-
-
-
-// Fix __dirname
-
-
-
-// Middleware
-
-
 import express from 'express';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
@@ -18,9 +7,13 @@ import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { Server } from 'socket.io';
+import adminRoutes from "./routes/admin.js";  
+import authRoutes from "./routes/auth.js";
+import userRoutes from "./routes/user.js";
+import contactRoutes from "./routes/contact.js";
+import withdrawalRoutes from "./routes/withdrawals.js";
+import User from "./models/User.js";
 
-import authRoutes from "./routes/auth.js";       // all auth + admin routes
-import contactRoutes from "./routes/contact.js"; // contact route
 
 dotenv.config();
 
@@ -32,40 +25,41 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
-// ==========================
+
+
 // Middleware
-// ==========================
+
 app.use(cors({
-  origin: ["http://127.0.0.1:5500", "http://localhost:5500"], // frontend origins
+  origin: ["http://127.0.0.1:5500", "http://localhost:5500"], // your frontend origins
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
 }));
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ==========================
-// Routes
-// ==========================
 app.get("/", (req, res) => res.send("TradexInvest backend is running"));
 
-// Auth + admin + user routes all in auth.js
-app.use("/api", authRoutes);
+// API routes
 
-// Contact route separate
+
+app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/withdrawals", withdrawalRoutes);
+app.use("/api/admin", adminRoutes);
 
-// ==========================
-// MongoDB connection & server start
-// ==========================
+
+// Start server after MongoDB connection
+// Start server after MongoDB connection
 const PORT = process.env.PORT || 10000;
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log("✅ MongoDB connected");
 
+    // 🚀 Start Express server once DB is ready
     server.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
     });
