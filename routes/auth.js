@@ -140,20 +140,23 @@ router.post("/verify-2fa", async (req, res) => {
 // Middleware
 function requireAdmin(req, res, next) {
   const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(403).json({ error: "No token provided" });
-
+  if (!token) {
+    console.log("❌ No token sent");
+    return res.status(403).json({ error: "No token provided" });
+  }
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
+    console.log("✅ Admin verified:", decoded);
     if (decoded.role !== "admin") {
-      return res.status(403).json({ error: "Not authorized as admin" });
+      return res.status(403).json({ error: "Forbidden" });
     }
     req.admin = decoded;
     next();
   } catch (err) {
-    return res.status(401).json({ error: "Invalid or expired token" });
+    console.error("❌ JWT verify failed:", err.message);
+    return res.status(401).json({ error: "Invalid token" });
   }
 }
-
 // Get all users
 router.get("/admin/users", requireAdmin, async (req, res) => {
   try {

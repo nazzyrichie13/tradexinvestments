@@ -1192,9 +1192,10 @@ const res = await fetch(`${backendUrl}/api/admin/users`, {
   const row = e.target.closest("tr");
 
   // Safely parse inputs
-  const balance = parseFloat(row.querySelector('input[data-field="balance"]').value) || 0;
-  const profit = parseFloat(row.querySelector('input[data-field="profit"]').value) || 0;
-  const interest = parseFloat(row.querySelector('input[data-field="interest"]').value) || 0;
+row.querySelector('input[data-field="balance"]').value = data.user.investment.balance;
+row.querySelector('input[data-field="profit"]').value = data.user.investment.profit;
+row.querySelector('input[data-field="interest"]').value = data.user.investment.interest;
+
 
   // Get JWT token stored after admin login
   const token = localStorage.getItem("adminToken");
@@ -1223,9 +1224,9 @@ const res = await fetch(`${backendUrl}/api/admin/users`, {
     }
 
     // ✅ Success: update row in table
-    row.querySelector('input[data-field="balance"]').value = data.user.balance;
-    row.querySelector('input[data-field="profit"]').value = data.user.profit;
-    row.querySelector('input[data-field="interest"]').value = data.user.interest;
+    row.querySelector('input[data-field="balance"]').value = data.user.investment.balance;
+row.querySelector('input[data-field="profit"]').value = data.user.investment.profit;
+row.querySelector('input[data-field="interest"]').value = data.user.investment.interest;
 
     alert("User investment updated successfully!");
 
