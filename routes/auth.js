@@ -165,7 +165,7 @@ router.get("/admin/users", requireAdmin, async (req, res) => {
 });
 
 // Update user investment
-router.put("/admin/user/:id/investment", requireAdmin, async (req, res) => {
+router.put("/user/:id/investment", requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { balance, interest, profit } = req.body;
