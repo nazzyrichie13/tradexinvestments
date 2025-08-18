@@ -144,13 +144,12 @@ function requireAdmin(req, res, next) {
     console.log("❌ No token sent");
     return res.status(403).json({ error: "No token provided" });
   }
+
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     console.log("✅ Admin verified:", decoded);
-    if (decoded.role !== "admin") {
-      return res.status(403).json({ error: "Forbidden" });
-    }
-    req.admin = decoded;
+
+    req.admin = decoded; // attach decoded token to request
     next();
   } catch (err) {
     console.error("❌ JWT verify failed:", err.message);
