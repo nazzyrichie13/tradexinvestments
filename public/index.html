@@ -1148,17 +1148,23 @@ const res = await fetch(`${backendUrl}/api/admin/users`, {
     const balance = parseFloat(row.querySelector('input[data-field="balance"]').value);
     const profit = parseFloat(row.querySelector('input[data-field="profit"]').value);
     const interest = parseFloat(row.querySelector('input[data-field="interest"]').value);
+    const token = localStorage.getItem("token"); // or wherever you store it
+if (!token) {
+  console.error("No token found");
+  return;
+}
+      const backendURI = "https://tradexinvestments.onrender.com";
 
     try {
       // ✅ Save Updated User Stats
-      const backendURI = "https://tradexinvestments.onrender.com";
+      
       const response = await fetch(`${backendURI}/api/admin/user/${id}/investment`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}` // if using JWT
     },
-    body: JSON.stringify({ amount, interest, profit })
+    body: JSON.stringify({ balance, interest, profit })
   });
 
   const data = await response.json();
