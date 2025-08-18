@@ -1152,7 +1152,7 @@ document.addEventListener("click", async (e) => {
   const profit = parseFloat(row.querySelector('input[data-field="profit"]').value) || 0;
   const interest = parseFloat(row.querySelector('input[data-field="interest"]').value) || 0;
 
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("adminToken");
   if (!token) {
     alert("You are not logged in. Please log in first.");
     return;
