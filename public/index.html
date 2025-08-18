@@ -871,29 +871,49 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
   }
 
   // ---------- transactions ----------
-  async function loadTransactions() {
-    const tbody = $("#txTable tbody");
-    if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
-    try {
-      const res = await fetch(`${backendUrl}/api/transactions/my`, { headers: authHeaders() });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to load transactions");
+ async function loadTransactions() {
+  const tbody = $("#txTable tbody");
+  if (!tbody) return;
 
-      const txs = Array.isArray(data.transactions) ? data.transactions : data;
-      tbody.innerHTML = txs.length
-        ? txs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-             .map(tx => `<tr>
-               <td>${fmtDate(tx.createdAt)}</td>
-               <td>${(tx.type || "").toUpperCase()}</td>
-               <td>$${fmtMoney(tx.amount)}</td>
-               <td>${(tx.status || "pending").toUpperCase()}</td>
-             </tr>`).join("")
-        : `<tr><td colspan="4">No transactions yet.</td></tr>`;
-    } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="4">Error: ${e.message}</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
+
+  try {
+    const res = await fetch(`${backendUrl}/api/transactions/my`, { headers: authHeaders() });
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.message || "Failed to load transactions");
+
+    // Ensure txs is always an array
+    let txs = [];
+    if (Array.isArray(data.transactions)) {
+      txs = data.transactions;
+    } else if (data && typeof data === "object" && data._id) {
+      // Single transaction returned as object
+      txs = [data];
     }
+
+    // If no transactions, show friendly message
+    if (txs.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4">No transactions yet.</td></tr>`;
+      return;
+    }
+
+    // Otherwise, render transactions table
+    tbody.innerHTML = txs
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .map(tx => `<tr>
+        <td>${fmtDate(tx.createdAt)}</td>
+        <td>${(tx.type || "").toUpperCase()}</td>
+        <td>$${fmtMoney(tx.amount)}</td>
+        <td>${(tx.status || "pending").toUpperCase()}</td>
+      </tr>`)
+      .join("");
+
+  } catch (e) {
+    // Fallback message
+    tbody.innerHTML = `<tr><td colspan="4">${e.message ? `Error: ${e.message}` : "No transactions yet."}</td></tr>`;
   }
+}
 
   // ---------- dashboard ----------
   function showDashboard(user) {
