@@ -801,18 +801,19 @@ const tabButtons = document.querySelectorAll('.tabs .btn');
   setInterval(()=>{ i=(i+1)%imgs.length; showImg(i); }, 3000);
   setInterval(()=>{ q=(q+1)%quotes.length; showQuote(q); }, 3000);
 })();
-document.getElementById("openLogin")?.addEventListener("click", () => openModal("loginModal"));
-document.getElementById("ctaLogin")?.addEventListener("click", () => openModal("loginModal"));
+document.addEventListener("DOMContentLoaded", () => {
+  // User login
+  document.getElementById("openLogin")?.addEventListener("click", () => openModal("loginModal"));
+  document.getElementById("ctaLogin")?.addEventListener("click", () => openModal("loginModal"));
 
-// ---------- Admin Login ----------
-document.getElementById("openAdminLogin")?.addEventListener("click", () => openModal("adminLoginModal"));
-document.getElementById("ctaAdminLogin")?.addEventListener("click", () => openModal("adminLoginModal"));
-/* ===========================
-   SIGNUP
-=========================== */
-document.getElementById("openSignup").onclick = ()=> openModal("signupModal");
-document.getElementById("ctaSignup").onclick  = ()=> openModal("signupModal");
+  // Admin login
+  document.getElementById("openAdminLogin")?.addEventListener("click", () => openModal("adminLoginModal"));
+  document.getElementById("ctaAdminLogin")?.addEventListener("click", () => openModal("adminLoginModal"));
 
+  // Signup
+  document.getElementById("openSignup")?.addEventListener("click", () => openModal("signupModal"));
+  document.getElementById("ctaSignup")?.addEventListener("click", () => openModal("signupModal"));
+});
 
 const backendUrl = "https://www.tradexinvest.net"; // Change to your backend
 
@@ -849,8 +850,7 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
 
 
 // ----- LOGIN / TERMS / 2FA -----
-document.getElementById("openSignup").onclick = ()=> openModal("loginModal");
-document.getElementById("ctaSignup").onclick  = ()=> openModal("loginModal");
+
 
 
 
