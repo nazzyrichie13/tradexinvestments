@@ -56,7 +56,7 @@ router.post("/user-login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ success: false, message: "Invalid email or password" });
 
-    // 2FA setup for user
+    // Setup 2FA if not exists
     if (!user.twoFASecret) {
       const secret = speakeasy.generateSecret({ length: 20 });
       user.twoFASecret = secret.base32;
@@ -76,12 +76,61 @@ router.post("/user-login", async (req, res) => {
 
     res.json({
       success: true,
+      requiresTerms: !user.acceptedTerms, // force terms acceptance first
       requires2FA: true,
-      tempToken,
-      requiresTerms: !user.acceptedTerms // ✅ send to frontend
+      tempToken
     });
   } catch (err) {
     console.error("User login error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// 2️⃣ Accept terms
+router.post("/accept-terms", async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ success: false, message: "No token provided" });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const user = await User.findById(decoded.id);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    user.acceptedTerms = true;
+    await user.save();
+
+    res.json({ success: true, message: "Terms accepted" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// 3️⃣ Verify 2FA
+router.post("/verify-2fa", async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    const { code } = req.body;
+    if (!token) return res.status(401).json({ success: false, message: "No token provided" });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const user = await User.findById(decoded.id);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    const verified = speakeasy.totp.verify({
+      secret: user.twoFASecret,
+      encoding: "base32",
+      token: code,
+      window: 1
+    });
+
+    if (!verified) return res.status(400).json({ success: false, message: "Invalid 2FA code" });
+
+    // 2FA passed → issue final JWT
+    const finalToken = jwt.sign({ id: user._id, kind: "user" }, JWT_SECRET, { expiresIn: "7d" });
+    res.json({ success: true, token: finalToken, user: { email: user.email, name: user.name } });
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
@@ -112,31 +161,7 @@ router.post("/admin-login", async (req, res) => {
   }
 });
 
-// =========================
-// USER 2FA VERIFY
-// =========================
-router.post("/verify-2fa", async (req, res) => {
-  try {
-    const { code, tempToken } = req.body;
-    if (!code || !tempToken) return res.status(400).json({ success: false, message: "Code and tempToken required" });
-
-    const decoded = jwt.verify(tempToken, JWT_SECRET);
-    if (decoded.kind !== "user") return res.status(400).json({ success: false, message: "Invalid token for 2FA" });
-
-    const user = await User.findById(decoded.id);
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
-
-    const verified = speakeasy.totp.verify({ secret: user.twoFASecret, encoding: "base32", token: code, window: 2 });
-    if (!verified) return res.status(400).json({ success: false, message: "Invalid 2FA code" });
-
-    const jwtToken = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: "7d" });
-
-    res.json({ success: true, token: jwtToken, user: { id: user._id, name: user.name, email: user.email } });
-  } catch (err) {
-    console.error("2FA verify error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-});
+//
 // Middleware
 function requireAdmin(req, res, next) {
   const token = req.headers.authorization?.split(" ")[1];

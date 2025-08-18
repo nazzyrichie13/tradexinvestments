@@ -973,35 +973,97 @@ document.getElementById("ctaSignup").onclick  = ()=> openModal("loginModal");
     }
 
     // ---------- Login Button ----------
-    $("#loginSubmit")?.addEventListener("click", async () => {
-      const email = $("#liEmail")?.value;
-      const password = $("#liPassword")?.value;
-      if (!email || !password) return alert("Please enter email and password.");
+  $("#loginSubmit")?.addEventListener("click", async () => {
+  const email = $("#liEmail")?.value;
+  const password = $("#liPassword")?.value;
+  if (!email || !password) return alert("Please enter email and password.");
 
-      try {
-        const response = await fetch(`${backendUrl}/api/auth/user-login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Login failed");
+  try {
+    const response = await fetch(`${backendUrl}/api/auth/user-login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.message || "Login failed");
 
-        // Save token & initial user
-        localStorage.setItem("jwtToken", data.token);
-        localStorage.setItem("currentUser", JSON.stringify(data.user));
+    // Must accept terms first
+    if (data.requiresTerms) {
+      localStorage.setItem("tempToken", data.tempToken);
+      $("#termsModal").style.display = "block";
+      return;
+    }
 
-        // Fetch the latest user info from backend
-        await fetchCurrentUser();
+    // Trigger 2FA if terms already accepted
+    if (data.requires2FA) {
+      localStorage.setItem("tempToken", data.tempToken);
+      $("#twoFAContainer").style.display = "block";
+      alert("2FA code sent to your email.");
+      return;
+    }
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
+  }
+});
 
-        // Show dashboard with updated info
-        const updatedUser = JSON.parse(localStorage.getItem("currentUser"));
-        showUserDashboard(updatedUser);
-      } catch (err) {
-        console.error(err);
-        alert(err.message);
+// Accept Terms button
+$("#acceptTermsBtn")?.addEventListener("click", async () => {
+  const tempToken = localStorage.getItem("tempToken");
+  if (!tempToken) return alert("No temp session found.");
+
+  try {
+    const res = await fetch(`${backendUrl}/api/auth/accept-terms`, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${tempToken}`
       }
     });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.message || "Could not accept terms");
+
+    $("#termsModal").style.display = "none";
+    $("#twoFAContainer").style.display = "block";
+    alert("Terms accepted. Please enter 2FA code.");
+
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
+  }
+});
+
+// Verify 2FA button
+$("#verify2FABtn")?.addEventListener("click", async () => {
+  const code = $("#twoFACode")?.value;
+  const tempToken = localStorage.getItem("tempToken");
+  if (!code || !tempToken) return alert("Enter 2FA code.");
+
+  try {
+    const res = await fetch(`${backendUrl}/api/auth/verify-2fa`, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${tempToken}`
+      },
+      body: JSON.stringify({ code })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.message || "Invalid 2FA code");
+
+    // Login complete → save JWT & user
+    localStorage.setItem("jwtToken", data.token);
+    localStorage.setItem("currentUser", JSON.stringify(data.user));
+
+    localStorage.removeItem("tempToken");
+    await fetchCurrentUser();
+    showUserDashboard(JSON.parse(localStorage.getItem("currentUser")));
+
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
+  }
+});
 
     // ---------- Fetch current user info ----------
     async function fetchCurrentUser() {
