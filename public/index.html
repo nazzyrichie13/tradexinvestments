@@ -1193,30 +1193,39 @@ document.addEventListener("click", async (e) => {
 
   // 🔹 Load Withdrawals into Admin Panel
   async function loadWithdrawals() {
-    const tbody = $("#adminWdBody");
-    if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="5">Loading...</td></tr>`;
-    try {
-      const res = await fetch(`${backendUrl}/api/admin/withdrawals`, { headers: authHeaders() });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.message || "Failed to load withdrawals");
+  const tbody = $("#adminWdBody");
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="5">Loading...</td></tr>`;
 
-      tbody.innerHTML = data.withdrawals.map(w => `
-        <tr>
-          <td>${w.user?.email || "Unknown"}</td>
-          <td>${w.method}</td>
-          <td>$${w.amount}</td>
-          <td>${w.status}</td>
-          <td>
-            <button class="approveWd" data-id="${w._id}">Approve</button>
-            <button class="rejectWd" data-id="${w._id}">Reject</button>
-          </td>
-        </tr>
-      `).join("");
-    } catch (err) {
-      tbody.innerHTML = `<tr><td colspan="5">Error: ${err.message}</td></tr>`;
+  try {
+    const res = await fetch(`${backendUrl}/api/admin/withdrawals`, { headers: authHeaders() });
+    const data = await res.json();
+
+    if (!data.success) throw new Error(data.message || "Failed to load withdrawals");
+
+    if (!data.withdrawals || data.withdrawals.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5">No withdrawals yet</td></tr>`;
+      return;
     }
+
+    tbody.innerHTML = data.withdrawals.map(w => `
+      <tr>
+        <td>${w.user?.email || "Unknown"}</td>
+        <td>${w.method}</td>
+        <td>$${w.amount}</td>
+        <td>${w.status}</td>
+        <td>
+          <button class="approveWd" data-id="${w._id}">Approve</button>
+          <button class="rejectWd" data-id="${w._id}">Reject</button>
+        </td>
+      </tr>
+    `).join("");
+    
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="5">Error: ${err.message}</td></tr>`;
   }
+}
+
   function renderAdminUsers(users) {
   const tableBody = document.querySelector("#adminUsersTable tbody");
   tableBody.innerHTML = "";
