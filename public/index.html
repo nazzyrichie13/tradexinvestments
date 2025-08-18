@@ -1033,7 +1033,7 @@ if (savedUser) {
         const res = await fetch(`${backendUrl}/api/auth/resend-2fa`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: user.email })
+          body: JSON.stringify({ email: user.email }) 
         });
         const data = await res.json();
         if (!res.ok || data.success === false) throw new Error(data.message || "Failed to resend code");
@@ -1141,7 +1141,7 @@ const res = await fetch(`${backendUrl}/api/admin/users`, {
   }
 
   // 🔹 Save Updated User Stats
-document.addEventListener("click", async (e) => {
+ document.addEventListener("click", async (e) => {
   if (!e.target.classList.contains("adminSave")) return;
 
   const id = e.target.dataset.id; // MongoDB _id
@@ -1171,21 +1171,18 @@ document.addEventListener("click", async (e) => {
       body: JSON.stringify({ balance, profit, interest })
     });
 
-    // Parse JSON safely
-    const text = await response.text();
-console.log("Raw response:", text);
+    // ✅ parse JSON from backend
+    const data = await response.json();
 
-let data;
-try {
-  data = JSON.parse(text);
-} catch {
-  throw new Error("Server did not return JSON: " + text.slice(0, 100));
-}
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to update user");
+    }
 
-    // Success: update row in table
- row.querySelector('input[data-field="balance"]').value = data.user.investment.balance;
-row.querySelector('input[data-field="profit"]').value = data.user.investment.profit;
-row.querySelector('input[data-field="interest"]').value = data.user.investment.interest;
+    // ✅ Success: update row in table
+    row.querySelector('input[data-field="balance"]').value = data.user.balance;
+    row.querySelector('input[data-field="profit"]').value = data.user.profit;
+    row.querySelector('input[data-field="interest"]').value = data.user.interest;
+
     alert("User investment updated successfully!");
 
   } catch (err) {
@@ -1194,61 +1191,6 @@ row.querySelector('input[data-field="interest"]').value = data.user.investment.i
   }
 });
 
-  // 🔹 Load Withdrawals into Admin Panel
-  async function loadWithdrawals() {
-  const tbody = $("#adminWdBody");
-  if (!tbody) return;
-  tbody.innerHTML = `<tr><td colspan="5">Loading...</td></tr>`;
-
-  try {
-    const res = await fetch(`${backendUrl}/api/admin/withdrawals`, { headers: authHeaders() });
-    const data = await res.json();
-
-    if (!data.success) throw new Error(data.message || "Failed to load withdrawals");
-
-    if (!data.withdrawals || data.withdrawals.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5">No withdrawals yet</td></tr>`;
-      return;
-    }
-
-    tbody.innerHTML = data.withdrawals.map(w => `
-      <tr>
-        <td>${w.user?.email || "Unknown"}</td>
-        <td>${w.method}</td>
-        <td>$${w.amount}</td>
-        <td>${w.status}</td>
-        <td>
-          <button class="approveWd" data-id="${w._id}">Approve</button>
-          <button class="rejectWd" data-id="${w._id}">Reject</button>
-        </td>
-      </tr>
-    `).join("");
-    
-  } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="5">Error: ${err.message}</td></tr>`;
-  }
-}
-
-  function renderAdminUsers(users) {
-  const tableBody = document.querySelector("#adminUsersTable tbody");
-  tableBody.innerHTML = "";
-
-  users.forEach((user) => {
-    const row = `
-      <tr>
-        <td>${user.name}</td>
-        <td>${user.email}</td>
-        <td>${user.balance ?? 0}</td>
-        <td>${user.profit ?? 0}</td>
-        <td>${user.interest ?? 0}%</td>
-        <td>
-          <button onclick="editUser('${user._id}')">Edit</button>
-        </td>
-      </tr>
-    `;
-    tableBody.innerHTML += row;
-  });
-}
 
 
   // 🔹 Approve/Reject Withdrawal

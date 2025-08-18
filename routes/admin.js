@@ -38,15 +38,7 @@ router.post("/admin-login", async (req, res) => {
 });
 
 // Get all users
-router.get("/admin/users", requireAdmin, async (req, res) => {
-  try {
-    const users = await User.find();
-    res.json({ success: true, users });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch users" });
-  }
-});
-
+// 
 // Update user investment
 router.put("/user/:id/investment", requireAdmin, async (req, res) => {
   try {
