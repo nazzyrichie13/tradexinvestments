@@ -1144,14 +1144,15 @@ const res = await fetch(`${backendUrl}/api/admin/users`, {
 document.addEventListener("click", async (e) => {
   if (!e.target.classList.contains("adminSave")) return;
 
-  const id = e.target.dataset.id; // user ID
+  const id = e.target.dataset.id; // MongoDB _id
   const row = e.target.closest("tr");
 
-  // Parse inputs safely
+  // Safely parse inputs
   const balance = parseFloat(row.querySelector('input[data-field="balance"]').value) || 0;
   const profit = parseFloat(row.querySelector('input[data-field="profit"]').value) || 0;
   const interest = parseFloat(row.querySelector('input[data-field="interest"]').value) || 0;
 
+  // Get JWT token stored after admin login
   const token = localStorage.getItem("adminToken");
   if (!token) {
     alert("You are not logged in. Please log in first.");
@@ -1161,28 +1162,32 @@ document.addEventListener("click", async (e) => {
   const backendURI = "https://tradexinvestments.onrender.com";
 
   try {
-    const response = await fetch(`${backendURI}/admin/user/${id}/investment`, {
+    const response = await fetch(`${backendURI}/api/admin/user/${id}/investment`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ balance, profit, interest }) // match backend
+      body: JSON.stringify({ balance, profit, interest })
     });
 
+    // Parse JSON safely
     const data = await response.json();
 
     if (!response.ok) {
       throw new Error(data.error || "Failed to update user");
     }
 
-    // Success feedback
-    alert(`User updated successfully! Balance: $${data.user.balance}`);
-    console.log("Updated user:", data.user);
+    // Success: update row in table
+    row.querySelector('input[data-field="balance"]').value = data.user.balance;
+    row.querySelector('input[data-field="profit"]').value = data.user.profit;
+    row.querySelector('input[data-field="interest"]').value = data.user.interest;
+
+    alert("User investment updated successfully!");
 
   } catch (err) {
-    alert("Error updating user: " + err.message);
     console.error(err);
+    alert("Error updating user: " + err.message);
   }
 });
 
