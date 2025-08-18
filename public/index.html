@@ -1141,38 +1141,48 @@ const res = await fetch(`${backendUrl}/api/admin/users`, {
   }
 
   // 🔹 Save Updated User Stats
- document.addEventListener("click", async (e) => {
-  if (e.target.classList.contains("adminSave")) {
-    const id = e.target.dataset.id; // this should be the user's ID
-    const row = e.target.closest("tr");
-    const balance = parseFloat(row.querySelector('input[data-field="balance"]').value);
-    const profit = parseFloat(row.querySelector('input[data-field="profit"]').value);
-    const interest = parseFloat(row.querySelector('input[data-field="interest"]').value);
-    const token = localStorage.getItem("token"); // or wherever you store it
-if (!token) {
-  console.error("No token found");
-  return;
-}
-      const backendURI = "https://tradexinvestments.onrender.com";
+document.addEventListener("click", async (e) => {
+  if (!e.target.classList.contains("adminSave")) return;
 
-    try {
-      // ✅ Save Updated User Stats
-      
-      const response = await fetch(`${backendURI}/api/admin/user/${id}/investment`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}` // if using JWT
-    },
-    body: JSON.stringify({ balance, interest, profit })
-  });
+  const id = e.target.dataset.id; // user ID
+  const row = e.target.closest("tr");
 
-  const data = await response.json();
-  console.log(data); // should
+  // Parse inputs safely
+  const balance = parseFloat(row.querySelector('input[data-field="balance"]').value) || 0;
+  const profit = parseFloat(row.querySelector('input[data-field="profit"]').value) || 0;
+  const interest = parseFloat(row.querySelector('input[data-field="interest"]').value) || 0;
 
-    } catch (err) {
-      alert("Error updating user: " + err.message);
+  const token = localStorage.getItem("token");
+  if (!token) {
+    alert("You are not logged in. Please log in first.");
+    return;
+  }
+
+  const backendURI = "https://tradexinvestments.onrender.com";
+
+  try {
+    const response = await fetch(`${backendURI}/api/admin/user/${id}/investment`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ balance, profit, interest }) // match backend
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to update user");
     }
+
+    // Success feedback
+    alert(`User updated successfully! Balance: $${data.user.balance}`);
+    console.log("Updated user:", data.user);
+
+  } catch (err) {
+    alert("Error updating user: " + err.message);
+    console.error(err);
   }
 });
 
