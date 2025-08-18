@@ -423,17 +423,63 @@
     <button id="verify2FA" class="btn btn-primary">Verify</button>
   </div>
 </div>
+<div class="grid">
+<div id="dashboardCard" class="hidden">
+  <!-- user dashboard content -->
 
-<!-- Deposit Modal -->
-<div id="depositModal" class="modal">
+  <div class="mb-6 flex justify-between items-center">
+    <h2 id="welcomeUser" class="text-xl font-bold">Welcome, User</h2>
+    <button id="logoutTop" class="px-4 py-2 bg-red-500 text-white rounded hidden">Logout</button>
+  </div>
+
+  <!-- User Stats -->
+  <div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="p-4 bg-gray-100 rounded">
+      <p class="text-sm text-gray-500">Balance</p>
+      <p id="statBalance" class="text-lg font-semibold">$0.00</p>
+    </div>
+    <div class="p-4 bg-gray-100 rounded">
+      <p class="text-sm text-gray-500">Profit</p>
+      <p id="statProfit" class="text-lg font-semibold">$0.00</p>
+    </div>
+    <div class="p-4 bg-gray-100 rounded">
+      <p class="text-sm text-gray-500">Interest</p>
+      <p id="statInterest" class="text-lg font-semibold">$0.00</p>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="mb-6 flex gap-4">
+    <button id="depositBtn" class="px-4 py-2 bg-green-500 text-white rounded">Deposit</button>
+    <button id="withdrawBtn" class="px-4 py-2 bg-yellow-500 text-white rounded">Withdraw</button>
+  </div>
+
+  <!-- Transactions Table -->
+  <div class="overflow-x-auto">
+    <table class="w-full border-collapse border border-gray-300">
+      <thead class="bg-gray-200">
+        <tr>
+          <th class="border border-gray-300 px-3 py-2">Date</th>
+          <th class="border border-gray-300 px-3 py-2">Type</th>
+          <th class="border border-gray-300 px-3 py-2">Amount</th>
+          <th class="border border-gray-300 px-3 py-2">Status</th>
+        </tr>
+      </thead>
+      <tbody id="txTable">
+        <tr>
+          <td colspan="4" class="text-center py-4">No transactions yet.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
   <h3>Deposit</h3>
   <input id="depositAmount" placeholder="Amount (USD)" />
   <div class="actions">
     <button class="btn" data-close="depositModal">Close</button>
     <button id="submitDeposit" class="btn btn-primary">Deposit</button>
   </div>
-</div>
 
+<div id="depositModal" class="modal"></div>
 <!-- Withdraw Modal -->
 <div id="withdrawModal" class="modal">
   <h3>Withdraw</h3>
@@ -449,7 +495,12 @@
     <button class="btn" data-close="withdrawModal">Close</button>
     <button id="submitWithdraw" class="btn btn-primary">Request Withdraw</button>
   </div>
+
 </div>
+</div>
+</div>
+
+
 
 
     
