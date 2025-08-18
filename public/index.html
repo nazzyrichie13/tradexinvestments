@@ -424,15 +424,14 @@
   </div>
 </div>
 <div class="grid">
-<div id="dashboardCard" class="hidden">
-  <!-- user dashboard content -->
-
+<!-- Dashboard Card -->
+<div id="dashboardCard" class="hidden p-6 bg-white shadow rounded-lg max-w-4xl mx-auto mt-8">
   <div class="mb-6 flex justify-between items-center">
     <h2 id="welcomeUser" class="text-xl font-bold">Welcome, User</h2>
     <button id="logoutTop" class="px-4 py-2 bg-red-500 text-white rounded hidden">Logout</button>
   </div>
 
-  <!-- User Stats -->
+  <!-- Stats -->
   <div class="grid grid-cols-3 gap-4 mb-6">
     <div class="p-4 bg-gray-100 rounded">
       <p class="text-sm text-gray-500">Balance</p>
@@ -448,13 +447,13 @@
     </div>
   </div>
 
-  <!-- Action Buttons -->
+  <!-- Buttons -->
   <div class="mb-6 flex gap-4">
     <button id="depositBtn" class="px-4 py-2 bg-green-500 text-white rounded">Deposit</button>
     <button id="withdrawBtn" class="px-4 py-2 bg-yellow-500 text-white rounded">Withdraw</button>
   </div>
 
-  <!-- Transactions Table -->
+  <!-- Transactions -->
   <div class="overflow-x-auto">
     <table class="w-full border-collapse border border-gray-300">
       <thead class="bg-gray-200">
@@ -472,32 +471,34 @@
       </tbody>
     </table>
   </div>
+</div>
+
+<!-- Deposit Modal -->
+<div id="depositModal" class="modal hidden">
   <h3>Deposit</h3>
   <input id="depositAmount" placeholder="Amount (USD)" />
-  <div class="actions">
+  <div class="actions mt-4">
     <button class="btn" data-close="depositModal">Close</button>
     <button id="submitDeposit" class="btn btn-primary">Deposit</button>
   </div>
+</div>
 
-<div id="depositModal" class="modal"></div>
 <!-- Withdraw Modal -->
-<div id="withdrawModal" class="modal">
+<div id="withdrawModal" class="modal hidden">
   <h3>Withdraw</h3>
   <input id="withdrawAmount" placeholder="Amount (USD)" />
-  <div style="height:8px"></div>
-  <select id="withdrawMethod">
+  <select id="withdrawMethod" class="mt-2">
     <option value="bank">Bank-to-Bank</option>
     <option value="paypal">PayPal</option>
     <option value="bitcoin">Bitcoin</option>
     <option value="cashapp">CashApp</option>
   </select>
-  <div class="actions">
+  <div class="actions mt-4">
     <button class="btn" data-close="withdrawModal">Close</button>
     <button id="submitWithdraw" class="btn btn-primary">Request Withdraw</button>
   </div>
+</div>
 
-</div>
-</div>
 </div>
 
 
