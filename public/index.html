@@ -851,100 +851,102 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
   const backendUrl = "https://tradexinvestments.onrender.com";
 
   // ---------- helpers ----------
+  const $ = (sel) => document.querySelector(sel);
   const token = () => localStorage.getItem("jwtToken") || "";
   const authHeaders = () => ({
     "Content-Type": "application/json",
     "Authorization": `Bearer ${token()}`
   });
-  const $ = (sel) => document.querySelector(sel);
   const fmtMoney = (n) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmtDate = (d) => new Date(d).toLocaleString();
 
-  // ---------- user stats ----------
+  // ---------- User Stats ----------
   function hydrateStatsFromUser(user) {
-    if (!user) return;
-    $("#statBalance") && ($("#statBalance").textContent = fmtMoney(user.balance ?? 0));
-    $("#statProfit") && ($("#statProfit").textContent = fmtMoney(user.profit ?? 0));
-    $("#statInterest") && ($("#statInterest").textContent = fmtMoney(user.interest ?? 0));
-    $("#welcomeUser") && ($("#welcomeUser").textContent = `Welcome, ${user.name || "User"}`);
-    $("#welcomeEmail") && ($("#welcomeEmail").textContent = user.email || "");
-  }
+  if (!user) return;
 
-  // ---------- transactions ----------
- async function loadTransactions() {
-  const tbody = $("#txTable tbody");
-  if (!tbody) return;
+  const inv = user.investment || {};
 
-  tbody.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
+  $("#statBalance") && ($("#statBalance").textContent = fmtMoney(inv.balance ?? 0));
+  $("#statProfit") && ($("#statProfit").textContent = fmtMoney(inv.profit ?? 0));
+  $("#statInterest") && ($("#statInterest").textContent = fmtMoney(inv.interest ?? 0));
 
-  try {
-    const res = await fetch(`${backendUrl}/api/transactions/my`, { headers: authHeaders() });
-    const data = await res.json();
-
-    if (!res.ok) throw new Error(data.message || "Failed to load transactions");
-
-    // Ensure txs is always an array
-    let txs = [];
-    if (Array.isArray(data.transactions)) {
-      txs = data.transactions;
-    } else if (data && typeof data === "object" && data._id) {
-      // Single transaction returned as object
-      txs = [data];
-    }
-
-    // If no transactions, show friendly message
-    if (txs.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="4">No transactions yet.</td></tr>`;
-      return;
-    }
-
-    // Otherwise, render transactions table
-    tbody.innerHTML = txs
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .map(tx => `<tr>
-        <td>${fmtDate(tx.createdAt)}</td>
-        <td>${(tx.type || "").toUpperCase()}</td>
-        <td>$${fmtMoney(tx.amount)}</td>
-        <td>${(tx.status || "pending").toUpperCase()}</td>
-      </tr>`)
-      .join("");
-
-  } catch (e) {
-    // Fallback message
-    tbody.innerHTML = `<tr><td colspan="4">${e.message ? `Error: ${e.message}` : "No transactions yet."}</td></tr>`;
-  }
+  $("#welcomeUser") && ($("#welcomeUser").textContent = `Welcome, ${user.name || "User"}`);
+  $("#welcomeEmail") && ($("#welcomeEmail").textContent = user.email || "");
 }
 
-  // ---------- dashboard ----------
-  function showDashboard(user) {
-    if (!user) return console.warn("No user provided");
+  // ---------- Load Transactions ----------
+  async function loadTransactions() {
+    const tbody = $("#txTable tbody");
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
 
+    try {
+      const res = await fetch(`${backendUrl}/api/transactions/my`, { headers: authHeaders() });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || "Failed to load transactions");
+
+      let txs = [];
+      if (Array.isArray(data.transactions)) {
+        txs = data.transactions;
+      } else if (data && typeof data === "object" && data._id) {
+        txs = [data];
+      }
+
+      if (txs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4">No transactions yet.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = txs
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .map(tx => `<tr>
+          <td>${fmtDate(tx.createdAt)}</td>
+          <td>${(tx.type || "").toUpperCase()}</td>
+          <td>$${fmtMoney(tx.amount)}</td>
+          <td>${(tx.status || "pending").toUpperCase()}</td>
+        </tr>`).join("");
+
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="4">${e.message ? `Error: ${e.message}` : "No transactions yet."}</td></tr>`;
+    }
+  }
+
+  // ---------- Show User Dashboard ----------
+  function showUserDashboard(user) {
+    if (!user) return;
+
+    // Close modals if open
     window.closeModal?.("loginModal");
     window.closeModal?.("termsModal");
     window.closeModal?.("twoFAModal");
 
+    // Show dashboard
     const dashboardCard = $("#dashboardCard");
     dashboardCard?.classList.remove("hidden");
-    hydrateStatsFromUser(user);
 
+    // Hydrate stats & load transactions
+    hydrateStatsFromUser(user);
+    loadTransactions();
+
+    // Deposit / Withdraw buttons
     $("#depositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
     $("#withdrawBtn")?.addEventListener("click", () => window.openModal?.("withdrawModal"));
 
-    loadTransactions();
-
-    // ---------- topbar buttons ----------
+    // Topbar buttons
     $("#openLogin")?.classList.add("hidden");
     $("#openSignup")?.classList.add("hidden");
     $("#openDashboard")?.classList.remove("hidden");
     $("#logoutTop")?.classList.remove("hidden");
 
-    // ---------- logout ----------
+    // Logout
     const logoutBtn = $("#logoutTop");
     if (logoutBtn && !logoutBtn.dataset.listenerAdded) {
       logoutBtn.addEventListener("click", () => {
         localStorage.removeItem("jwtToken");
         localStorage.removeItem("currentUser");
         dashboardCard?.classList.add("hidden");
+
         $("#openLogin")?.classList.remove("hidden");
         $("#openSignup")?.classList.remove("hidden");
         $("#openDashboard")?.classList.add("hidden");
@@ -954,55 +956,50 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
     }
   }
 
-  // ---------- login & 2FA ----------
+  // ---------- Auto-show dashboard if logged in ----------
   document.addEventListener("DOMContentLoaded", () => {
-    const loginBtn = $("#loginSubmit");
-    const emailInput = $("#liEmail");
-    const passInput = $("#liPassword");
-    const termsBtn = $("#acceptTerms");
-    const verify2Btn = $("#verify2FA");
-    const resend2Btn = $("#resend2FA");
-
     const savedUser = localStorage.getItem("currentUser");
-if (savedUser) {
-  try {
-    const userObj = JSON.parse(savedUser);
-    showDashboard(userObj);
-  } catch (err) {
-    console.error("Invalid JSON in localStorage:", err);
-    localStorage.removeItem("currentUser"); // optional: clean it
-  }
-}
-
-
-    loginBtn?.addEventListener("click", async (e) => {
-      e.preventDefault();
-      const email = emailInput.value.trim().toLowerCase();
-      const password = passInput.value.trim();
-      if (!email || !password) return alert("Enter email & password");
-
+    if (savedUser) {
       try {
-        const res = await fetch(`${backendUrl}/api/auth/user-login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        
-        });
-        const data = await res.json();
-        if (!res.ok || data.success === false) throw new Error(data.message || "Invalid login");
+        const userObj = JSON.parse(savedUser);
+        showUserDashboard(userObj);
+      } catch (err) {
+        console.error("Invalid JSON in localStorage:", err);
+        localStorage.removeItem("currentUser");
+      }
+    }
+  
 
-        localStorage.setItem("currentUser", JSON.stringify({ ...data.user, tempToken: data.tempToken }));
-        if (data.requiresTerms) openModal?.("termsModal");
-        else if (data.requires2FA) openModal?.("twoFAModal") && startTwofaCountdown?.(300);
-      } catch (err) { alert(err.message || "Login failed"); }
-    });
+  // ---------- Login Button ----------
+  $("#loginSubmit")?.addEventListener("click", async () => {
+    const email = $("#liEmail")?.value;
+    const password = $("#liPassword")?.value;
+    if (!email || !password) return alert("Please enter email and password.");
 
-    termsBtn?.addEventListener("click", () => {
-      localStorage.setItem("termsAccepted", "true");
-      closeModal?.("termsModal");
-      openModal?.("twoFAModal");
-      startTwofaCountdown?.(300);
-    });
+    try {
+      const response = await fetch(`${backendUrl}/api/auth/user-login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Login failed");
+
+      // Save token & user
+      localStorage.setItem("jwtToken", data.token);
+      localStorage.setItem("currentUser", JSON.stringify(data.user));
+
+      // Show dashboard
+      showUserDashboard(data.user);
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+    }
+  });
+
+
+
 
     verify2Btn?.addEventListener("click", async () => {
       const code = $("#twofaCode")?.value.trim();
