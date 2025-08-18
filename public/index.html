@@ -1179,10 +1179,9 @@ document.addEventListener("click", async (e) => {
     }
 
     // Success: update row in table
-    row.querySelector('input[data-field="balance"]').value = data.user.balance;
-    row.querySelector('input[data-field="profit"]').value = data.user.profit;
-    row.querySelector('input[data-field="interest"]').value = data.user.interest;
-
+ row.querySelector('input[data-field="balance"]').value = data.user.investment.balance;
+row.querySelector('input[data-field="profit"]').value = data.user.investment.profit;
+row.querySelector('input[data-field="interest"]').value = data.user.investment.interest;
     alert("User investment updated successfully!");
 
   } catch (err) {
