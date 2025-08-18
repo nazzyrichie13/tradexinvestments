@@ -972,32 +972,55 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
 
   // ---------- Login Button ----------
   $("#loginSubmit")?.addEventListener("click", async () => {
-    const email = $("#liEmail")?.value;
-    const password = $("#liPassword")?.value;
-    if (!email || !password) return alert("Please enter email and password.");
+  const email = $("#liEmail")?.value;
+  const password = $("#liPassword")?.value;
+  if (!email || !password) return alert("Please enter email and password.");
 
-    try {
-      const response = await fetch(`${backendUrl}/api/auth/user-login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+  try {
+    const response = await fetch(`${backendUrl}/api/auth/user-login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Login failed");
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Login failed");
 
-      // Save token & user
-      localStorage.setItem("jwtToken", data.token);
+    // Save token & initial user
+    localStorage.setItem("jwtToken", data.token);
+    localStorage.setItem("currentUser", JSON.stringify(data.user));
+
+    // Fetch the latest user info from backend
+    await fetchCurrentUser();
+
+    // Show dashboard with updated info
+    const updatedUser = JSON.parse(localStorage.getItem("currentUser"));
+    showUserDashboard(updatedUser);
+
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
+  }
+});
+
+// Example: fetch current user info after login
+async function fetchCurrentUser() {
+  const token = localStorage.getItem("jwtToken");
+  if (!token) return;
+
+  try {
+    const res = await fetch(`${backendUrl}/api/auth/me`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (res.ok && data.user) {
       localStorage.setItem("currentUser", JSON.stringify(data.user));
-
-      // Show dashboard
-      showUserDashboard(data.user);
-    } catch (err) {
-      console.error(err);
-      alert(err.message);
+      hydrateStatsFromUser(data.user);
     }
-  });
-
+  } catch (err) {
+    console.error("Failed to fetch current user:", err);
+  }
+}
 
 
 
