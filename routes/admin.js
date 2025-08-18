@@ -66,29 +66,29 @@ const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 // });
 
 
-// // Get all withdrawals
-// router.get("/admin/withdrawals", requireAdmin, async (req, res) => {
-//   try {
-//     const withdrawals = await Withdrawal.find().populate("user", "name email");
-//     res.json({ success: true, withdrawals });
-//   } catch (err) {
-//     res.status(500).json({ error: "Failed to fetch withdrawals" });
-//   }
-// });
+// Get all withdrawals
+router.get("/admin/withdrawals", requireAdmin, async (req, res) => {
+  try {
+    const withdrawals = await Withdrawal.find().populate("user", "name email");
+    res.json({ success: true, withdrawals });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch withdrawals" });
+  }
+});
 
-// // Confirm withdrawal
-// router.put("/admin/withdrawals/:id/confirm", requireAdmin, async (req, res) => {
-//   try {
-//     const withdrawal = await Withdrawal.findByIdAndUpdate(
-//       req.params.id,
-//       { $set: { status: "Confirmed" } },
-//       { new: true }
-//     );
-//     res.json({ success: true, withdrawal });
-//   } catch (err) {
-//     res.status(500).json({ error: "Failed to confirm withdrawal" });
-//   }
-// });
+// Confirm withdrawal
+router.put("/admin/withdrawals/:id/confirm", requireAdmin, async (req, res) => {
+  try {
+    const withdrawal = await Withdrawal.findByIdAndUpdate(
+      req.params.id,
+      { $set: { status: "Confirmed" } },
+      { new: true }
+    );
+    res.json({ success: true, withdrawal });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to confirm withdrawal" });
+  }
+});
 
 export default router;
 
