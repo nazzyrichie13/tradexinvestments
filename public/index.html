@@ -910,151 +910,184 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ---------- Show User Dashboard ----------
-  function showUserDashboard(user) {
-    if (!user) return;
+  // ---------- Helper functions ----------
+function $(selector) { return document.querySelector(selector); }
 
-    window.closeModal?.("loginModal");
-    window.closeModal?.("termsModal");
-    window.closeModal?.("twoFAContainer");
+function showModal(id) {
+  const el = $(`#${id}`);
+  if (el) el.style.display = "block";
+}
 
-    $("#dashboardCard")?.classList.remove("hidden");
-    hydrateStatsFromUser(user);
-    loadTransactions();
+function hideModal(id) {
+  const el = $(`#${id}`);
+  if (el) el.style.display = "none";
+}
 
-    $("#depositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
-    $("#withdrawBtn")?.addEventListener("click", () => window.openModal?.("withdrawModal"));
+// ---------- Show user dashboard ----------
+function showUserDashboard(user) {
+  if (!user) return;
 
-    $("#openLogin")?.classList.add("hidden");
-    $("#openSignup")?.classList.add("hidden");
-    $("#openDashboard")?.classList.remove("hidden");
-    $("#logoutTop")?.classList.remove("hidden");
+  window.closeModal?.("loginModal");
+  window.closeModal?.("termsModal");
+  window.closeModal?.("twoFAModal"); // matches HTML
 
-    const logoutBtn = $("#logoutTop");
-    if (logoutBtn && !logoutBtn.dataset.listenerAdded) {
-      logoutBtn.addEventListener("click", () => {
-        localStorage.removeItem("jwtToken");
-        localStorage.removeItem("currentUser");
-        $("#dashboardCard")?.classList.add("hidden");
-        $("#openLogin")?.classList.remove("hidden");
-        $("#openSignup")?.classList.remove("hidden");
-        $("#openDashboard")?.classList.add("hidden");
-        logoutBtn.classList.add("hidden");
-      });
-      logoutBtn.dataset.listenerAdded = "true";
+  $("#dashboardCard")?.classList.remove("hidden");
+  hydrateStatsFromUser(user);
+  loadTransactions();
+
+  $("#depositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
+  $("#withdrawBtn")?.addEventListener("click", () => window.openModal?.("withdrawModal"));
+
+  $("#openLogin")?.classList.add("hidden");
+  $("#openSignup")?.classList.add("hidden");
+  $("#openDashboard")?.classList.remove("hidden");
+  $("#logoutTop")?.classList.remove("hidden");
+
+  const logoutBtn = $("#logoutTop");
+  if (logoutBtn && !logoutBtn.dataset.listenerAdded) {
+    logoutBtn.addEventListener("click", () => {
+      localStorage.removeItem("jwtToken");
+      localStorage.removeItem("currentUser");
+      $("#dashboardCard")?.classList.add("hidden");
+      $("#openLogin")?.classList.remove("hidden");
+      $("#openSignup")?.classList.remove("hidden");
+      $("#openDashboard")?.classList.add("hidden");
+      logoutBtn.classList.add("hidden");
+    });
+    logoutBtn.dataset.listenerAdded = "true";
+  }
+}
+
+// ---------- Auto-show dashboard if logged in ----------
+const savedUser = localStorage.getItem("currentUser");
+if (savedUser) {
+  try { showUserDashboard(JSON.parse(savedUser)); }
+  catch { localStorage.removeItem("currentUser"); }
+}
+
+// ---------- User Login ----------
+const loginBtn = $("#loginSubmit");
+if (loginBtn) loginBtn.addEventListener("click", async () => {
+  const email = $("#liEmail")?.value;
+  const password = $("#liPassword")?.value;
+  if (!email || !password) return alert("Please enter email and password.");
+
+  try {
+    const res = await fetch(`${backendUrl}/api/auth/user-login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.message || "Login failed");
+
+    if (data.requiresTerms) {
+      localStorage.setItem("tempToken", data.tempToken);
+      showModal("termsModal");
+      return;
     }
-  }
+    if (data.requires2FA) {
+      localStorage.setItem("tempToken", data.tempToken);
+      showModal("twoFAModal");
+      startTwofaCountdown(300);
+      alert("2FA code sent to your email.");
+    }
 
-  // ---------- Auto-show dashboard if logged in ----------
-  const savedUser = localStorage.getItem("currentUser");
-  if (savedUser) {
-    try { showUserDashboard(JSON.parse(savedUser)); }
-    catch { localStorage.removeItem("currentUser"); }
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
   }
+});
 
-  // ---------- User Login ----------
-  const loginBtn = $("#loginSubmit");
-  if (loginBtn) loginBtn.addEventListener("click", async () => {
-    const email = $("#liEmail")?.value;
-    const password = $("#liPassword")?.value;
-    if (!email || !password) return alert("Please enter email and password.");
+// ---------- Accept Terms ----------
+document.addEventListener("click", async (e) => {
+  if (e.target.id === "acceptTermsBtn") {
+    const tempToken = localStorage.getItem("tempToken");
+    if (!tempToken) return alert("No temp session found.");
 
     try {
-      const res = await fetch(`${backendUrl}/api/auth/user-login`, {
+      const res = await fetch(`${backendUrl}/api/auth/accept-terms`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${tempToken}` }
       });
       const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message || "Login failed");
+      if (!res.ok || !data.success) throw new Error(data.message || "Could not accept terms");
 
-      if (data.requiresTerms) {
-        localStorage.setItem("tempToken", data.tempToken);
-        $("#termsModal").style.display = "block";
-        return;
-      }
-      if (data.requires2FA) {
-        localStorage.setItem("tempToken", data.tempToken);
-        $("#twoFAContainer").style.display = "block";
-        startTwofaCountdown(300);
-        alert("2FA code sent to your email.");
-      }
-
+      hideModal("termsModal");
+      showModal("twoFAModal");
+      startTwofaCountdown(300);
+      alert("Terms accepted. Please enter 2FA code.");
     } catch (err) {
       console.error(err);
       alert(err.message);
     }
-  });
+  }
+});
 
-  // ---------- Accept Terms ----------
-  document.addEventListener("click", async (e) => {
-    if (e.target.id === "acceptTermsBtn") {
-      const tempToken = localStorage.getItem("tempToken");
-      if (!tempToken) return alert("No temp session found.");
+// ---------- Verify 2FA ----------
+const verify2Btn = $("#verify2FA"); // matches HTML
+if (verify2Btn) verify2Btn.addEventListener("click", async () => {
+  const code = $("#twofaCode")?.value; // matches HTML
+  const tempToken = localStorage.getItem("tempToken");
+  if (!code || !tempToken) return alert("Enter 2FA code.");
 
-      try {
-        const res = await fetch(`${backendUrl}/api/auth/accept-terms`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${tempToken}` }
-        });
-        const data = await res.json();
-        if (!res.ok || !data.success) throw new Error(data.message || "Could not accept terms");
+  try {
+    const res = await fetch(`${backendUrl}/api/auth/verify-2fa`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${tempToken}` },
+      body: JSON.stringify({ code })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.message || "Invalid 2FA code");
 
-        $("#termsModal").style.display = "none";
-        $("#twoFAContainer").style.display = "block";
-        startTwofaCountdown(300);
-        alert("Terms accepted. Please enter 2FA code.");
-      } catch (err) { console.error(err); alert(err.message); }
-    }
-  });
+    localStorage.setItem("jwtToken", data.token);
+    localStorage.setItem("currentUser", JSON.stringify(data.user));
+    localStorage.removeItem("tempToken");
 
-  // ---------- Verify 2FA ----------
-  const verify2Btn = $("#verify2FABtn");
-  if (verify2Btn) verify2Btn.addEventListener("click", async () => {
-    const code = $("#twoFACode")?.value;
-    const tempToken = localStorage.getItem("tempToken");
-    if (!code || !tempToken) return alert("Enter 2FA code.");
+    await fetchCurrentUser();
+    showUserDashboard(JSON.parse(localStorage.getItem("currentUser")));
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
+  }
+});
 
-    try {
-      const res = await fetch(`${backendUrl}/api/auth/verify-2fa`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${tempToken}` },
-        body: JSON.stringify({ code })
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message || "Invalid 2FA code");
-
-      localStorage.setItem("jwtToken", data.token);
+// ---------- Fetch current user ----------
+async function fetchCurrentUser() {
+  const token = localStorage.getItem("jwtToken");
+  if (!token) return;
+  try {
+    const res = await fetch(`${backendUrl}/api/auth/me`, { headers: { "Authorization": `Bearer ${token}` } });
+    const data = await res.json();
+    if (res.ok && data.user) {
       localStorage.setItem("currentUser", JSON.stringify(data.user));
-      localStorage.removeItem("tempToken");
-
-      await fetchCurrentUser();
-      showUserDashboard(JSON.parse(localStorage.getItem("currentUser")));
-    } catch (err) { console.error(err); alert(err.message); }
-  });
-
-  async function fetchCurrentUser() {
-    const token = localStorage.getItem("jwtToken");
-    if (!token) return;
-    try {
-      const res = await fetch(`${backendUrl}/api/auth/me`, { headers: { "Authorization": `Bearer ${token}` } });
-      const data = await res.json();
-      if (res.ok && data.user) { localStorage.setItem("currentUser", JSON.stringify(data.user)); hydrateStatsFromUser(data.user); }
-    } catch (err) { console.error("Failed to fetch current user:", err); }
+      hydrateStatsFromUser(data.user);
+    }
+  } catch (err) {
+    console.error("Failed to fetch current user:", err);
   }
+}
 
-  $("#openLogin")?.addEventListener("click", () => openModal("loginModal"));
-  $("#ctaLogin")?.addEventListener("click", () => openModal("loginModal"));
+// ---------- Open login modal ----------
+$("#openLogin")?.addEventListener("click", () => openModal("loginModal"));
+$("#ctaLogin")?.addEventListener("click", () => openModal("loginModal"));
 
-  // ---------- 2FA Timer ----------
-  let twofaTimer;
-  function startTwofaCountdown(seconds) {
-    clearInterval(twofaTimer);
-    const display = $("#twofaTimer");
-    let remaining = seconds;
-    const updateDisplay = () => { if (display) display.textContent = `${String(Math.floor(remaining / 60)).padStart(2,"0")}:${String(remaining % 60).padStart(2,"0")}`; };
+// ---------- 2FA Timer ----------
+let twofaTimer;
+function startTwofaCountdown(seconds) {
+  clearInterval(twofaTimer);
+  const display = $("#twofaTimer");
+  let remaining = seconds;
+  const updateDisplay = () => {
+    if (display) display.textContent = `${String(Math.floor(remaining / 60)).padStart(2,"0")}:${String(remaining % 60).padStart(2,"0")}`;
+  };
+  updateDisplay();
+  twofaTimer = setInterval(() => {
+    remaining--;
     updateDisplay();
-    twofaTimer = setInterval(() => { remaining--; updateDisplay(); if (remaining <= 0) clearInterval(twofaTimer); }, 1000);
-  }
+    if (remaining <= 0) clearInterval(twofaTimer);
+  }, 1000);
+}
 
   // ---------- Admin Login ----------
   $("#openAdminLogin")?.addEventListener("click", () => openModal("adminLoginModal"));
