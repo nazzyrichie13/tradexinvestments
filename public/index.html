@@ -451,7 +451,7 @@
   </div>
   <div class="actions">
     <button class="btn" data-close="twoFAModal">Cancel</button>
-    <button id="verify2FA" class="btn btn-primary">Verify</button>
+    <button id="verify2FABtn" class="btn btn-primary">Verify</button>
   </div>
 </div>
 
@@ -851,8 +851,8 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
 
 
 // // ----- LOGIN / TERMS / 2FA -----
-// document.getElementById("openSignup").onclick = ()=> openModal("loginModal");
-// document.getElementById("ctaSignup").onclick  = ()=> openModal("loginModal");
+document.getElementById("openSignup").onclick = ()=> openModal("loginModal");
+document.getElementById("ctaSignup").onclick  = ()=> openModal("loginModal");
 
 
 
@@ -1040,20 +1040,21 @@ if (loginBtn) loginBtn.addEventListener("click", async () => {
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.message || "Login failed");
 
-    // Terms must be accepted first
+    
+
+    // If 2FA is required
     if (data.requiresTerms) {
       localStorage.setItem("tempToken", data.tempToken);
       $("#termsModal").style.display = "block";
-      $("#dashboardCard").style.display = "none"; // hide dashboard until accepted
-      return;
+      $("#dashboardCard").style.display = "none";
+      return; // stop here, do NOT check 2FA yet
     }
-
-    // If 2FA is required
-    if (data.requires2FA) {
+     if (data.requires2FA) {
       localStorage.setItem("tempToken", data.tempToken);
       $("#twoFAModal").style.display = "block";
       startTwofaCountdown(300);
       alert("2FA code sent to your email.");
+      return;
     }
 
   } catch (err) {
@@ -1062,6 +1063,7 @@ if (loginBtn) loginBtn.addEventListener("click", async () => {
   }
 });
 
+// ---------- Accept Terms ----------
 // ---------- Accept Terms ----------
 document.addEventListener("click", async (e) => {
   if (e.target.id === "acceptTermsBtn") {
@@ -1081,7 +1083,8 @@ document.addEventListener("click", async (e) => {
       if (!res.ok || !data.success) throw new Error(data.message || "Could not accept terms");
 
       $("#termsModal").style.display = "none";
-      // Proceed to 2FA if required
+
+      // ✅ Now move to 2FA
       $("#twoFAModal").style.display = "block";
       startTwofaCountdown(300);
       alert("Terms accepted. Please enter 2FA code.");
@@ -1093,6 +1096,7 @@ document.addEventListener("click", async (e) => {
   }
 });
 
+
 // ---------- Verify 2FA ----------
 const verify2Btn = $("#verify2FABtn");
 if (verify2Btn) verify2Btn.addEventListener("click", async () => {
@@ -1101,23 +1105,20 @@ if (verify2Btn) verify2Btn.addEventListener("click", async () => {
   if (!code || !tempToken) return alert("Enter 2FA code.");
 
   try {
-    const res = await fetch(`${backendUrl}/api/auth/verify-2fa`, {
+   const res = await fetch(`${backendUrl}/api/auth/verify-2fa`, {
       method: "POST",
-      headers: { 
-        "Content-Type": "application/json", 
-        "Authorization": `Bearer ${tempToken}` 
-      },
-      body: JSON.stringify({ code })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code, tempToken })   //
     });
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.message || "Invalid 2FA code");
 
-    localStorage.setItem("jwtToken", data.token);
+    localStorage.setItem("jwtToken", data.authToken);  // ✅ backend sends authToken, not token
     localStorage.setItem("currentUser", JSON.stringify(data.user));
     localStorage.removeItem("tempToken");
 
     const user = await fetchCurrentUser();
-    showUserDashboard(user); // Show dashboard **only after terms & 2FA**
+    showUserDashboard(data.user); // Show dashboard **only after terms & 2FA**
 
   } catch (err) { 
     console.error(err); 

@@ -166,7 +166,11 @@ router.post("/accept-terms", async (req, res) => {
 // Verify 2FA
 router.post("/verify-2fa", async (req, res) => {
   try {
-    const { tempToken, code } = req.body;
+    const headerToken = req.headers.authorization?.split(" ")[1];
+    const tempToken = headerToken || req.body.tempToken; // support both
+    const { code } = req.body;
+    if (!tempToken || !code) return res.status(400).json({ success: false, message: "Missing token or code" });
+
     const payload = jwt.verify(tempToken, JWT_SECRET);
     const user = await User.findById(payload.id);
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
@@ -175,16 +179,10 @@ router.post("/verify-2fa", async (req, res) => {
       secret: user.twoFASecret,
       encoding: "base32",
       token: code,
-      window: 2, // small window for slight clock differences
+      window: 2,
     });
 
     if (!verified) return res.status(401).json({ success: false, message: "Invalid 2FA code" });
-
-    // 2FA successful → send full user data including current investment
-    const currentInvestment = user.investment?.currentAmount || 0; // default to 0 if not set
-    const balance = user.investment?.balance || 0;
-    const profit = user.investment?.profit || 0;
-    const interest = user.investment?.interest || 0;
 
     // Generate real JWT for session
     const authToken = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "1h" });
@@ -193,20 +191,20 @@ router.post("/verify-2fa", async (req, res) => {
       success: true,
       user: {
         email: user.email,
-        currentInvestment,
-        balance,
-        profit,
-        interest,
+        currentInvestment: user.investment?.currentAmount || 0,
+        balance: user.investment?.balance || 0,
+        profit: user.investment?.profit || 0,
+        interest: user.investment?.interest || 0,
         name: user.name,
       },
       authToken,
     });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error verifying 2FA" });
   }
 });
+
 
 // =========================
 // ADMIN ROUTES
