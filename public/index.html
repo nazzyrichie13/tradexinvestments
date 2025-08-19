@@ -731,239 +731,347 @@
     </footer>
     <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const $ = (selector) => document.querySelector(selector);
-  const backendUrl = "https://tradexinvestments.onrender.com"; // replace with your backend URL
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => document.querySelectorAll(sel);
+  const backendUrl = "https://www.tradexinvest.net";
 
-  /*** Helper Functions ***/
-  const openModal = (modalId) => {
-    $("#overlay").style.display = "block";
-    $(modalId).classList.remove("hidden");
-  };
+  // ---------- helpers ----------
+  const token = () => localStorage.getItem("jwtToken") || "";
+  const tempToken = () => localStorage.getItem("jwtTemp") || "";
+  const authHeaders = () => ({
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token()}`
+  });
+  const fmtMoney = (n) => `$${Number(n).toFixed(2)}`;
 
-  const closeModal = (modalId) => {
-    $(modalId).classList.add("hidden");
-    $("#overlay").style.display = "none";
-  };
+  // ---------- modal helpers ----------
+  function openModal(id) { $(id).classList.remove("hidden"); $("#overlay").style.display = "block"; }
+  function closeModal(id) { $(id).classList.add("hidden"); $("#overlay").style.display = "none"; }
 
-  /*** Overlay close ***/
-  $("#overlay")?.addEventListener("click", () => {
-    document.querySelectorAll(".modal").forEach(modal => modal.classList.add("hidden"));
-    $("#overlay").style.display = "none";
+  // ---------- Global state ----------
+  let currentUser = null;
+
+  // ---------- Terms ----------
+  $("#acceptTermsBtn")?.addEventListener("click", async () => {
+    try {
+      const res = await fetch(`${backendUrl}/accept-terms`, { method: "POST", headers: { Authorization: `Bearer ${tempToken()}` }});
+      const data = await res.json();
+      if (!data.success) return alert(data.message);
+      closeModal("#termsModal");
+      openModal("#twoFAModal");
+      start2FACountdown();
+    } catch (err) { console.error(err); }
   });
 
-  document.querySelectorAll("[data-close]").forEach(btn => {
-    btn.addEventListener("click", () => closeModal(`#${btn.dataset.close}`));
+  // ---------- 2FA ----------
+  let countdownInterval;
+  function start2FACountdown(duration = 300) {
+    clearInterval(countdownInterval);
+    const countdownEl = $("#countdown");
+    let timeLeft = duration;
+    function updateDisplay() {
+      const min = Math.floor(timeLeft / 60).toString().padStart(2, "0");
+      const sec = (timeLeft % 60).toString().padStart(2, "0");
+      countdownEl.textContent = `Code expires in ${min}:${sec}`;
+    }
+    updateDisplay();
+    countdownInterval = setInterval(() => {
+      timeLeft--;
+      updateDisplay();
+      if (timeLeft <= 0) {
+        clearInterval(countdownInterval);
+        alert("2FA code expired. Please login again.");
+        closeModal("#twoFAModal");
+        localStorage.removeItem("jwtTemp");
+      }
+    }, 1000);
+  }
+
+  $("#verify2FA")?.addEventListener("click", async () => {
+    const code = $("#twofaCode").value;
+    if (!code) return alert("Enter 2FA code");
+    try {
+      const res = await fetch(`${backendUrl}/verify-2fa`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${tempToken()}` },
+        body: JSON.stringify({ code })
+      });
+      const data = await res.json();
+      if (!data.success) return alert(data.message);
+      localStorage.setItem("jwtToken", data.token);
+      localStorage.removeItem("jwtTemp");
+      currentUser = data.user;
+      closeModal("#twoFAModal");
+      showUserDashboard();
+    } catch (err) { console.error(err); }
   });
 
-  /*** Open modals ***/
-  $("#openLogin")?.addEventListener("click", () => openModal("#loginModal"));
-  $("#openSignup")?.addEventListener("click", () => openModal("#signupModal"));
-  $("#openAdminLogin")?.addEventListener("click", () => openModal("#adminLoginModal"));
-  $("#ctaLogin")?.addEventListener("click", () => openModal("#loginModal"));
-  $("#ctaSignup")?.addEventListener("click", () => openModal("#signupModal"));
-
-  /*** User dashboard functions ***/
-  const showUserDashboard = (user) => {
-    $("#dashboardSection").style.display = "block";
-    $("#welcomeUser").textContent = `Welcome, ${user.name}`;
-    $("#statBalance").textContent = `$${user.balance.toFixed(2)}`;
-    $("#statProfit").textContent = `$${user.profit.toFixed(2)}`;
-    $("#statInterest").textContent = `$${user.interest.toFixed(2)}`;
-
-    $("#openLogin").classList.add("hidden");
-    $("#openSignup").classList.add("hidden");
-    $("#openDashboard").classList.remove("hidden");
-    $("#logoutTop").classList.remove("hidden");
-  };
-
-  const clearUserDashboard = () => {
-    $("#dashboardSection").style.display = "none";
-    $("#openLogin").classList.remove("hidden");
-    $("#openSignup").classList.remove("hidden");
-    $("#openDashboard").classList.add("hidden");
-    $("#logoutTop").classList.add("hidden");
-  };
-
-  /*** Logout ***/
-  $("#logoutTop")?.addEventListener("click", () => {
-    localStorage.removeItem("jwtToken");
-    clearUserDashboard();
+  $("#resend2FA")?.addEventListener("click", async () => {
+    alert("Resend feature requires re-login"); 
   });
 
-  $("#logoutAdmin")?.addEventListener("click", () => {
-    localStorage.removeItem("adminToken");
-    $("#adminDashboard").classList.add("hidden");
-  });
-
-  /*** User Login ***/
+  // ---------- Login ----------
   $("#loginSubmit")?.addEventListener("click", async () => {
     const email = $("#liEmail").value;
     const password = $("#liPassword").value;
-    if (!email || !password) return alert("Please enter email and password");
-
+    if (!email || !password) return alert("Enter email & password");
     try {
-      const res = await fetch(`${backendUrl}/api/auth/user-login`, {
+      const res = await fetch(`${backendUrl}/user-login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
       });
       const data = await res.json();
-      if (data.token && data.user) {
-        localStorage.setItem("jwtToken", data.token);
-        showUserDashboard(data.user);
-        closeModal("#loginModal");
-      } else alert(data.error || "Login failed");
-    } catch (err) {
-      console.error(err);
-      alert("Login error");
-    }
+      if (!data.success) return alert(data.message);
+      if (data.requiresTerms) openModal("#termsModal");
+      else if (data.requires2FA) {
+        localStorage.setItem("jwtTemp", data.tempToken);
+        openModal("#twoFAModal");
+        start2FACountdown();
+      }
+    } catch (err) { console.error(err); }
   });
 
-  /*** Signup ***/
+  // ---------- Signup ----------
   $("#signupSubmit")?.addEventListener("click", async () => {
     const name = $("#suName").value;
     const email = $("#suEmail").value;
     const password = $("#suPassword").value;
     if (!name || !email || !password) return alert("Fill all fields");
-
     try {
-      const res = await fetch(`${backendUrl}/api/auth/user-signup`, {
+      const res = await fetch(`${backendUrl}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password })
       });
       const data = await res.json();
-      if (data.success) {
-        alert("Signup successful, please login");
-        closeModal("#signupModal");
-      } else alert(data.error || "Signup failed");
-    } catch (err) {
-      console.error(err);
-      alert("Signup error");
-    }
+      if (!data.success) return alert(data.message);
+      alert("Account created. Please login.");
+      closeModal("#signupModal");
+    } catch (err) { console.error(err); }
   });
 
-  /*** Admin Login ***/
+  // ---------- User Dashboard ----------
+  async function showUserDashboard() {
+    try {
+      const res = await fetch(`${backendUrl}/current-user`, { headers: authHeaders() });
+      const data = await res.json();
+      if (!data.success) return alert(data.message);
+      currentUser = data.user;
+
+      $("#dashboardSection").style.display = "block";
+      $("#welcomeUser").textContent = `Welcome, ${currentUser.name}`;
+
+      const inv = currentUser.investment || { balance: 0, profit: 0, interest: 0 };
+      $("#statBalance").textContent = fmtMoney(inv.balance);
+      $("#statProfit").textContent = fmtMoney(inv.profit);
+      $("#statInterest").textContent = fmtMoney(inv.interest);
+
+      // Render transaction history
+      const txTable = $("#txTable");
+      txTable.innerHTML = "";
+      const txHistory = currentUser.transactions || [];
+      if (!txHistory.length) txTable.innerHTML = `<tr><td colspan="4" class="text-center py-4">No transactions yet.</td></tr>`;
+      else txHistory.forEach(tx => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${new Date(tx.date).toLocaleString()}</td><td>${tx.type}</td><td>${fmtMoney(tx.amount)}</td><td>${tx.status}</td>`;
+        txTable.appendChild(tr);
+      });
+    } catch (err) { console.error(err); }
+  }
+
+  // ---------- Deposit ----------
+  $("#depositBtn")?.addEventListener("click", async () => {
+    const amount = parseFloat(prompt("Deposit amount:"));
+    if (!amount || amount <= 0) return alert("Invalid amount");
+    await updateUserInvestment(amount, "deposit");
+  });
+
+  // ---------- Withdraw ----------
+  $("#withdrawBtn")?.addEventListener("click", async () => {
+    const amount = parseFloat(prompt("Withdraw amount:"));
+    if (!amount || amount <= 0) return alert("Invalid amount");
+    await updateUserInvestment(amount, "withdraw");
+  });
+
+  async function updateUserInvestment(amount, type) {
+    try {
+      const balance = currentUser.investment?.balance || 0;
+      const profit = currentUser.investment?.profit || 0;
+      const interest = currentUser.investment?.interest || 0;
+
+      let newBalance = type === "deposit" ? balance + amount : balance - amount;
+      if (newBalance < 0) return alert("Insufficient funds");
+
+      const res = await fetch(`${backendUrl}/user/${currentUser._id}/investment`, {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify({ balance: newBalance, profit, interest })
+      });
+      const data = await res.json();
+      if (!data.success) return alert(data.message);
+
+      // update local state & UI
+      currentUser.investment = { balance: newBalance, profit, interest };
+      showUserDashboard();
+    } catch (err) { console.error(err); }
+  }
+
+  // ---------- Admin Login ----------
   $("#adminLoginSubmit")?.addEventListener("click", async () => {
     const email = $("#adminEmail").value;
     const password = $("#adminPassword").value;
-    if (!email || !password) return alert("Enter admin credentials");
-
     try {
-      const res = await fetch(`${backendUrl}/api/auth/admin-login`, {
+      const res = await fetch(`${backendUrl}/admin-login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
       });
       const data = await res.json();
-      if (data.token) {
-        localStorage.setItem("adminToken", data.token);
-        $("#adminDashboard").classList.remove("hidden");
-        closeModal("#adminLoginModal");
-        loadUsers();
-      } else alert(data.error || "Admin login failed");
-    } catch (err) {
-      console.error(err);
-      alert("Admin login error");
-    }
+      if (!data.success) return alert(data.message);
+      localStorage.setItem("jwtToken", data.token);
+      closeModal("#adminLoginModal");
+      showAdminDashboard();
+    } catch (err) { console.error(err); }
   });
 
-  /*** Admin Users Table ***/
-  const loadUsers = async () => {
-    const token = localStorage.getItem("adminToken");
-    if (!token) return;
-    try {
-      const res = await fetch(`${backendUrl}/api/admin/users`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (!data.users) return;
-      const tbody = $("#adminUsersBody");
-      tbody.innerHTML = "";
+  // ---------- Admin Dashboard ----------
+  async function showAdminDashboard() {
+    $("#adminDashboard").classList.remove("hidden");
 
-      data.users.forEach(user => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${user.name}</td>
-          <td>${user.email}</td>
-          <td>${user.balance.toFixed(2)}</td>
-          <td>${user.profit.toFixed(2)}</td>
-          <td>${user.interest.toFixed(2)}</td>
-          <td><button class="btn editUserBtn" data-id="${user._id}">Edit</button></td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      document.querySelectorAll(".editUserBtn").forEach(btn => {
-        btn.addEventListener("click", () => openEditUser(btn.dataset.id));
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  /*** Edit User Modal ***/
-  let editingUserId = null;
-  const openEditUser = async (userId) => {
-    editingUserId = userId;
-    const token = localStorage.getItem("adminToken");
-    const res = await fetch(`${backendUrl}/api/admin/user/${userId}`, {
-      headers: { "Authorization": `Bearer ${token}` }
-    });
+    // Load users
+    const res = await fetch(`${backendUrl}/admin/users`, { headers: authHeaders() });
     const data = await res.json();
-    if (!data.user) return alert("User not found");
+    if (!data.success) return alert(data.message);
+    const tbody = $("#adminUsersBody");
+    tbody.innerHTML = "";
+    data.users.forEach(u => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${u.name}</td><td>${u.email}</td>
+        <td>${fmtMoney(u.investment?.balance || 0)}</td>
+        <td>${fmtMoney(u.investment?.profit || 0)}</td>
+        <td>${fmtMoney(u.investment?.interest || 0)}</td>
+        <td><button class="btn updateUser" data-id="${u._id}">Update</button></td>`;
+      tbody.appendChild(tr);
+    });
 
-    $("#editName").value = data.user.name;
-    $("#editEmail").value = data.user.email;
-    $("#editBalance").value = data.user.balance;
-    $("#editProfit").value = data.user.profit;
-    $("#editInterest").value = data.user.interest;
-    openModal("#updateUserForm");
-  };
+    // Bind update buttons
+    $$(".updateUser").forEach(btn => btn.addEventListener("click", e => {
+      const id = e.target.dataset.id;
+      const user = data.users.find(u => u._id === id);
+      if (!user) return;
+      $("#editName").value = user.name;
+      $("#editEmail").value = user.email;
+      $("#editBalance").value = user.investment?.balance || 0;
+      $("#editProfit").value = user.investment?.profit || 0;
+      $("#editInterest").value = user.investment?.interest || 0;
+      openModal("#updateUserForm");
+      $("#saveUserBtn").onclick = async () => {
+        try {
+          const updatedRes = await fetch(`${backendUrl}/user/${id}/investment`, {
+            method: "PUT",
+            headers: authHeaders(),
+            body: JSON.stringify({
+              balance: parseFloat($("#editBalance").value),
+              profit: parseFloat($("#editProfit").value),
+              interest: parseFloat($("#editInterest").value)
+            })
+          });
+          const updated = await updatedRes.json();
+          if (!updated.success) return alert(updated.message);
+          closeModal("#updateUserForm");
+          showAdminDashboard();
+        } catch (err) { console.error(err); }
+      };
+    }));
 
-  $("#saveUserBtn")?.addEventListener("click", async () => {
-    if (!editingUserId) return;
-    const token = localStorage.getItem("adminToken");
-    const payload = {
-      name: $("#editName").value,
-      email: $("#editEmail").value,
-      balance: Number($("#editBalance").value),
-      profit: Number($("#editProfit").value),
-      interest: Number($("#editInterest").value)
-    };
-    try {
-      const res = await fetch(`${backendUrl}/api/admin/user/${editingUserId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (data.success) {
-        alert("User updated successfully");
-        closeModal("#updateUserForm");
-        loadUsers();
-      } else alert(data.error || "Update failed");
-    } catch (err) {
-      console.error(err);
-      alert("Error updating user");
-    }
-  });
-
-  /*** Auto-load user dashboard if JWT exists ***/
-  const token = localStorage.getItem("jwtToken");
-  if (token) {
-    fetch(`${backendUrl}/api/auth/user-profile`, {
-      headers: { "Authorization": `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) showUserDashboard(data.user);
-      });
+    // Load withdrawals
+    refreshWithdrawals();
   }
+
+  async function refreshWithdrawals() {
+    const wdRes = await fetch(`${backendUrl}/admin/withdrawals`, { headers: authHeaders() });
+    const wdData = await wdRes.json();
+    if (!wdData.success) return alert(wdData.message);
+    const tbody = $("#adminWdBody");
+    tbody.innerHTML = "";
+    wdData.withdrawals.forEach(wd => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${wd.user.name}</td><td>${wd.method}</td><td>${fmtMoney(wd.amount)}</td>
+        <td>${wd.status}</td>
+        <td>${wd.status==="Pending"? `<button class="btn btn-primary confirmWd" data-id="${wd._id}">Confirm</button>`:""}</td>`;
+      tbody.appendChild(tr);
+    });
+    $$(".confirmWd").forEach(btn => btn.addEventListener("click", async e => {
+      const id = e.target.dataset.id;
+      const res = await fetch(`${backendUrl}/admin/withdrawals/${id}/confirm`, { method: "PUT", headers: authHeaders() });
+      const data = await res.json();
+      if (!data.success) return alert(data.message);
+      refreshWithdrawals();
+    }));
+  }
+
+  // ---------- Open Modals ----------
+  $("#openLogin")?.addEventListener("click", () => openModal("#loginModal"));
+  $("#openSignup")?.addEventListener("click", () => openModal("#signupModal"));
+  $("#openAdminLogin")?.addEventListener("click", () => openModal("#adminLoginModal"));
+  $$(".modal [data-close]").forEach(btn => btn.addEventListener("click", e => closeModal("#" + e.target.dataset.close)));
 });
+// ---------------------
+// Live user data refresh
+// ---------------------
+let liveRefreshInterval;
+
+async function fetchUserData() {
+  try {
+    const res = await fetch(`${backendUrl}/api/auth/current-user`, {
+      headers: authHeaders(),
+    });
+    if (!res.ok) throw new Error("Failed to fetch user data");
+    const data = await res.json();
+    if (data.success) {
+      const user = data.user;
+      $("#statBalance").textContent = `$${user.investment.balance.toFixed(2)}`;
+      $("#statProfit").textContent = `$${user.investment.profit.toFixed(2)}`;
+      $("#statInterest").textContent = `$${user.investment.interest.toFixed(2)}`;
+      $("#welcomeUser").textContent = `Welcome, ${user.name}`;
+    }
+  } catch (err) {
+    console.error("Error fetching user data:", err);
+  }
+}
+
+// Start auto-refresh every 10 seconds
+function startLiveRefresh() {
+  if (liveRefreshInterval) clearInterval(liveRefreshInterval);
+  liveRefreshInterval = setInterval(fetchUserData, 10000); // 10 seconds
+}
+
+// Stop auto-refresh when user logs out
+function stopLiveRefresh() {
+  if (liveRefreshInterval) clearInterval(liveRefreshInterval);
+}
+
+// ---------------------
+// Integrate with login flow
+// ---------------------
+async function handleUserLogin(token) {
+  localStorage.setItem("jwtToken", token);
+  $("#loginModal").classList.add("hidden");
+  $("#dashboardSection").classList.remove("hidden");
+  await fetchUserData();   // load initial data
+  startLiveRefresh();      // start live updates
+}
+
+// ---------------------
+// Stop refresh on logout
+// ---------------------
+$("#logoutTop").addEventListener("click", () => {
+  localStorage.removeItem("jwtToken");
+  $("#dashboardSection").classList.add("hidden");
+  stopLiveRefresh();
+});
+
 </script>
 </body>
 </html>
