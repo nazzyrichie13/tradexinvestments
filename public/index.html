@@ -925,23 +925,58 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ---------- Verify 2FA ----------
-  $("#verify2FA")?.addEventListener("click", async ()=>{
-    const code = $("#twofaCode")?.value.trim();
-    const tempToken = localStorage.getItem("tempToken");
-    if(!code || !tempToken){ alert("Enter 2FA code"); return; }
-    try{
-      const res = await fetch(`${backendUrl}/api/auth/verify-2fa`, {
-        method:"POST", headers:{"Content-Type":"application/json", "Authorization":`Bearer ${tempToken}`},
-        body: JSON.stringify({code})
-      });
-      const data = await res.json();
-      if(!res.ok || !data.success) throw new Error(data.message || "Invalid 2FA code");
-      localStorage.setItem("jwtToken", data.token);
+  $("#verify2FA")?.addEventListener("click", async () => {
+  const code = $("#twofaCode")?.value.trim();
+  const tempToken = localStorage.getItem("tempToken");
+  if (!code || !tempToken) { alert("Enter 2FA code"); return; }
+
+  try {
+    const res = await fetch(`${backendUrl}/api/auth/verify-2fa`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${tempToken}`
+      },
+      body: JSON.stringify({ code })
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.message || "Invalid 2FA code");
+
+    localStorage.setItem("jwtToken", data.token);
+    localStorage.removeItem("tempToken");
+
+    // Fetch fresh user data from backend
+    const user = await fetchCurrentUser();
+    if (user) showUserDashboard(user);
+
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
+  }
+});
+
+async function fetchCurrentUser() {
+  const token = localStorage.getItem("jwtToken");
+  if (!token) return null;
+
+  try {
+    const res = await fetch(`${backendUrl}/api/auth/me`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (res.ok && data.user) {
       localStorage.setItem("currentUser", JSON.stringify(data.user));
-      localStorage.removeItem("tempToken");
-      showUserDashboard(data.user);
-    }catch(err){ console.error(err); alert(err.message); }
-  });
+      return data.user;
+    }
+    return null;
+  } catch (err) {
+    console.error("Failed to fetch current user:", err);
+    return null;
+  }
+}
+
+
 
   // ---------- 2FA Timer ----------
   let twofaTimer;
