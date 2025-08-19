@@ -430,10 +430,9 @@
 </div>
 
 <!-- ===== Overlay + Modals ===== -->
-<div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-40"></div>
+<div id="overlay" class="overlay hidden > </div>
 
 
-<!-- Signup Modal -->
 <div id="signupModal" class="modal">
   <h3>Create account</h3>
   <div class="row">
@@ -953,7 +952,8 @@ function closeModal(id){
 
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.message || "Invalid 2FA code");
-
+document.getElementById("overlay").style.display = "none";
+document.getElementById("twoFAModal").style.display = "none";
     localStorage.setItem("jwtToken", data.token);
     localStorage.removeItem("tempToken");
 
