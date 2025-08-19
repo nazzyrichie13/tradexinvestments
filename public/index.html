@@ -875,6 +875,19 @@ function openModal(id) {
       closeModal(btn.dataset.close);
     });
   });
+  function welcomeUser(user) {
+  const dashboardCard = document.getElementById("dashboardCard");
+  if (!dashboardCard) return; // Exit if dashboardCard doesn't exist
+
+  // Create a welcome message element
+  const welcomeMsg = document.createElement("h2");
+  welcomeMsg.textContent = `Welcome, ${user.name}!`;
+  welcomeMsg.style.marginBottom = "10px";
+  welcomeMsg.style.color = "#333";
+
+  // Prepend the welcome message to the dashboardCard
+  dashboardCard.prepend(welcomeMsg);
+}
 
   // ---------- Helpers ----------
   const token = () => localStorage.getItem("jwtToken") || "";
@@ -981,6 +994,7 @@ $("#DepositBtn")?.addEventListener("click", () => {
     window.closeModal?.("twoFAModal");
 
     $("#dashboardCard")?.classList.remove("hidden");
+    welcomeUser(user);
     hydrateStatsFromUser(user);
     loadTransactions();
 

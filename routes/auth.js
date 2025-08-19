@@ -98,6 +98,18 @@ router.post("/user-login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ success: false, message: "Invalid email or password" });
 
+    // Check if terms are accepted first
+    if (!user.acceptedTerms) {
+      // Do NOT generate 2FA yet
+      const tempToken = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "10m" });
+      return res.json({
+        success: true,
+        requiresTerms: true,
+        requires2FA: false, // 2FA not yet required
+        tempToken,
+      });
+    }
+
     // Generate 2FA secret if missing
     if (!user.twoFASecret) {
       const secret = speakeasy.generateSecret({ length: 20 });
@@ -119,15 +131,17 @@ router.post("/user-login", async (req, res) => {
 
     res.json({
       success: true,
-      requiresTerms: !user.acceptedTerms,
+      requiresTerms: false,
       requires2FA: true,
       tempToken,
     });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error during login" });
   }
 });
+
 
 // Accept terms
 router.post("/accept-terms", async (req, res) => {
@@ -152,33 +166,45 @@ router.post("/accept-terms", async (req, res) => {
 // Verify 2FA
 router.post("/verify-2fa", async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
-    const { code } = req.body;
-    if (!token) return res.status(401).json({ success: false, message: "No token provided" });
-
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await User.findById(decoded.id);
+    const { tempToken, code } = req.body;
+    const payload = jwt.verify(tempToken, JWT_SECRET);
+    const user = await User.findById(payload.id);
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
     const verified = speakeasy.totp.verify({
       secret: user.twoFASecret,
       encoding: "base32",
       token: code,
-      window: 1,
+      window: 2, // small window for slight clock differences
     });
 
-    if (!verified) return res.status(400).json({ success: false, message: "Invalid 2FA code" });
+    if (!verified) return res.status(401).json({ success: false, message: "Invalid 2FA code" });
 
-    const finalToken = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "7d" });
+    // 2FA successful → send full user data including current investment
+    const currentInvestment = user.investment?.currentAmount || 0; // default to 0 if not set
+    const balance = user.investment?.balance || 0;
+    const profit = user.investment?.profit || 0;
+    const interest = user.investment?.interest || 0;
+
+    // Generate real JWT for session
+    const authToken = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "1h" });
 
     res.json({
       success: true,
-      token: finalToken,
-      user: { id: user._id, name: user.name, email: user.email },
+      user: {
+        email: user.email,
+        currentInvestment,
+        balance,
+        profit,
+        interest,
+        name: user.name,
+      },
+      authToken,
     });
+
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({ success: false, message: "Server error verifying 2FA" });
   }
 });
 
