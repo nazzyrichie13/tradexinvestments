@@ -1040,11 +1040,10 @@ if (loginBtn) loginBtn.addEventListener("click", async () => {
 
     
 
-    // If 2FA is required
     if (data.requiresTerms) {
   localStorage.setItem("tempToken", data.tempToken);
-  $("#termsModal").style.display = "block";
-  $("#twoFAModal").style.display = "none"; // 🔒 force hide 2FA
+  openModal("termsModal");
+  closeModal("twoFAModal");
   return;
 }
 if (data.requires2FA) {
@@ -1078,13 +1077,10 @@ document.addEventListener("click", async (e) => {
       });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || "Could not accept terms");
-
-      $("#termsModal").style.display = "none";
-
-      // ✅ Now move to 2FA
-      $("#twoFAModal").style.display = "block";
-      startTwofaCountdown(300);
-      alert("Terms accepted. Please enter 2FA code.");
+closeModal("termsModal");
+openModal("twoFAModal");
+startTwofaCountdown(300);
+ alert("Terms accepted. Please enter 2FA code.");
 
     } catch (err) { 
       console.error(err); 
@@ -1097,7 +1093,7 @@ document.addEventListener("click", async (e) => {
 // ---------- Verify 2FA ----------
 const verify2Btn = $("#verify2FABtn");
 if (verify2Btn) verify2Btn.addEventListener("click", async () => {
-  const code = $("#twoFACode")?.value;
+  const code = $("#twofaCode")?.value;
   const tempToken = localStorage.getItem("tempToken");
   if (!code || !tempToken) return alert("Enter 2FA code.");
 
@@ -1145,7 +1141,8 @@ async function fetchCurrentUser() {
 let twofaTimer;
 function startTwofaCountdown(seconds) {
   clearInterval(twofaTimer);
-  const display = $("#twofaTimer");
+  const display = $("#countdown"); // fixed ID
+
   let remaining = seconds;
   const updateDisplay = () => { 
     if (display) display.textContent = `${String(Math.floor(remaining / 60)).padStart(2,"0")}:${String(remaining % 60).padStart(2,"0")}`; 
