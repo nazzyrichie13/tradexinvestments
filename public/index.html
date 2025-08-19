@@ -213,12 +213,12 @@
   display: none;
 }
 /* CSS */
-/* #adminLoginModal {
+#adminLoginModal {
   display: none;
 }
 #adminLoginModal.active {
   display: block;
-} */
+} 
 
 
   </style>
@@ -850,10 +850,8 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
 });
 
 
-// // ----- LOGIN / TERMS / 2FA -----
-document.getElementById("openSignup").onclick = ()=> openModal("loginModal");
-document.getElementById("ctaSignup").onclick  = ()=> openModal("loginModal");
-
+document.getElementById("openSignup").onclick = ()=> openModal("signupModal");
+document.getElementById("ctaSignup").onclick  = ()=> openModal("signupModal");
 
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -1044,18 +1042,17 @@ if (loginBtn) loginBtn.addEventListener("click", async () => {
 
     // If 2FA is required
     if (data.requiresTerms) {
-      localStorage.setItem("tempToken", data.tempToken);
-      $("#termsModal").style.display = "block";
-      $("#dashboardCard").style.display = "none";
-      return; // stop here, do NOT check 2FA yet
-    }
-     if (data.requires2FA) {
-      localStorage.setItem("tempToken", data.tempToken);
-      $("#twoFAModal").style.display = "block";
-      startTwofaCountdown(300);
-      alert("2FA code sent to your email.");
-      return;
-    }
+  localStorage.setItem("tempToken", data.tempToken);
+  $("#termsModal").style.display = "block";
+  $("#twoFAModal").style.display = "none"; // 🔒 force hide 2FA
+  return;
+}
+if (data.requires2FA) {
+  localStorage.setItem("tempToken", data.tempToken);
+  $("#twoFAModal").style.display = "block";
+  return;
+}
+
 
   } catch (err) {
     console.error(err);
