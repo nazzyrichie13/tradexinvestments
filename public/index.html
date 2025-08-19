@@ -345,94 +345,15 @@
 </div>
 
 
-<div class="grid">
-<!-- Dashboard Card -->
-<div id="dashboardCard" class="hidden p-6 bg-white shadow rounded-lg max-w-4xl mx-auto mt-8">
-  <button id="openDashboard" class="btn btn-primary">Go to Dashboard</button>
-  <div class="mb-6 flex justify-between items-center">
-    <h2 id="welcomeUser" class="text-xl font-bold">Welcome, User</h2>
-    <button id="logoutTop" class="px-4 py-2 bg-red-500 text-white rounded hidden">Logout</button>
-  </div>
-
-  <!-- Stats -->
-  <div class="grid grid-cols-3 gap-4 mb-6">
-    <div class="p-4 bg-gray-100 rounded">
-      <p class="text-sm text-gray-500">Balance</p>
-      <p id="statBalance" class="text-lg font-semibold">$0.00</p>
-    </div>
-    <div class="p-4 bg-gray-100 rounded">
-      <p class="text-sm text-gray-500">Profit</p>
-      <p id="statProfit" class="text-lg font-semibold">$0.00</p>
-    </div>
-    <div class="p-4 bg-gray-100 rounded">
-      <p class="text-sm text-gray-500">Interest</p>
-      <p id="statInterest" class="text-lg font-semibold">$0.00</p>
-    </div>
-  </div>
-
-  <!-- Buttons -->
-  <div class="mb-6 flex gap-4">
-    <button id="depositBtn" class="px-4 py-2 bg-green-500 text-white rounded">Deposit</button>
-    <button id="withdrawBtn" class="px-4 py-2 bg-yellow-500 text-white rounded">Withdraw</button>
-  </div>
-
-  <!-- Transactions -->
-  <div class="overflow-x-auto">
-    <table class="w-full border-collapse border border-gray-300">
-      <thead class="bg-gray-200">
-        <tr>
-          <th class="border border-gray-300 px-3 py-2">Date</th>
-          <th class="border border-gray-300 px-3 py-2">Type</th>
-          <th class="border border-gray-300 px-3 py-2">Amount</th>
-          <th class="border border-gray-300 px-3 py-2">Status</th>
-        </tr>
-      </thead>
-      <tbody id="txTable">
-        <tr>
-          <td colspan="4" class="text-center py-4">No transactions yet.</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- Deposit Modal -->
-<div id="depositModal" class="modal hidden">
-  <h3>Deposit</h3>
-  <input id="depositAmount" placeholder="Amount (USD)" />
-  <div class="actions mt-4">
-    <button class="btn" data-close="depositModal">Close</button>
-    <button id="submitDeposit" class="btn btn-primary">Deposit</button>
-  </div>
-</div>
-
-<!-- Withdraw Modal -->
-<div id="withdrawModal" class="modal hidden">
-  <h3>Withdraw</h3>
-  <input id="withdrawAmount" placeholder="Amount (USD)" />
-  <select id="withdrawMethod" class="mt-2">
-    <option value="bank">Bank-to-Bank</option>
-    <option value="paypal">PayPal</option>
-    <option value="bitcoin">Bitcoin</option>
-    <option value="cashapp">CashApp</option>
-  </select>
-  <div class="actions mt-4">
-    <button class="btn" data-close="withdrawModal">Close</button>
-    <button id="submitWithdraw" class="btn btn-primary">Request Withdraw</button>
-  </div>
-</div>
-
-</div>
-
 
     
   </div>
 </div>
 
 <!-- ===== Overlay + Modals ===== -->
-<div id="overlay"  > </div>
+<div id="overlay"></div>
 
-
+<!-- Signup Modal -->
 <div id="signupModal" class="modal">
   <h3>Create account</h3>
   <div class="row">
@@ -503,6 +424,32 @@
   </div>
 </div>
 
+<!-- Deposit Modal -->
+<div id="depositModal" class="modal">
+  <h3>Deposit</h3>
+  <input id="depositAmount" placeholder="Amount (USD)" />
+  <div class="actions">
+    <button class="btn" data-close="depositModal">Close</button>
+    <button id="submitDeposit" class="btn btn-primary">Deposit</button>
+  </div>
+</div>
+
+<!-- Withdraw Modal -->
+<div id="withdrawModal" class="modal">
+  <h3>Withdraw</h3>
+  <input id="withdrawAmount" placeholder="Amount (USD)" />
+  <div style="height:8px"></div>
+  <select id="withdrawMethod">
+    <option value="bank">Bank-to-Bank</option>
+    <option value="paypal">PayPal</option>
+    <option value="bitcoin">Bitcoin</option>
+    <option value="cashapp">CashApp</option>
+  </select>
+  <div class="actions">
+    <button class="btn" data-close="withdrawModal">Close</button>
+    <button id="submitWithdraw" class="btn btn-primary">Request Withdraw</button>
+  </div>
+</div>
 
 
     
@@ -685,7 +632,7 @@
         <div class="contact-info">
           <p>
             <i class="fas fa-envelope"></i>
-            <p>Need help? Contact our support team at</p>
+            <p>Need help? Contact our support team</p>
             <a href="support@tradexinvest.net">support@tradexinvest.net</a>
           </p>
           <p>
@@ -729,349 +676,521 @@
       
 
     </footer>
-    <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const $ = (sel) => document.querySelector(sel);
-  const $$ = (sel) => document.querySelectorAll(sel);
-  const backendUrl = "https://www.tradexinvest.net";
+<script>
+// Function to toggle mobile nav
+function toggleMobileNav() {
+  const mobileMenu = document.getElementById("mobileMenu");
+  if (!mobileMenu) return; // prevent error if element not found
+  mobileMenu.classList.toggle("show"); // toggles the 'show' class
+}
 
-  // ---------- helpers ----------
-  const token = () => localStorage.getItem("jwtToken") || "";
-  const tempToken = () => localStorage.getItem("jwtTemp") || "";
-  const authHeaders = () => ({
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token()}`
-  });
-  const fmtMoney = (n) => `$${Number(n).toFixed(2)}`;
+let interest = 8000; // Starting interest
+const interestRatePerSecond = 0.05; // Amount to grow every second (you can adjust)
+const interestEl = document.getElementById("interestCounter");
 
-  // ---------- modal helpers ----------
-  function openModal(id) { $(id).classList.remove("hidden"); $("#overlay").style.display = "block"; }
-  function closeModal(id) { $(id).classList.add("hidden"); $("#overlay").style.display = "none"; }
+function updateInterest() {
+  interest += interestRatePerSecond;
+  interestEl.textContent = interest.toFixed(2);
+}
+setInterval(updateInterest, 1000); // Update every 1 second
 
-  // ---------- Global state ----------
-  let currentUser = null;
 
-  // ---------- Terms ----------
-  $("#acceptTermsBtn")?.addEventListener("click", async () => {
-    try {
-      const res = await fetch(`${backendUrl}/accept-terms`, { method: "POST", headers: { Authorization: `Bearer ${tempToken()}` }});
-      const data = await res.json();
-      if (!data.success) return alert(data.message);
-      closeModal("#termsModal");
-      openModal("#twoFAModal");
-      start2FACountdown();
-    } catch (err) { console.error(err); }
-  });
+// ====== NEXT PAYOUT COUNTDOWN ======
+const countdownEl = document.getElementById("payoutCountdown");
 
-  // ---------- 2FA ----------
-  let countdownInterval;
-  function start2FACountdown(duration = 300) {
-    clearInterval(countdownInterval);
-    const countdownEl = $("#countdown");
-    let timeLeft = duration;
-    function updateDisplay() {
-      const min = Math.floor(timeLeft / 60).toString().padStart(2, "0");
-      const sec = (timeLeft % 60).toString().padStart(2, "0");
-      countdownEl.textContent = `Code expires in ${min}:${sec}`;
-    }
-    updateDisplay();
-    countdownInterval = setInterval(() => {
-      timeLeft--;
-      updateDisplay();
-      if (timeLeft <= 0) {
-        clearInterval(countdownInterval);
-        alert("2FA code expired. Please login again.");
-        closeModal("#twoFAModal");
-        localStorage.removeItem("jwtTemp");
-      }
-    }, 1000);
+// Example: set next payout 48 hours from now
+const nextPayoutDate = new Date();
+nextPayoutDate.setHours(nextPayoutDate.getHours() + 48);
+
+function updateCountdown() {
+  const now = new Date().getTime();
+  const distance = nextPayoutDate - now;
+
+  if (distance < 0) {
+    countdownEl.textContent = "Payout processing...";
+    return;
   }
 
-  $("#verify2FA")?.addEventListener("click", async () => {
-    const code = $("#twofaCode").value;
-    if (!code) return alert("Enter 2FA code");
+  const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+  let output = "";
+  if (days > 0) output += `${days}d `;
+  output += `${hours}h ${minutes}m ${seconds}s`;
+
+  countdownEl.textContent = output;
+}
+setInterval(updateCountdown, 1000); // Update every
+
+
+
+
+
+
+
+
+
+// Expose globally if using inline onclick
+window.toggleMobileNav = toggleMobileNav;
+
+
+let countdownTimer = null;
+
+/* ===========================
+   HELPERS: MODALS & STATE
+=========================== */
+const overlay = document.getElementById("overlay");
+function openModal(id){
+  overlay.style.display = "block";
+  document.getElementById(id).style.display = "block";
+}
+function closeModal(id){
+  const el = document.getElementById(id);
+  if(el) el.style.display = "none";
+  // If no other modal is open, hide overlay
+  const anyOpen = [...document.querySelectorAll(".modal")].some(m => m.style.display === "block");
+  if(!anyOpen) overlay.style.display = "none";
+}
+overlay.addEventListener("click", ()=>{
+  document.querySelectorAll(".modal").forEach(m=>m.style.display="none");
+  overlay.style.display="none";
+});
+document.querySelectorAll("[data-close]").forEach(btn=>{
+  btn.addEventListener("click", ()=> closeModal(btn.getAttribute("data-close")));
+});
+
+function currency(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2}); }
+function setSession(user, jwt){
+  if(user) localStorage.setItem("currentUser", JSON.stringify(user));
+  if(jwt)  localStorage.setItem("jwtToken", jwt);
+}
+function clearSession(){
+  localStorage.clear();
+}
+const tabButtons = document.querySelectorAll('.tabs .btn');
+  const tabContents = document.querySelectorAll('.tab-content');
+
+  tabButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      const target = button.dataset.tab;
+
+      // Remove 'active' from all buttons
+      tabButtons.forEach(btn => btn.classList.remove('active'));
+      // Hide all tab contents
+      tabContents.forEach(content => (content.style.display = 'none'));
+
+      // Add 'active' to clicked button
+      button.classList.add('active');
+      // Show the selected tab content
+      document.getElementById(target).style.display = 'block';
+    });
+  });
+
+/* ===========================
+   SLIDERS
+=========================== */
+(function sliders(){
+  const imgs = document.querySelectorAll("#welcomeNote img");
+  const quotes = document.querySelectorAll("#quotes p");
+  let i=0, q=0;
+  function showImg(k){ imgs.forEach((im,idx)=>im.classList.toggle("active", idx===k)); }
+  function showQuote(k){ quotes.forEach((p,idx)=>p.classList.toggle("active", idx===k)); }
+  showImg(0); showQuote(0);
+  setInterval(()=>{ i=(i+1)%imgs.length; showImg(i); }, 3000);
+  setInterval(()=>{ q=(q+1)%quotes.length; showQuote(q); }, 3000);
+})();
+document.getElementById("openLogin")?.addEventListener("click", () => openModal("loginModal"));
+document.getElementById("ctaLogin")?.addEventListener("click", () => openModal("loginModal"));
+
+// ---------- Admin Login ----------
+document.getElementById("openAdminLogin")?.addEventListener("click", () => openModal("adminLoginModal"));
+document.getElementById("ctaAdminLogin")?.addEventListener("click", () => openModal("adminLoginModal"));
+/* ===========================
+   SIGNUP
+=========================== */
+document.getElementById("openSignup").onclick = ()=> openModal("signupModal");
+document.getElementById("ctaSignup").onclick  = ()=> openModal("signupModal");
+
+
+const backendUrl = "https://www.tradexinvest.net"; // Change to your backend
+
+document.getElementById("signupSubmit").addEventListener("click", async () => {
+  const name = document.getElementById("suName").value.trim();
+  const email = document.getElementById("suEmail").value.trim();
+  const password = document.getElementById("suPassword").value.trim();
+
+  if (!name || !email || !password) {
+    alert("Please fill in all fields.");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${backendUrl}/api/auth/register`, { 
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      alert("Account created successfully! You can now log in.");
+      document.querySelector('[data-close="signupModal"]').click();
+    } else {
+      alert(data.message || "Signup failed.");
+    }
+  } catch (err) {
+    console.error("Signup error:", err);
+    alert("Something went wrong. Please try again.");
+  }
+});
+
+
+// ----- LOGIN / TERMS / 2FA -----
+document.getElementById("openSignup").onclick = ()=> openModal("loginModal");
+document.getElementById("ctaSignup").onclick  = ()=> openModal("loginModal");
+
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  const backendUrl = "https://www.tradexinvest.net";
+  const $ = (sel) => document.querySelector(sel);
+
+  // ---------- Helpers ----------
+  const token = () => localStorage.getItem("jwtToken") || "";
+  const authHeaders = () => ({
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token()}`
+  });
+  const fmtMoney = (n) =>
+    Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtDate = (d) => new Date(d).toLocaleString();
+
+  // ---------- User Stats ----------
+  function hydrateStatsFromUser(user) {
+    if (!user) return;
+    const inv = user.investment || {};
+    $("#statBalance") && ($("#statBalance").textContent = fmtMoney(inv.balance ?? 0));
+    $("#statProfit") && ($("#statProfit").textContent = fmtMoney(inv.profit ?? 0));
+    $("#statInterest") && ($("#statInterest").textContent = fmtMoney(inv.interest ?? 0));
+    $("#welcomeUser") && ($("#welcomeUser").textContent = `Welcome, ${user.name || "User"}`);
+    $("#welcomeEmail") && ($("#welcomeEmail").textContent = user.email || "");
+  }
+
+  // ---------- Load Transactions ----------
+  async function loadTransactions() {
+    const tbody = $("#txTable tbody");
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
     try {
-      const res = await fetch(`${backendUrl}/verify-2fa`, {
+      const res = await fetch(`${backendUrl}/api/transactions/my`, { headers: authHeaders() });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to load transactions");
+
+      let txs = Array.isArray(data.transactions) ? data.transactions : (data && data._id ? [data] : []);
+      if (!txs.length) {
+        tbody.innerHTML = `<tr><td colspan="4">No transactions yet.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = txs
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .map(tx => `<tr>
+          <td>${fmtDate(tx.createdAt)}</td>
+          <td>${(tx.type || "").toUpperCase()}</td>
+          <td>$${fmtMoney(tx.amount)}</td>
+          <td>${(tx.status || "pending").toUpperCase()}</td>
+        </tr>`).join("");
+
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="4">Error: ${e.message || "No transactions yet."}</td></tr>`;
+    }
+  }
+
+  // ---------- Show User Dashboard ----------
+  function showUserDashboard(user) {
+    if (!user) return;
+
+    window.closeModal?.("loginModal");
+    window.closeModal?.("termsModal");
+    window.closeModal?.("twoFAContainer");
+
+    $("#dashboardCard")?.classList.remove("hidden");
+    hydrateStatsFromUser(user);
+    loadTransactions();
+
+    $("#depositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
+    $("#withdrawBtn")?.addEventListener("click", () => window.openModal?.("withdrawModal"));
+
+    $("#openLogin")?.classList.add("hidden");
+    $("#openSignup")?.classList.add("hidden");
+    $("#openDashboard")?.classList.remove("hidden");
+    $("#logoutTop")?.classList.remove("hidden");
+
+    const logoutBtn = $("#logoutTop");
+    if (logoutBtn && !logoutBtn.dataset.listenerAdded) {
+      logoutBtn.addEventListener("click", () => {
+        localStorage.removeItem("jwtToken");
+        localStorage.removeItem("currentUser");
+        $("#dashboardCard")?.classList.add("hidden");
+        $("#openLogin")?.classList.remove("hidden");
+        $("#openSignup")?.classList.remove("hidden");
+        $("#openDashboard")?.classList.add("hidden");
+        logoutBtn.classList.add("hidden");
+      });
+      logoutBtn.dataset.listenerAdded = "true";
+    }
+  }
+
+  // ---------- Auto-show dashboard if logged in ----------
+  const savedUser = localStorage.getItem("currentUser");
+  if (savedUser) {
+    try { showUserDashboard(JSON.parse(savedUser)); }
+    catch { localStorage.removeItem("currentUser"); }
+  }
+
+  // ---------- User Login ----------
+  const loginBtn = $("#loginSubmit");
+  if (loginBtn) loginBtn.addEventListener("click", async () => {
+    const email = $("#liEmail")?.value;
+    const password = $("#liPassword")?.value;
+    if (!email || !password) return alert("Please enter email and password.");
+
+    try {
+      const res = await fetch(`${backendUrl}/api/auth/user-login`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${tempToken()}` },
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || "Login failed");
+
+      if (data.requiresTerms) {
+        localStorage.setItem("tempToken", data.tempToken);
+        $("#termsModal").style.display = "block";
+        return;
+      }
+      if (data.requires2FA) {
+        localStorage.setItem("tempToken", data.tempToken);
+        $("#twoFAContainer").style.display = "block";
+        startTwofaCountdown(300);
+        alert("2FA code sent to your email.");
+      }
+
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+    }
+  });
+
+  // ---------- Accept Terms ----------
+  document.addEventListener("click", async (e) => {
+    if (e.target.id === "acceptTermsBtn") {
+      const tempToken = localStorage.getItem("tempToken");
+      if (!tempToken) return alert("No temp session found.");
+
+      try {
+        const res = await fetch(`${backendUrl}/api/auth/accept-terms`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${tempToken}` }
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || "Could not accept terms");
+
+        $("#termsModal").style.display = "none";
+        $("#twoFAContainer").style.display = "block";
+        startTwofaCountdown(300);
+        alert("Terms accepted. Please enter 2FA code.");
+      } catch (err) { console.error(err); alert(err.message); }
+    }
+  });
+
+  // ---------- Verify 2FA ----------
+  const verify2Btn = $("#verify2FABtn");
+  if (verify2Btn) verify2Btn.addEventListener("click", async () => {
+    const code = $("#twoFACode")?.value;
+    const tempToken = localStorage.getItem("tempToken");
+    if (!code || !tempToken) return alert("Enter 2FA code.");
+
+    try {
+      const res = await fetch(`${backendUrl}/api/auth/verify-2fa`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${tempToken}` },
         body: JSON.stringify({ code })
       });
       const data = await res.json();
-      if (!data.success) return alert(data.message);
+      if (!res.ok || !data.success) throw new Error(data.message || "Invalid 2FA code");
+
       localStorage.setItem("jwtToken", data.token);
-      localStorage.removeItem("jwtTemp");
-      currentUser = data.user;
-      closeModal("#twoFAModal");
-      showUserDashboard();
-    } catch (err) { console.error(err); }
+      localStorage.setItem("currentUser", JSON.stringify(data.user));
+      localStorage.removeItem("tempToken");
+
+      await fetchCurrentUser();
+      showUserDashboard(JSON.parse(localStorage.getItem("currentUser")));
+    } catch (err) { console.error(err); alert(err.message); }
   });
 
-  $("#resend2FA")?.addEventListener("click", async () => {
-    alert("Resend feature requires re-login"); 
-  });
-
-  // ---------- Login ----------
-  $("#loginSubmit")?.addEventListener("click", async () => {
-    const email = $("#liEmail").value;
-    const password = $("#liPassword").value;
-    if (!email || !password) return alert("Enter email & password");
+  async function fetchCurrentUser() {
+    const token = localStorage.getItem("jwtToken");
+    if (!token) return;
     try {
-      const res = await fetch(`${backendUrl}/user-login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-      });
+      const res = await fetch(`${backendUrl}/api/auth/me`, { headers: { "Authorization": `Bearer ${token}` } });
       const data = await res.json();
-      if (!data.success) return alert(data.message);
-      if (data.requiresTerms) openModal("#termsModal");
-      else if (data.requires2FA) {
-        localStorage.setItem("jwtTemp", data.tempToken);
-        openModal("#twoFAModal");
-        start2FACountdown();
-      }
-    } catch (err) { console.error(err); }
-  });
-
-  // ---------- Signup ----------
-  $("#signupSubmit")?.addEventListener("click", async () => {
-    const name = $("#suName").value;
-    const email = $("#suEmail").value;
-    const password = $("#suPassword").value;
-    if (!name || !email || !password) return alert("Fill all fields");
-    try {
-      const res = await fetch(`${backendUrl}/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password })
-      });
-      const data = await res.json();
-      if (!data.success) return alert(data.message);
-      alert("Account created. Please login.");
-      closeModal("#signupModal");
-    } catch (err) { console.error(err); }
-  });
-
-  // ---------- User Dashboard ----------
-  async function showUserDashboard() {
-    try {
-      const res = await fetch(`${backendUrl}/current-user`, { headers: authHeaders() });
-      const data = await res.json();
-      if (!data.success) return alert(data.message);
-      currentUser = data.user;
-
-      $("#dashboardSection").style.display = "block";
-      $("#welcomeUser").textContent = `Welcome, ${currentUser.name}`;
-
-      const inv = currentUser.investment || { balance: 0, profit: 0, interest: 0 };
-      $("#statBalance").textContent = fmtMoney(inv.balance);
-      $("#statProfit").textContent = fmtMoney(inv.profit);
-      $("#statInterest").textContent = fmtMoney(inv.interest);
-
-      // Render transaction history
-      const txTable = $("#txTable");
-      txTable.innerHTML = "";
-      const txHistory = currentUser.transactions || [];
-      if (!txHistory.length) txTable.innerHTML = `<tr><td colspan="4" class="text-center py-4">No transactions yet.</td></tr>`;
-      else txHistory.forEach(tx => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${new Date(tx.date).toLocaleString()}</td><td>${tx.type}</td><td>${fmtMoney(tx.amount)}</td><td>${tx.status}</td>`;
-        txTable.appendChild(tr);
-      });
-    } catch (err) { console.error(err); }
+      if (res.ok && data.user) { localStorage.setItem("currentUser", JSON.stringify(data.user)); hydrateStatsFromUser(data.user); }
+    } catch (err) { console.error("Failed to fetch current user:", err); }
   }
 
-  // ---------- Deposit ----------
-  $("#depositBtn")?.addEventListener("click", async () => {
-    const amount = parseFloat(prompt("Deposit amount:"));
-    if (!amount || amount <= 0) return alert("Invalid amount");
-    await updateUserInvestment(amount, "deposit");
-  });
+  $("#openLogin")?.addEventListener("click", () => openModal("loginModal"));
+  $("#ctaLogin")?.addEventListener("click", () => openModal("loginModal"));
 
-  // ---------- Withdraw ----------
-  $("#withdrawBtn")?.addEventListener("click", async () => {
-    const amount = parseFloat(prompt("Withdraw amount:"));
-    if (!amount || amount <= 0) return alert("Invalid amount");
-    await updateUserInvestment(amount, "withdraw");
-  });
-
-  async function updateUserInvestment(amount, type) {
-    try {
-      const balance = currentUser.investment?.balance || 0;
-      const profit = currentUser.investment?.profit || 0;
-      const interest = currentUser.investment?.interest || 0;
-
-      let newBalance = type === "deposit" ? balance + amount : balance - amount;
-      if (newBalance < 0) return alert("Insufficient funds");
-
-      const res = await fetch(`${backendUrl}/user/${currentUser._id}/investment`, {
-        method: "PUT",
-        headers: authHeaders(),
-        body: JSON.stringify({ balance: newBalance, profit, interest })
-      });
-      const data = await res.json();
-      if (!data.success) return alert(data.message);
-
-      // update local state & UI
-      currentUser.investment = { balance: newBalance, profit, interest };
-      showUserDashboard();
-    } catch (err) { console.error(err); }
+  // ---------- 2FA Timer ----------
+  let twofaTimer;
+  function startTwofaCountdown(seconds) {
+    clearInterval(twofaTimer);
+    const display = $("#twofaTimer");
+    let remaining = seconds;
+    const updateDisplay = () => { if (display) display.textContent = `${String(Math.floor(remaining / 60)).padStart(2,"0")}:${String(remaining % 60).padStart(2,"0")}`; };
+    updateDisplay();
+    twofaTimer = setInterval(() => { remaining--; updateDisplay(); if (remaining <= 0) clearInterval(twofaTimer); }, 1000);
   }
 
   // ---------- Admin Login ----------
+  $("#openAdminLogin")?.addEventListener("click", () => openModal("adminLoginModal"));
+
   $("#adminLoginSubmit")?.addEventListener("click", async () => {
-    const email = $("#adminEmail").value;
-    const password = $("#adminPassword").value;
+    localStorage.removeItem("adminToken"); localStorage.removeItem("currentAdmin");
+    const email = $("#adminEmail")?.value.trim().toLowerCase();
+    const password = $("#adminPassword")?.value.trim();
+    if (!email || !password) return alert("Enter admin email & password");
+
     try {
-      const res = await fetch(`${backendUrl}/admin-login`, {
+      const res = await fetch(`${backendUrl}/api/auth/admin-login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
       });
       const data = await res.json();
-      if (!data.success) return alert(data.message);
-      localStorage.setItem("jwtToken", data.token);
-      closeModal("#adminLoginModal");
+      if (!res.ok || !data.success) throw new Error(data.message || "Invalid login");
+
+      localStorage.setItem("adminToken", data.token);
+      localStorage.setItem("currentAdmin", JSON.stringify(data.admin));
+      closeModal("adminLoginModal");
       showAdminDashboard();
-    } catch (err) { console.error(err); }
+    } catch (err) { alert("Login failed: " + err.message); }
   });
 
-  // ---------- Admin Dashboard ----------
-  async function showAdminDashboard() {
-    $("#adminDashboard").classList.remove("hidden");
+  const adminAuthHeaders = () => ({
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${localStorage.getItem("adminToken") || ""}`
+  });
 
-    // Load users
-    const res = await fetch(`${backendUrl}/admin/users`, { headers: authHeaders() });
-    const data = await res.json();
-    if (!data.success) return alert(data.message);
+  function showAdminDashboard() {
+    $("#adminDashboard")?.classList.remove("hidden");
+    loadAdminUsers();
+    loadWithdrawals();
+  }
+
+  async function loadAdminUsers() {
     const tbody = $("#adminUsersBody");
-    tbody.innerHTML = "";
-    data.users.forEach(u => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${u.name}</td><td>${u.email}</td>
-        <td>${fmtMoney(u.investment?.balance || 0)}</td>
-        <td>${fmtMoney(u.investment?.profit || 0)}</td>
-        <td>${fmtMoney(u.investment?.interest || 0)}</td>
-        <td><button class="btn updateUser" data-id="${u._id}">Update</button></td>`;
-      tbody.appendChild(tr);
-    });
-
-    // Bind update buttons
-    $$(".updateUser").forEach(btn => btn.addEventListener("click", e => {
-      const id = e.target.dataset.id;
-      const user = data.users.find(u => u._id === id);
-      if (!user) return;
-      $("#editName").value = user.name;
-      $("#editEmail").value = user.email;
-      $("#editBalance").value = user.investment?.balance || 0;
-      $("#editProfit").value = user.investment?.profit || 0;
-      $("#editInterest").value = user.investment?.interest || 0;
-      openModal("#updateUserForm");
-      $("#saveUserBtn").onclick = async () => {
-        try {
-          const updatedRes = await fetch(`${backendUrl}/user/${id}/investment`, {
-            method: "PUT",
-            headers: authHeaders(),
-            body: JSON.stringify({
-              balance: parseFloat($("#editBalance").value),
-              profit: parseFloat($("#editProfit").value),
-              interest: parseFloat($("#editInterest").value)
-            })
-          });
-          const updated = await updatedRes.json();
-          if (!updated.success) return alert(updated.message);
-          closeModal("#updateUserForm");
-          showAdminDashboard();
-        } catch (err) { console.error(err); }
-      };
-    }));
-
-    // Load withdrawals
-    refreshWithdrawals();
-  }
-
-  async function refreshWithdrawals() {
-    const wdRes = await fetch(`${backendUrl}/admin/withdrawals`, { headers: authHeaders() });
-    const wdData = await wdRes.json();
-    if (!wdData.success) return alert(wdData.message);
-    const tbody = $("#adminWdBody");
-    tbody.innerHTML = "";
-    wdData.withdrawals.forEach(wd => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${wd.user.name}</td><td>${wd.method}</td><td>${fmtMoney(wd.amount)}</td>
-        <td>${wd.status}</td>
-        <td>${wd.status==="Pending"? `<button class="btn btn-primary confirmWd" data-id="${wd._id}">Confirm</button>`:""}</td>`;
-      tbody.appendChild(tr);
-    });
-    $$(".confirmWd").forEach(btn => btn.addEventListener("click", async e => {
-      const id = e.target.dataset.id;
-      const res = await fetch(`${backendUrl}/admin/withdrawals/${id}/confirm`, { method: "PUT", headers: authHeaders() });
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="6">Loading...</td></tr>`;
+    try {
+      const res = await fetch(`${backendUrl}/api/admin/users`, { headers: adminAuthHeaders() });
       const data = await res.json();
-      if (!data.success) return alert(data.message);
-      refreshWithdrawals();
-    }));
+      const users = data.users || data;
+      if (!Array.isArray(users)) throw new Error("Invalid users response");
+
+      tbody.innerHTML = users.map(u => `
+        <tr>
+          <td>${u.name}</td>
+          <td>${u.email}</td>
+          <td><input type="number" data-id="${u._id}" data-field="balance" value="${u.investment?.balance || 0}"></td>
+          <td><input type="number" data-id="${u._id}" data-field="profit" value="${u.investment?.profit || 0}"></td>
+          <td><input type="number" data-id="${u._id}" data-field="interest" value="${u.investment?.interest || 0}"></td>
+          <td><button class="adminSave" data-id="${u._id}">Save</button></td>
+        </tr>
+      `).join("");
+
+    } catch (err) { tbody.innerHTML = `<tr><td colspan="6">Error: ${err.message}</td></tr>`; }
   }
 
-  // ---------- Open Modals ----------
-  $("#openLogin")?.addEventListener("click", () => openModal("#loginModal"));
-  $("#openSignup")?.addEventListener("click", () => openModal("#signupModal"));
-  $("#openAdminLogin")?.addEventListener("click", () => openModal("#adminLoginModal"));
-  $$(".modal [data-close]").forEach(btn => btn.addEventListener("click", e => closeModal("#" + e.target.dataset.close)));
-});
-// ---------------------
-// Live user data refresh
-// ---------------------
-let liveRefreshInterval;
-
-async function fetchUserData() {
-  try {
-    const res = await fetch(`${backendUrl}/api/auth/current-user`, {
-      headers: authHeaders(),
-    });
-    if (!res.ok) throw new Error("Failed to fetch user data");
-    const data = await res.json();
-    if (data.success) {
-      const user = data.user;
-      $("#statBalance").textContent = `$${user.investment.balance.toFixed(2)}`;
-      $("#statProfit").textContent = `$${user.investment.profit.toFixed(2)}`;
-      $("#statInterest").textContent = `$${user.investment.interest.toFixed(2)}`;
-      $("#welcomeUser").textContent = `Welcome, ${user.name}`;
+  document.addEventListener("click", async (e) => {
+    // Admin Save
+    if (e.target.classList.contains("adminSave")) {
+      const id = e.target.dataset.id;
+      const row = e.target.closest("tr");
+      const balance = parseFloat(row.querySelector('input[data-field="balance"]').value) || 0;
+      const profit = parseFloat(row.querySelector('input[data-field="profit"]').value) || 0;
+      const interest = parseFloat(row.querySelector('input[data-field="interest"]').value) || 0;
+      try {
+        const res = await fetch(`${backendUrl}/api/admin/user/${id}/investment`, {
+          method: "PUT", headers: adminAuthHeaders(), body: JSON.stringify({ balance, profit, interest })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || "Update failed");
+        alert("User investment updated!"); loadAdminUsers();
+      } catch (err) { alert("Error: " + err.message); }
     }
-  } catch (err) {
-    console.error("Error fetching user data:", err);
+
+    // Approve/Reject Withdrawal
+    if (e.target.classList.contains("approveWd") || e.target.classList.contains("rejectWd")) {
+      const id = e.target.dataset.id;
+      const action = e.target.classList.contains("approveWd") ? "confirm" : "reject";
+      try {
+        const res = await fetch(`${backendUrl}/api/admin/withdrawals/${id}/${action}`, { method: "PUT", headers: adminAuthHeaders() });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || "Action failed");
+        alert(`Withdrawal ${action === "confirm" ? "approved" : "rejected"}!`);
+        loadWithdrawals();
+      } catch (err) { alert("Error: " + err.message); }
+    }
+  });
+
+  async function loadWithdrawals() {
+    try {
+      const token = localStorage.getItem("adminToken");
+      if (!token) return alert("You must log in as admin first!");
+      const tbody = document.querySelector("#withdrawalsTable tbody");
+      if (!tbody) return console.error("No table found with ID 'withdrawalsTable'");
+      const res = await fetch(`${backendUrl}/api/admin/withdrawals`, { headers: adminAuthHeaders() });
+      const data = await res.json();
+      const withdrawals = data.withdrawals || data;
+      tbody.innerHTML = "";
+
+      if (!withdrawals || withdrawals.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No withdrawals yet</td></tr>`;
+        return;
+      }
+
+      withdrawals.forEach(w => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${w.user?.name || "Unknown"}</td>
+          <td>${w.method}</td>
+          <td>${w.amount}</td>
+          <td>${w.status}</td>
+          <td>
+            <button class="approveWd" data-id="${w._id}">Approve</button>
+            <button class="rejectWd" data-id="${w._id}">Reject</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+    } catch (err) { console.error("Error loading withdrawals:", err); }
   }
-}
 
-// Start auto-refresh every 10 seconds
-function startLiveRefresh() {
-  if (liveRefreshInterval) clearInterval(liveRefreshInterval);
-  liveRefreshInterval = setInterval(fetchUserData, 10000); // 10 seconds
-}
-
-// Stop auto-refresh when user logs out
-function stopLiveRefresh() {
-  if (liveRefreshInterval) clearInterval(liveRefreshInterval);
-}
-
-// ---------------------
-// Integrate with login flow
-// ---------------------
-async function handleUserLogin(token) {
-  localStorage.setItem("jwtToken", token);
-  $("#loginModal").classList.add("hidden");
-  $("#dashboardSection").classList.remove("hidden");
-  await fetchUserData();   // load initial data
-  startLiveRefresh();      // start live updates
-}
-
-// ---------------------
-// Stop refresh on logout
-// ---------------------
-$("#logoutTop").addEventListener("click", () => {
-  localStorage.removeItem("jwtToken");
-  $("#dashboardSection").classList.add("hidden");
-  stopLiveRefresh();
+  $("#logoutAdmin")?.addEventListener("click", () => {
+    localStorage.removeItem("adminToken"); localStorage.removeItem("currentAdmin");
+    $("#adminDashboard")?.classList.add("hidden");
+  });
 });
+
 
 </script>
+
+  
 </body>
 </html>
