@@ -348,6 +348,37 @@
 
     
   </div>
+<div class="grid">
+  <div id="dashboardCard">
+<!-- Deposit Modal -->
+<div id="depositModal" class="modal">
+  <h3>Deposit</h3>
+  <input id="depositAmount" placeholder="Amount (USD)" />
+  <div class="actions">
+    <button class="btn" data-close="depositModal">Close</button>
+    <button id="DepositBtn" class="btn btn-primary">Deposit</button>
+  </div>
+</div>
+
+<!-- Withdraw Modal -->
+<div id="withdrawModal" class="modal">
+  <h3>Withdraw</h3>
+  <input id="withdrawAmount" placeholder="Amount (USD)" />
+  <div style="height:8px"></div>
+  <select id="withdrawMethod">
+    <option value="bank">Bank-to-Bank</option>
+    <option value="paypal">PayPal</option>
+    <option value="bitcoin">Bitcoin</option>
+    <option value="cashapp">CashApp</option>
+  </select>
+  <div class="actions">
+    <button class="btn" data-close="withdrawModal">Close</button>
+    <button id="WithdrawBtn" class="btn btn-primary">Request Withdraw</button>
+  </div>
+</div>
+</div>
+
+    </div>
 </div>
 
 <!-- ===== Overlay + Modals ===== -->
@@ -424,35 +455,6 @@
   </div>
 </div>
 
-<!-- Deposit Modal -->
-<div id="depositModal" class="modal">
-  <h3>Deposit</h3>
-  <input id="depositAmount" placeholder="Amount (USD)" />
-  <div class="actions">
-    <button class="btn" data-close="depositModal">Close</button>
-    <button id="submitDeposit" class="btn btn-primary">Deposit</button>
-  </div>
-</div>
-
-<!-- Withdraw Modal -->
-<div id="withdrawModal" class="modal">
-  <h3>Withdraw</h3>
-  <input id="withdrawAmount" placeholder="Amount (USD)" />
-  <div style="height:8px"></div>
-  <select id="withdrawMethod">
-    <option value="bank">Bank-to-Bank</option>
-    <option value="paypal">PayPal</option>
-    <option value="bitcoin">Bitcoin</option>
-    <option value="cashapp">CashApp</option>
-  </select>
-  <div class="actions">
-    <button class="btn" data-close="withdrawModal">Close</button>
-    <button id="submitWithdraw" class="btn btn-primary">Request Withdraw</button>
-  </div>
-</div>
-
-
-    
 <!-- end  -->
     <div id="welcomeNote" class="welcomeNote">
       <img src="images/photo 5.avif" alt="img" />
@@ -848,15 +850,31 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
 });
 
 
-// ----- LOGIN / TERMS / 2FA -----
-document.getElementById("openSignup").onclick = ()=> openModal("loginModal");
-document.getElementById("ctaSignup").onclick  = ()=> openModal("loginModal");
+// // ----- LOGIN / TERMS / 2FA -----
+// document.getElementById("openSignup").onclick = ()=> openModal("loginModal");
+// document.getElementById("ctaSignup").onclick  = ()=> openModal("loginModal");
 
 
 
 document.addEventListener("DOMContentLoaded", () => {
   const backendUrl = "https://www.tradexinvest.net";
   const $ = (sel) => document.querySelector(sel);
+function openModal(id) {
+    const modal = $("#" + id);
+    if (modal) modal.style.display = "block";
+  }
+
+  function closeModal(id) {
+    const modal = $("#" + id);
+    if (modal) modal.style.display = "none";
+  }
+
+  // ---------- Close buttons ----------
+  document.querySelectorAll("[data-close]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      closeModal(btn.dataset.close);
+    });
+  });
 
   // ---------- Helpers ----------
   const token = () => localStorage.getItem("jwtToken") || "";
@@ -908,6 +926,51 @@ document.addEventListener("DOMContentLoaded", () => {
       tbody.innerHTML = `<tr><td colspan="4">Error: ${e.message || "No transactions yet."}</td></tr>`;
     }
   }
+  // ---------- Withdraw ----------
+$("#WithdrawBtn")?.addEventListener("click", async () => {
+  const amount = parseFloat($("#withdrawAmount").value);
+  const method = $("#withdrawMethod").value;
+
+  if (!amount || amount <= 0) {
+    return alert("Enter a valid withdrawal amount.");
+  }
+
+  try {
+    // Send request to backend (pending by default)
+    const res = await fetch(`${backendUrl}/api/withdrawals`, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`
+      },
+      body: JSON.stringify({ amount, method })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Error creating withdrawal");
+
+    alert("Withdrawal request submitted. Status: Pending");
+    $("#withdrawAmount").value = "";
+    $("#withdrawMethod").value = "bank";
+    closeModal("withdrawModal");
+
+  } catch (err) {
+    alert("Failed: " + err.message);
+  }
+});
+$("#DepositBtn")?.addEventListener("click", () => {
+    const amount = parseFloat($("#depositAmount").value);
+    if (!amount || amount <= 0) {
+      alert("Enter a valid deposit amount.");
+      return;
+    }
+
+    // Example action (replace with API call)
+    alert(`Deposit of $${amount.toFixed(2)} submitted successfully!`);
+    $("#depositAmount").value = "";
+    closeModal("depositModal");
+  });
+  
 
   // ---------- Show User Dashboard ----------
   function showUserDashboard(user) {
@@ -1050,8 +1113,8 @@ async function fetchCurrentUser() {
     }
   }
 
-  $("#openLogin")?.addEventListener("click", () => openModal("loginModal"));
-  $("#ctaLogin")?.addEventListener("click", () => openModal("loginModal"));
+  // $("#openLogin")?.addEventListener("click", () => openModal("loginModal"));
+  // $("#ctaLogin")?.addEventListener("click", () => openModal("loginModal"));
 
   // ---------- 2FA Timer ----------
   let twofaTimer;
