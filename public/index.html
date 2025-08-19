@@ -208,7 +208,13 @@
   .right{float:right}
   #dashboardCard {
   display: none;
+  background-color: #0b1220;
+  color: whitesmoke;
 }
+#dashboardCard .active {
+  display: block;
+}
+
 #termsModal, #twoFAModal {
   display: none;
 }
@@ -290,7 +296,6 @@
 
   <!-- Dashboard / right column -->
   <div class="grid">
-    <!-- ================= Admin Dashboard ================= -->
 <div id="adminDashboard" class="card hidden">
   <h2>Admin Dashboard</h2>
   <button id="logoutAdmin" class="btn">Logout</button>
@@ -343,10 +348,6 @@
     <button onclick="closeModal('editUserModal')" class="btn">Cancel</button>
   </div>
 </div>
-
-
-
-    
   </div>
 <div class="grid">
   <div id="dashboardCard">
@@ -990,7 +991,7 @@ $("#DepositBtn")?.addEventListener("click", () => {
 
     $("#dashboardCard")?.classList.remove("hidden");
     hydrateStatsFromUser(user);
-    loadTransactions();
+    loadTransactions(user);
 
     $("#depositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
     $("#withdrawBtn")?.addEventListener("click", () => window.openModal?.("withdrawModal"));
