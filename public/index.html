@@ -353,6 +353,9 @@
 <div class="grid">
   <div class="card">
   <div id="dashboardCard">
+   <button id="openDepositBtn" class="btn btn-primary">Deposit</button>
+<button id="openWithdrawBtn" class="btn btn-primary">Withdraw</button> 
+
 <!-- Deposit Modal -->
 <div id="depositModal" class="modal">
   <h3>Deposit</h3>
@@ -900,7 +903,7 @@ function openModal(id) {
   }
 
   // ---------- Load Transactions ----------
-  async function loadTransactions() {
+  async function loadTransactions(user) {
     const tbody = $("#txTable tbody");
     if (!tbody) return;
     tbody.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
@@ -993,7 +996,7 @@ $("#DepositBtn")?.addEventListener("click", () => {
 
     $("#dashboardCard")?.classList.remove("hidden");
     hydrateStatsFromUser(user);
-    loadTransactions(user);
+    loadTransactions();
 
     $("#depositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
     $("#withdrawBtn")?.addEventListener("click", () => window.openModal?.("withdrawModal"));
@@ -1112,9 +1115,9 @@ if (verify2Btn) verify2Btn.addEventListener("click", async () => {
     localStorage.setItem("jwtToken", data.authToken);  // ✅ backend sends authToken, not token
     localStorage.setItem("currentUser", JSON.stringify(data.user));
     localStorage.removeItem("tempToken");
-
+closeModal("twoFAModal");
     const user = await fetchCurrentUser();
-    showUserDashboard(data.user); // Show dashboard **only after terms & 2FA**
+    showUserDashboard(user); // Show dashboard **only after terms & 2FA**
 
   } catch (err) { 
     console.error(err); 
