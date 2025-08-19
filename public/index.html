@@ -875,19 +875,7 @@ function openModal(id) {
       closeModal(btn.dataset.close);
     });
   });
-  function welcomeUser(user) {
-  const dashboardCard = document.getElementById("dashboardCard");
-  if (!dashboardCard) return; // Exit if dashboardCard doesn't exist
-
-  // Create a welcome message element
-  const welcomeMsg = document.createElement("h2");
-  welcomeMsg.textContent = `Welcome, ${user.name}!`;
-  welcomeMsg.style.marginBottom = "10px";
-  welcomeMsg.style.color = "#333";
-
-  // Prepend the welcome message to the dashboardCard
-  dashboardCard.prepend(welcomeMsg);
-}
+ 
 
   // ---------- Helpers ----------
   const token = () => localStorage.getItem("jwtToken") || "";
@@ -987,14 +975,22 @@ $("#DepositBtn")?.addEventListener("click", () => {
 
   // ---------- Show User Dashboard ----------
   function showUserDashboard(user) {
+    const dashboardCard = $("#dashboardCard");
+  
     if (!user) return;
+    dashboardCard.innerHTML = ""; // clear previous
+  const welcomeMsg = document.createElement("h2");
+  welcomeMsg.textContent = `Welcome, ${user.name}!`;
+  dashboardCard.prepend(welcomeMsg);
+  dashboardCard.style.display = "block"; // show dashboard
+
+
 
     window.closeModal?.("loginModal");
     window.closeModal?.("termsModal");
     window.closeModal?.("twoFAModal");
 
     $("#dashboardCard")?.classList.remove("hidden");
-    welcomeUser(user);
     hydrateStatsFromUser(user);
     loadTransactions();
 
@@ -1029,118 +1025,144 @@ $("#DepositBtn")?.addEventListener("click", () => {
   }
 
   // ---------- User Login ----------
-  const loginBtn = $("#loginSubmit");
-  if (loginBtn) loginBtn.addEventListener("click", async () => {
-    const email = $("#liEmail")?.value;
-    const password = $("#liPassword")?.value;
-    if (!email || !password) return alert("Please enter email and password.");
+const loginBtn = $("#loginSubmit");
+if (loginBtn) loginBtn.addEventListener("click", async () => {
+  const email = $("#liEmail")?.value;
+  const password = $("#liPassword")?.value;
+  if (!email || !password) return alert("Please enter email and password.");
 
-    try {
-      const res = await fetch(`${backendUrl}/api/auth/user-login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message || "Login failed");
+  try {
+    const res = await fetch(`${backendUrl}/api/auth/user-login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.message || "Login failed");
 
-      if (data.requiresTerms) {
-        localStorage.setItem("tempToken", data.tempToken);
-        $("#termsModal").style.display = "block";
-        return;
-      }
-      if (data.requires2FA) {
-        localStorage.setItem("tempToken", data.tempToken);
-        $("#twoFAModal").style.display = "block";
-        startTwofaCountdown(300);
-        alert("2FA code sent to your email.");
-      }
-
-    } catch (err) {
-      console.error(err);
-      alert(err.message);
+    // Terms must be accepted first
+    if (data.requiresTerms) {
+      localStorage.setItem("tempToken", data.tempToken);
+      $("#termsModal").style.display = "block";
+      $("#dashboardCard").style.display = "none"; // hide dashboard until accepted
+      return;
     }
-  });
 
-  // ---------- Accept Terms ----------
-  document.addEventListener("click", async (e) => {
-    if (e.target.id === "acceptTermsBtn") {
-      const tempToken = localStorage.getItem("tempToken");
-      if (!tempToken) return alert("No temp session found.");
-
-      try {
-        const res = await fetch(`${backendUrl}/api/auth/accept-terms`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${tempToken}` },
-          body: JSON.stringify({ accepted: true })
-        });
-        const data = await res.json();
-        if (!res.ok || !data.success) throw new Error(data.message || "Could not accept terms");
-
-        $("#termsModal").style.display = "none";
-        $("#twoFAModal").style.display = "block";
-        startTwofaCountdown(300);
-        alert("Terms accepted. Please enter 2FA code.");
-      } catch (err) { console.error(err); alert(err.message); }
+    // If 2FA is required
+    if (data.requires2FA) {
+      localStorage.setItem("tempToken", data.tempToken);
+      $("#twoFAModal").style.display = "block";
+      startTwofaCountdown(300);
+      alert("2FA code sent to your email.");
     }
-  });
 
-  // ---------- Verify 2FA ----------
-  const verify2Btn = $("#verify2FABtn");
-  if (verify2Btn) verify2Btn.addEventListener("click", async () => {
-    const code = $("#twoFACode")?.value;
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
+  }
+});
+
+// ---------- Accept Terms ----------
+document.addEventListener("click", async (e) => {
+  if (e.target.id === "acceptTermsBtn") {
     const tempToken = localStorage.getItem("tempToken");
-    if (!code || !tempToken) return alert("Enter 2FA code.");
+    if (!tempToken) return alert("No temp session found.");
 
     try {
-      const res = await fetch(`${backendUrl}/api/auth/verify-2fa`, {
+      const res = await fetch(`${backendUrl}/api/auth/accept-terms`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${tempToken}` },
-        body: JSON.stringify({ code })
+        headers: { 
+          "Content-Type": "application/json", 
+          "Authorization": `Bearer ${tempToken}` 
+        },
+        body: JSON.stringify({ accepted: true })
       });
       const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message || "Invalid 2FA code");
+      if (!res.ok || !data.success) throw new Error(data.message || "Could not accept terms");
 
-      localStorage.setItem("jwtToken", data.token);
-      localStorage.setItem("currentUser", JSON.stringify(data.user));
-      localStorage.removeItem("tempToken");
+      $("#termsModal").style.display = "none";
+      // Proceed to 2FA if required
+      $("#twoFAModal").style.display = "block";
+      startTwofaCountdown(300);
+      alert("Terms accepted. Please enter 2FA code.");
 
-      await fetchCurrentUser(user);
-      showUserDashboard(JSON.parse(localStorage.getItem("currentUser")));
-    } catch (err) { console.error(err); alert(err.message); }
-  });
-
-async function fetchCurrentUser() {
-    const token = localStorage.getItem("jwtToken");
-    if (!token) return null;
-    try {
-      const res = await fetch(`${backendUrl}/api/auth/current-user`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      if (!res.ok) return null;
-      const user = await res.json();
-      localStorage.setItem("currentUser", JSON.stringify(user));
-      return user;
-    } catch (err) {
-      console.error("Failed to fetch current user:", err);
-      return null;
+    } catch (err) { 
+      console.error(err); 
+      alert(err.message); 
     }
   }
+});
 
-  // $("#openLogin")?.addEventListener("click", () => openModal("loginModal"));
-  // $("#ctaLogin")?.addEventListener("click", () => openModal("loginModal"));
+// ---------- Verify 2FA ----------
+const verify2Btn = $("#verify2FABtn");
+if (verify2Btn) verify2Btn.addEventListener("click", async () => {
+  const code = $("#twoFACode")?.value;
+  const tempToken = localStorage.getItem("tempToken");
+  if (!code || !tempToken) return alert("Enter 2FA code.");
 
-  // ---------- 2FA Timer ----------
-  let twofaTimer;
-  function startTwofaCountdown(seconds) {
-    clearInterval(twofaTimer);
-    const display = $("#twofaTimer");
-    let remaining = seconds;
-    const updateDisplay = () => { if (display) display.textContent = `${String(Math.floor(remaining / 60)).padStart(2,"0")}:${String(remaining % 60).padStart(2,"0")}`; };
-    updateDisplay();
-    twofaTimer = setInterval(() => { remaining--; updateDisplay(); if (remaining <= 0) clearInterval(twofaTimer); }, 1000);
+  try {
+    const res = await fetch(`${backendUrl}/api/auth/verify-2fa`, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json", 
+        "Authorization": `Bearer ${tempToken}` 
+      },
+      body: JSON.stringify({ code })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.message || "Invalid 2FA code");
+
+    localStorage.setItem("jwtToken", data.token);
+    localStorage.setItem("currentUser", JSON.stringify(data.user));
+    localStorage.removeItem("tempToken");
+
+    const user = await fetchCurrentUser();
+    showUserDashboard(user); // Show dashboard **only after terms & 2FA**
+
+  } catch (err) { 
+    console.error(err); 
+    alert(err.message); 
   }
+});
 
+// ---------- Fetch Current User ----------
+async function fetchCurrentUser() {
+  const token = localStorage.getItem("jwtToken");
+  if (!token) return null;
+  try {
+    const res = await fetch(`${backendUrl}/api/auth/current-user`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    if (!res.ok) return null;
+    const user = await res.json();
+    localStorage.setItem("currentUser", JSON.stringify(user));
+    return user;
+  } catch (err) {
+    console.error("Failed to fetch current user:", err);
+    return null;
+  }
+}
+
+// ---------- 2FA Timer ----------
+let twofaTimer;
+function startTwofaCountdown(seconds) {
+  clearInterval(twofaTimer);
+  const display = $("#twofaTimer");
+  let remaining = seconds;
+  const updateDisplay = () => { 
+    if (display) display.textContent = `${String(Math.floor(remaining / 60)).padStart(2,"0")}:${String(remaining % 60).padStart(2,"0")}`; 
+  };
+  updateDisplay();
+  twofaTimer = setInterval(() => { 
+    remaining--; 
+    updateDisplay(); 
+    if (remaining <= 0) clearInterval(twofaTimer); 
+  }, 1000);
+}
+
+
+
+  
   // ---------- Admin Login ----------
   $("#openAdminLogin")?.addEventListener("click", () => openModal("adminLoginModal"));
 
