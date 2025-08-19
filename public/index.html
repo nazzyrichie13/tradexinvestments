@@ -226,6 +226,16 @@
   display: block;
 } 
 
+.transaction-item { 
+  padding: 10px; 
+  margin-bottom: 10px; 
+  border-radius: 6px; 
+  background: #f8f8f8; 
+}
+
+.status-success { color: green; font-weight: bold; }
+.status-pending { color: orange; font-weight: bold; }
+.status-failed { color: red; font-weight: bold; }
 
   </style>
 </head>
@@ -355,7 +365,16 @@
   <div id="dashboardCard">
    <button id="openDepositBtn" class="btn btn-primary">Deposit</button>
 <button id="openWithdrawBtn" class="btn btn-primary">Withdraw</button> 
+<div class="stats">
+    <p>Balance: <span id="statBalance">0.00</span> USD</p>
+    <p>Profit: <span id="statProfit">0.00</span> USD</p>
+    <p>Interest: <span id="statInterest">0.00</span> USD</p>
+  </div>
 
+  <div class="transactions">
+    <h3>Transaction History</h3>
+    <div id="transactionsList"></div>
+  </div>
 <!-- Deposit Modal -->
 <div id="depositModal" class="modal">
   <h3>Deposit</h3>
@@ -887,50 +906,60 @@ function openModal(id) {
     "Content-Type": "application/json",
     "Authorization": `Bearer ${token()}`
   });
-  const fmtMoney = (n) =>
-    Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  
   const fmtDate = (d) => new Date(d).toLocaleString();
 
   // ---------- User Stats ----------
-  function hydrateStatsFromUser(user) {
-    if (!user) return;
-    const inv = user.investment || {};
-    $("#statBalance") && ($("#statBalance").textContent = fmtMoney(inv.balance ?? 0));
-    $("#statProfit") && ($("#statProfit").textContent = fmtMoney(inv.profit ?? 0));
-    $("#statInterest") && ($("#statInterest").textContent = fmtMoney(inv.interest ?? 0));
-    $("#welcomeUser") && ($("#welcomeUser").textContent = `Welcome, ${user.name || "User"}`);
-    $("#welcomeEmail") && ($("#welcomeEmail").textContent = user.email || "");
-  }
+  const fmtMoney = (n) =>
+  Number(n || 0).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+// Hydrate user stats into the dashboard
+function hydrateStatsFromUser(user) {
+  if (!user) return;
+
+  const inv = user.investment || {};
+
+  $("#statBalance").textContent = fmtMoney(inv.balance || 0);
+  $("#statProfit").textContent = fmtMoney(inv.profit || 0);
+  $("#statInterest").textContent = fmtMoney(inv.interest || 0);
+
+  $("#welcomeName").textContent = `Welcome ${user.name || "User"}`;
+}
 
   // ---------- Load Transactions ----------
-  async function loadTransactions(user) {
-    const tbody = $("#txTable tbody");
-    if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
-    try {
-      const res = await fetch(`${backendUrl}/api/transactions/my`, { headers: authHeaders() });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to load transactions");
+  function loadTransactions(user) {
+  const txList = $("#transactionsList");
+  txList.innerHTML = "";
 
-      let txs = Array.isArray(data.transactions) ? data.transactions : (data && data._id ? [data] : []);
-      if (!txs.length) {
-        tbody.innerHTML = `<tr><td colspan="4">No transactions yet.</td></tr>`;
-        return;
-      }
+  const transactions = user.transactions || [];
 
-      tbody.innerHTML = txs
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        .map(tx => `<tr>
-          <td>${fmtDate(tx.createdAt)}</td>
-          <td>${(tx.type || "").toUpperCase()}</td>
-          <td>$${fmtMoney(tx.amount)}</td>
-          <td>${(tx.status || "pending").toUpperCase()}</td>
-        </tr>`).join("");
-
-    } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="4">Error: ${e.message || "No transactions yet."}</td></tr>`;
-    }
+  if (transactions.length === 0) {
+    txList.innerHTML = "<p>No transactions yet</p>";
+    return;
   }
+
+  transactions.forEach((tx) => {
+    let statusClass = "";
+    if (tx.status.toLowerCase() === "success") statusClass = "status-success";
+    else if (tx.status.toLowerCase() === "pending") statusClass = "status-pending";
+    else statusClass = "status-failed";
+
+    const item = document.createElement("div");
+    item.className = "transaction-item";
+    item.innerHTML = `
+      <p><strong>Type:</strong> ${tx.type}</p>
+      <p><strong>Amount:</strong> $${fmtMoney(tx.amount)}</p>
+      <p><strong>Status:</strong> <span class="${statusClass}">${tx.status}</span></p>
+      <p><strong>Date:</strong> ${fmtDate(tx.date)}</p>
+      <hr>
+    `;
+    txList.appendChild(item);
+  });
+}
+
   // ---------- Withdraw ----------
 $("#WithdrawBtn")?.addEventListener("click", async () => {
   const amount = parseFloat($("#withdrawAmount").value);
@@ -996,7 +1025,7 @@ $("#DepositBtn")?.addEventListener("click", () => {
 
     $("#dashboardCard")?.classList.remove("hidden");
     hydrateStatsFromUser(user);
-    loadTransactions();
+    loadTransactions(user);
 
     $("#depositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
     $("#withdrawBtn")?.addEventListener("click", () => window.openModal?.("withdrawModal"));
@@ -1042,6 +1071,9 @@ if (loginBtn) loginBtn.addEventListener("click", async () => {
       body: JSON.stringify({ email, password })
     });
     const data = await res.json();
+    if (data.success && data.user) {
+  showUserDashboard(data.user);
+}
     if (!res.ok || !data.success) throw new Error(data.message || "Login failed");
 
     
