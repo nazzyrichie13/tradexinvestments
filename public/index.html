@@ -729,133 +729,77 @@
       
 
     </footer>
-<script>
+    <script>
+document.addEventListener("DOMContentLoaded", () => {
+  const $ = (selector) => document.querySelector(selector);
+  const backendUrl = "https://tradexinvestments.onrender.com"; // replace with your backend URL
 
-  document.addEventListener("DOMContentLoaded", () => {
+  /*** Helper Functions ***/
+  const openModal = (modalId) => {
+    $("#overlay").style.display = "block";
+    $(modalId).classList.remove("hidden");
+  };
 
-  window.$ = window.$ || ((selector) => document.querySelector(selector));
-  const backendUrl = "https://www.tradexinvest.net";
-  const overlay = $("#overlay");
+  const closeModal = (modalId) => {
+    $(modalId).classList.add("hidden");
+    $("#overlay").style.display = "none";
+  };
 
-  // ---------- Overlay / Modals ----------
-  function openModal(id) {
-    if (!overlay) return;
-    const modal = $(`#${id}`);
-    if (!modal) return;
-    overlay.classList.remove("hidden");
-    overlay.style.display = "block";
-    modal.classList.remove("hidden");
-    modal.style.display = "block";
-  }
-
-  function closeModal(id) {
-    const modal = $(`#${id}`);
-    if (modal) {
-      modal.classList.add("hidden");
-      modal.style.display = "none";
-    }
-    const anyOpen = [...document.querySelectorAll(".modal")].some(m => !m.classList.contains("hidden"));
-    if (!anyOpen && overlay) {
-      overlay.classList.add("hidden");
-      overlay.style.display = "none";
-    }
-  }
-
-  overlay?.addEventListener("click", () => {
-    document.querySelectorAll(".modal").forEach(m => {
-      m.classList.add("hidden");
-      m.style.display = "none";
-    });
-    overlay.classList.add("hidden");
-    overlay.style.display = "none";
+  /*** Overlay close ***/
+  $("#overlay")?.addEventListener("click", () => {
+    document.querySelectorAll(".modal").forEach(modal => modal.classList.add("hidden"));
+    $("#overlay").style.display = "none";
   });
 
   document.querySelectorAll("[data-close]").forEach(btn => {
-    btn.addEventListener("click", () => closeModal(btn.dataset.close));
+    btn.addEventListener("click", () => closeModal(`#${btn.dataset.close}`));
   });
 
-  // ---------- Session Helpers ----------
-  function setSession(user, jwt) {
-    if (user) localStorage.setItem("currentUser", JSON.stringify(user));
-    if (jwt) localStorage.setItem("jwtToken", jwt);
-  }
+  /*** Open modals ***/
+  $("#openLogin")?.addEventListener("click", () => openModal("#loginModal"));
+  $("#openSignup")?.addEventListener("click", () => openModal("#signupModal"));
+  $("#openAdminLogin")?.addEventListener("click", () => openModal("#adminLoginModal"));
+  $("#ctaLogin")?.addEventListener("click", () => openModal("#loginModal"));
+  $("#ctaSignup")?.addEventListener("click", () => openModal("#signupModal"));
 
-  function clearSession() {
-    localStorage.removeItem("currentUser");
-    localStorage.removeItem("jwtToken");
-    localStorage.removeItem("tempToken");
-  }
+  /*** User dashboard functions ***/
+  const showUserDashboard = (user) => {
+    $("#dashboardSection").style.display = "block";
+    $("#welcomeUser").textContent = `Welcome, ${user.name}`;
+    $("#statBalance").textContent = `$${user.balance.toFixed(2)}`;
+    $("#statProfit").textContent = `$${user.profit.toFixed(2)}`;
+    $("#statInterest").textContent = `$${user.interest.toFixed(2)}`;
 
-  const authHeaders = () => ({
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${localStorage.getItem("jwtToken") || ""}`
-  });
-  function adminHeaders() {
-  return {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${localStorage.getItem("adminToken") || ""}`
+    $("#openLogin").classList.add("hidden");
+    $("#openSignup").classList.add("hidden");
+    $("#openDashboard").classList.remove("hidden");
+    $("#logoutTop").classList.remove("hidden");
   };
-}
 
-  const fmtMoney = n => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const fmtDate = d => new Date(d).toLocaleString();
+  const clearUserDashboard = () => {
+    $("#dashboardSection").style.display = "none";
+    $("#openLogin").classList.remove("hidden");
+    $("#openSignup").classList.remove("hidden");
+    $("#openDashboard").classList.add("hidden");
+    $("#logoutTop").classList.add("hidden");
+  };
 
-  // ---------- Fetch Current User ----------
-  async function fetchCurrentUser() {
-    const token = localStorage.getItem("jwtToken");
-    if (!token) return null;
+  /*** Logout ***/
+  $("#logoutTop")?.addEventListener("click", () => {
+    localStorage.removeItem("jwtToken");
+    clearUserDashboard();
+  });
 
-    try {
-      const res = await fetch(`${backendUrl}/api/auth/current-user`, { headers: { "Authorization": `Bearer ${token}` } });
-      if (!res.ok) return null;
-      const user = await res.json();
-      console.log("✅ Current user:", user);
-      localStorage.setItem("currentUser", JSON.stringify(user));
-      return user;
-    } catch (err) {
-      console.error("Failed to fetch current user:", err);
-      return null;
-    }
-  }
+  $("#logoutAdmin")?.addEventListener("click", () => {
+    localStorage.removeItem("adminToken");
+    $("#adminDashboard").classList.add("hidden");
+  });
 
-  // ---------- Dashboard ----------
-  function hydrateStats(user) {
-    if (!user) return;
-    $("#statBalance") && ($("#statBalance").textContent = fmtMoney(user.investment?.balance));
-    $("#statProfit") && ($("#statProfit").textContent = fmtMoney(user.investment?.profit));
-    $("#statInterest") && ($("#statInterest").textContent = fmtMoney(user.investment?.interest));
-    $("#welcomeUser") && ($("#welcomeUser").textContent = `Welcome, ${user.name}`);
-    $("#welcomeEmail") && ($("#welcomeEmail").textContent = user.email);
-  }
-
-  function showUserDashboard(user) {
-    if (!user) return;
-    closeModal("loginModal");
-    closeModal("signupModal");
-    closeModal("termsModal");
-    closeModal("twoFAModal");
-
-    $("#dashboardCard")?.classList.remove("hidden");
-    hydrateStats(user);
-
-    $("#openLogin")?.classList.add("hidden");
-    $("#openSignup")?.classList.add("hidden");
-    $("#openDashboard")?.classList.remove("hidden");
-    $("#logoutTop")?.classList.remove("hidden");
-  }
-
-  // ---------- Auto-show user ----------
-  const savedUser = localStorage.getItem("currentUser");
-  if (savedUser) {
-    try { showUserDashboard(JSON.parse(savedUser)); }
-    catch { localStorage.removeItem("currentUser"); }
-  }
-
-  // ---------- User Login ----------
+  /*** User Login ***/
   $("#loginSubmit")?.addEventListener("click", async () => {
-    const email = $("#liEmail")?.value.trim();
-    const password = $("#liPassword")?.value.trim();
-    if (!email || !password) return alert("Enter email & password");
+    const email = $("#liEmail").value;
+    const password = $("#liPassword").value;
+    if (!email || !password) return alert("Please enter email and password");
 
     try {
       const res = await fetch(`${backendUrl}/api/auth/user-login`, {
@@ -863,236 +807,163 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
       });
-
       const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message || "Login failed");
-
-      if (data.requiresTerms) {
-        localStorage.setItem("tempToken", data.tempToken);
-        openModal("termsModal");
-        return;
-      }
-
-      if (data.requires2FA) {
-        localStorage.setItem("tempToken", data.tempToken);
-        openModal("twoFAModal");
-        startTwofaCountdown(300);
-        alert("2FA code sent to your email.");
-      }
-
+      if (data.token && data.user) {
+        localStorage.setItem("jwtToken", data.token);
+        showUserDashboard(data.user);
+        closeModal("#loginModal");
+      } else alert(data.error || "Login failed");
     } catch (err) {
       console.error(err);
-      alert(err.message);
+      alert("Login error");
     }
   });
 
-  // ---------- Accept Terms ----------
-  $("#acceptTermsBtn")?.addEventListener("click", async () => {
-    const tempToken = localStorage.getItem("tempToken");
-    if (!tempToken) return alert("No temp session");
+  /*** Signup ***/
+  $("#signupSubmit")?.addEventListener("click", async () => {
+    const name = $("#suName").value;
+    const email = $("#suEmail").value;
+    const password = $("#suPassword").value;
+    if (!name || !email || !password) return alert("Fill all fields");
 
     try {
-      const res = await fetch(`${backendUrl}/api/auth/accept-terms`, {
+      const res = await fetch(`${backendUrl}/api/auth/user-signup`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${tempToken}`
-        }
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password })
       });
-
       const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message || "Could not accept terms");
-
-      console.log("✅ Terms accepted");
-      closeModal("termsModal");
-
-      // After accepting terms → 2FA
-      openModal("twoFAModal");
-      startTwofaCountdown(300);
-
+      if (data.success) {
+        alert("Signup successful, please login");
+        closeModal("#signupModal");
+      } else alert(data.error || "Signup failed");
     } catch (err) {
       console.error(err);
-      alert(err.message);
+      alert("Signup error");
     }
   });
 
-  // ---------- Verify 2FA ----------
-  $("#verify2FA")?.addEventListener("click", async () => {
-    const code = $("#twofaCode")?.value.trim();
-    const tempToken = localStorage.getItem("tempToken");
-    if (!code || !tempToken) return alert("Enter 2FA code");
+  /*** Admin Login ***/
+  $("#adminLoginSubmit")?.addEventListener("click", async () => {
+    const email = $("#adminEmail").value;
+    const password = $("#adminPassword").value;
+    if (!email || !password) return alert("Enter admin credentials");
 
     try {
-      const res = await fetch(`${backendUrl}/api/auth/verify-2fa`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${tempToken}`
-        },
-        body: JSON.stringify({ code })
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message || "Invalid 2FA code");
-
-      // Success → store final JWT
-      localStorage.setItem("jwtToken", data.token);
-      localStorage.removeItem("tempToken");
-
-      closeModal("twoFAModal");
-      overlay.style.display = "none";
-
-      // Fetch user and show dashboard
-      const user = await fetchCurrentUser();
-      if (user) showUserDashboard(user);
-
-    } catch (err) {
-      console.error("❌ 2FA Verification Error:", err);
-      alert(err.message);
-    }
-  });
-
-  // ---------- 2FA Countdown ----------
-  let twofaTimer;
-  function startTwofaCountdown(seconds) {
-    clearInterval(twofaTimer);
-    const display = $("#twofaTimer");
-    let remaining = seconds;
-
-    const update = () => {
-      if (display) display.textContent = `${String(Math.floor(remaining/60)).padStart(2,"0")}:${String(remaining%60).padStart(2,"0")}`;
-    };
-
-    update();
-    twofaTimer = setInterval(() => {
-      remaining--;
-      update();
-      if (remaining <= 0) clearInterval(twofaTimer);
-    }, 1000);
-  }
-
-})
-
-  async function loadTransactions(){
-    const tbody = $("#txTable tbody");
-    if(!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
-    try {
-      const res = await fetch(`${backendUrl}/api/transactions/my`, {headers: authHeaders()});
-      const data = await res.json();
-      if(!res.ok) throw new Error(data.message || "Failed to load transactions");
-      const txs = Array.isArray(data.transactions) ? data.transactions : (data && data._id ? [data] : []);
-      if(!txs.length){ tbody.innerHTML=`<tr><td colspan="4">No transactions yet.</td></tr>`; return; }
-      tbody.innerHTML = txs
-        .sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt))
-        .map(tx=>`<tr>
-          <td>${fmtDate(tx.createdAt)}</td>
-          <td>${(tx.type||"").toUpperCase()}</td>
-          <td>$${fmtMoney(tx.amount)}</td>
-          <td>${(tx.status||"pending").toUpperCase()}</td>
-        </tr>`).join("");
-    } catch(e){
-      tbody.innerHTML = `<tr><td colspan="4">Error: ${e.message}</td></tr>`;
-    }
-  }
-
-  // ---------- Signup ----------
-  $("#signupSubmit")?.addEventListener("click", async ()=>{
-    const name = $("#suName")?.value.trim();
-    const email = $("#suEmail")?.value.trim();
-    const password = $("#suPassword")?.value.trim();
-    if(!name || !email || !password){ alert("Fill all fields."); return; }
-    try{
-      const res = await fetch(`${backendUrl}/api/auth/register`, {
-        method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({name,email,password})
-      });
-      const data = await res.json();
-      if(res.ok){ alert("Account created!"); closeModal("signupModal"); }
-      else alert(data.message || "Signup failed");
-    }catch(err){ console.error(err); alert("Something went wrong"); }
-  });
-
-  // ---------- User Login ----------
-
-
-  // ---------- Admin Login ----------
-  $("#adminLoginSubmit")?.addEventListener("click", async ()=>{
-    localStorage.removeItem("adminToken");
-    localStorage.removeItem("currentAdmin");
-    const email = $("#adminEmail")?.value.trim();
-    const password = $("#adminPassword")?.value.trim();
-    if(!email || !password){ alert("Enter admin email & password"); return; }
-    try{
       const res = await fetch(`${backendUrl}/api/auth/admin-login`, {
-        method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({email,password})
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
       });
       const data = await res.json();
-      if(!res.ok || !data.success) throw new Error(data.message || "Invalid login");
-      localStorage.setItem("adminToken", data.token);
-      localStorage.setItem("currentAdmin", JSON.stringify(data.admin));
-      closeModal("adminLoginModal");
-      showAdminDashboard();
-    }catch(err){ alert("Admin login failed: "+err.message); }
-  });
-
-  function showAdminDashboard(){
-    $("#adminDashboard")?.classList.remove("hidden");
-    loadAdminUsers();
-    loadWithdrawals();
-  }
-
-  async function loadAdminUsers(){
-    const tbody = $("#adminUsersBody");
-    if(!tbody) return;
-    tbody.innerHTML=`<tr><td colspan="6">Loading...</td></tr>`;
-    try{
-      const res = await fetch(`${backendUrl}/api/admin/users`, {headers:adminHeaders()});
-      const data = await res.json();
-      const users = data.users || [];
-      tbody.innerHTML = users.map(u=>`<tr>
-        <td>${u.name}</td><td>${u.email}</td>
-        <td><input type="number" data-id="${u._id}" data-field="balance" value="${u.investment?.balance||0}"></td>
-        <td><input type="number" data-id="${u._id}" data-field="profit" value="${u.investment?.profit||0}"></td>
-        <td><input type="number" data-id="${u._id}" data-field="interest" value="${u.investment?.interest||0}"></td>
-        <td><button class="adminSave" data-id="${u._id}">Save</button></td>
-      </tr>`).join("");
-    }catch(err){ tbody.innerHTML=`<tr><td colspan="6">Error: ${err.message}</td></tr>`; }
-  }
-
-  document.addEventListener("click", async (e)=>{
-    if(e.target.classList.contains("adminSave")){
-      const id = e.target.dataset.id;
-      const row = e.target.closest("tr");
-      const balance = parseFloat(row.querySelector('input[data-field="balance"]').value);
-      const profit = parseFloat(row.querySelector('input[data-field="profit"]').value);
-      const interest = parseFloat(row.querySelector('input[data-field="interest"]').value);
-      try{
-        const res = await fetch(`${backendUrl}/api/admin/user/${id}/investment`, {
-          method:"PUT", headers:adminHeaders(), body:JSON.stringify({balance,profit,interest})
-        });
-        const data = await res.json();
-        if(!res.ok) throw new Error(data.message || "Failed");
-        alert("User updated!");
-      }catch(err){ alert("Error updating: "+err.message); }
+      if (data.token) {
+        localStorage.setItem("adminToken", data.token);
+        $("#adminDashboard").classList.remove("hidden");
+        closeModal("#adminLoginModal");
+        loadUsers();
+      } else alert(data.error || "Admin login failed");
+    } catch (err) {
+      console.error(err);
+      alert("Admin login error");
     }
   });
 
-  async function loadWithdrawals(){
-    const tbody = $("#adminWithdrawalsBody");
-    if(!tbody) return;
-    tbody.innerHTML=`<tr><td colspan="5">Loading...</td></tr>`;
-    try{
-      const res = await fetch(`${backendUrl}/api/admin/withdrawals`, {headers:adminHeaders()});
+  /*** Admin Users Table ***/
+  const loadUsers = async () => {
+    const token = localStorage.getItem("adminToken");
+    if (!token) return;
+    try {
+      const res = await fetch(`${backendUrl}/api/admin/users`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
       const data = await res.json();
-      const withdrawals = data.withdrawals || [];
-      if(!withdrawals.length){ tbody.innerHTML=`<tr><td colspan="5">No withdrawals</td></tr>`; return; }
-      tbody.innerHTML = withdrawals.map(w=>`<tr>
-        <td>${w.userName}</td><td>${w.method}</td><td>$${fmtMoney(w.amount)}</td><td>${w.status}</td><td>${fmtDate(w.createdAt)}</td>
-      </tr>`).join("");
-    }catch(err){ tbody.innerHTML=`<tr><td colspan="5">Error: ${err.message}</td></tr>`; }
-  }
+      if (!data.users) return;
+      const tbody = $("#adminUsersBody");
+      tbody.innerHTML = "";
 
-; // End DOMContentLoaded
+      data.users.forEach(user => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${user.name}</td>
+          <td>${user.email}</td>
+          <td>${user.balance.toFixed(2)}</td>
+          <td>${user.profit.toFixed(2)}</td>
+          <td>${user.interest.toFixed(2)}</td>
+          <td><button class="btn editUserBtn" data-id="${user._id}">Edit</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.querySelectorAll(".editUserBtn").forEach(btn => {
+        btn.addEventListener("click", () => openEditUser(btn.dataset.id));
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  /*** Edit User Modal ***/
+  let editingUserId = null;
+  const openEditUser = async (userId) => {
+    editingUserId = userId;
+    const token = localStorage.getItem("adminToken");
+    const res = await fetch(`${backendUrl}/api/admin/user/${userId}`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (!data.user) return alert("User not found");
+
+    $("#editName").value = data.user.name;
+    $("#editEmail").value = data.user.email;
+    $("#editBalance").value = data.user.balance;
+    $("#editProfit").value = data.user.profit;
+    $("#editInterest").value = data.user.interest;
+    openModal("#updateUserForm");
+  };
+
+  $("#saveUserBtn")?.addEventListener("click", async () => {
+    if (!editingUserId) return;
+    const token = localStorage.getItem("adminToken");
+    const payload = {
+      name: $("#editName").value,
+      email: $("#editEmail").value,
+      balance: Number($("#editBalance").value),
+      profit: Number($("#editProfit").value),
+      interest: Number($("#editInterest").value)
+    };
+    try {
+      const res = await fetch(`${backendUrl}/api/admin/user/${editingUserId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("User updated successfully");
+        closeModal("#updateUserForm");
+        loadUsers();
+      } else alert(data.error || "Update failed");
+    } catch (err) {
+      console.error(err);
+      alert("Error updating user");
+    }
+  });
+
+  /*** Auto-load user dashboard if JWT exists ***/
+  const token = localStorage.getItem("jwtToken");
+  if (token) {
+    fetch(`${backendUrl}/api/auth/user-profile`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.user) showUserDashboard(data.user);
+      });
+  }
+});
 </script>
 </body>
 </html>
