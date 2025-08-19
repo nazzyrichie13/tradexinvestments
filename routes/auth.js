@@ -43,6 +43,16 @@ router.post("/register", async (req, res) => {
     res.status(500).json({ message: "Server error during signup." });
   }
 });
+router.get("/current-user", requireAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select("-password"); // don’t return password
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    res.json(user); // ✅ always return JSON
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 // =========================
 // USER LOGIN

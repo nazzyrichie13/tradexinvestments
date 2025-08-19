@@ -928,9 +928,11 @@ function closeModal(id){
       const data = await res.json();
       if(!res.ok || !data.success) throw new Error(data.message || "Could not accept terms");
       closeModal("termsModal");
-      openModal("twoFAModal");
-      startTwofaCountdown(300);
-      alert("Terms accepted. Enter 2FA code.");
+     openModal("twoFAModal");   // 👈 always happens
+     startTwofaCountdown(300);
+     alert("Terms accepted. Enter 2FA code.");
+
+    
     }catch(err){ console.error(err); alert(err.message); }
   });
 
@@ -940,31 +942,50 @@ function closeModal(id){
   const tempToken = localStorage.getItem("tempToken");
   if (!code || !tempToken) { alert("Enter 2FA code"); return; }
 
-  try {
-    const res = await fetch(`${backendUrl}/api/auth/verify-2fa`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${tempToken}`
-      },
-      body: JSON.stringify({ code })
-    });
-
-    const data = await res.json();
-    if (!res.ok || !data.success) throw new Error(data.message || "Invalid 2FA code");
-document.getElementById("overlay").style.display = "none";
-document.getElementById("twoFAModal").style.display = "none";
-    localStorage.setItem("jwtToken", data.token);
-    localStorage.removeItem("tempToken");
-
-    // Fetch fresh user data from backend
+  
     const user = await fetchCurrentUser();
     if (user) showUserDashboard(user);
 
-  } catch (err) {
-    console.error(err);
-    alert(err.message);
+  try {
+  const res = await fetch(`${backendUrl}/api/auth/verify-2fa`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${localStorage.getItem("tempToken") || ""}`
+    },
+    body: JSON.stringify({ code: document.getElementById("twoFACode").value })
+  });
+
+  // First check response type safely
+  let data;
+  try {
+    data = await res.json();
+  } catch (parseErr) {
+    throw new Error("Server returned an invalid response. Please try again.");
   }
+
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Invalid 2FA code");
+  }
+
+  // ✅ Success
+  document.getElementById("overlay").style.display = "none";
+  document.getElementById("twoFAModal").style.display = "none";
+
+  localStorage.setItem("jwtToken", data.token);
+  localStorage.removeItem("tempToken");
+
+  // Fetch and refresh user
+  const user = await fetchCurrentUser();
+  if (user) {
+    showUserDashboard(user);
+  }
+
+} catch (err) {
+  console.error("❌ 2FA Verification Error:", err);
+  alert(err.message || "Something went wrong verifying 2FA.");
+}
+
 });
 
 async function fetchCurrentUser() {
@@ -972,20 +993,24 @@ async function fetchCurrentUser() {
   if (!token) return null;
 
   try {
-    const res = await fetch(`${backendUrl}/api/auth/me`, {
+    const res = await fetch(`${backendUrl}/api/auth/current-user`, {
       headers: { "Authorization": `Bearer ${token}` }
     });
-    const data = await res.json();
-    if (res.ok && data.user) {
-      localStorage.setItem("currentUser", JSON.stringify(data.user));
-      return data.user;
+
+    if (!res.ok) {
+      console.error("Failed to fetch user:", res.status);
+      return null;
     }
-    return null;
+
+    const user = await res.json();
+    console.log("✅ Current user:", user);
+    return user;
   } catch (err) {
     console.error("Failed to fetch current user:", err);
     return null;
   }
 }
+
 
 
 
