@@ -994,7 +994,8 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const res = await fetch(`${backendUrl}/api/auth/accept-terms`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${tempToken}` }
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${tempToken}` },
+          body: JSON.stringify({ accepted: true })
         });
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.message || "Could not accept terms");
@@ -1027,7 +1028,7 @@ document.addEventListener("DOMContentLoaded", () => {
       localStorage.setItem("currentUser", JSON.stringify(data.user));
       localStorage.removeItem("tempToken");
 
-      await fetchCurrentUser();
+      await fetchCurrentUser(user);
       showUserDashboard(JSON.parse(localStorage.getItem("currentUser")));
     } catch (err) { console.error(err); alert(err.message); }
   });
