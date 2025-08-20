@@ -371,18 +371,23 @@
   <button type="submit">Add Investment</button>
 </form>
 
-<table>
-  <thead>
-    <tr>
-      <th>User</th>
-      <th>Amount</th>
-      <th>Date</th>
-      <th>Method</th>
-      <th>Action</th>
-    </tr>
-  </thead>
-  <tbody id="investmentTableBody"></tbody>
-</table>
+<body onload="loadInvestments()">
+  <table>
+    <thead>
+      <tr>
+        <th>User Email</th>
+        <th>Amount</th>
+        <th>Date</th>
+        <th>Method</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="investmentTableBody"></tbody>
+  </table>
+
+  <script src="admin.js"></script>
+</body>
+
 
 
 <!-- ================= Edit User Modal ================= -->
@@ -983,15 +988,35 @@ function openModal(id) {
   });
 
 // Hydrate user stats into the dashboard
-async function loadUserDashboard(userId) {
-  const res = await fetch(`/api/investments/${userId}`);
-  const data = await res.json();
+// When user logs in, hydrate dashboard from DB data
+function hydrateStatsFromUser(user) {
+  if (!user) return;
 
-  if (data.success) {
-    const totalInvestment = data.investments.reduce((sum, inv) => sum + inv.amount, 0);
-    document.getElementById("statInvestment").innerText = `$${totalInvestment.toFixed(2)}`;
+  // ---- Investment Stat ----
+  const investments = user.investments || [];
+  const totalInvestment = investments.reduce((sum, inv) => sum + inv.amount, 0);
+  document.getElementById("statInvestment").innerText = `$${totalInvestment.toFixed(2)}`;
+
+  // ---- Transactions List ----
+  const txList = document.getElementById("transactionsList");
+  txList.innerHTML = "";
+
+  if (investments.length === 0) {
+    txList.innerHTML = "<p>No transactions yet</p>";
+    return;
   }
+
+  investments.forEach(inv => {
+    txList.innerHTML += `
+      <div class="transaction-item">
+        <span class="tx-amount">$${inv.amount.toFixed(2)}</span>
+        <span class="tx-method">${inv.method}</span>
+        <span class="tx-date">${new Date(inv.date).toLocaleDateString()}</span>
+      </div>
+    `;
+  });
 }
+
 async function loadTransactionHistory(userId) {
   try {
     const res = await fetch(`/api/investments/${userId}`);
@@ -1096,10 +1121,9 @@ $("#DepositBtn")?.addEventListener("click", () => {
     window.closeModal?.("twoFAModal");
 
     $("#dashboardCard")?.classList.remove("hidden");
-    loadInvestments(user)
-    
-    loadUserDashboard(user)
-    loadTransactionHistory(user)
+     
+  hydrateStatsFromUser(user)
+  loadTransactionHistory?.(user);
 
     $("#openDepositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
     $("#openWithdrawBtn")?.addEventListener("click", () => window.openModal?.("withdrawModal"));
