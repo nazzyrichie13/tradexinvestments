@@ -1136,8 +1136,8 @@ $("#DepositBtn")?.addEventListener("click", () => {
 
     $("#dashboardCard")?.classList.remove("hidden");
      
-  hydrateStatsFromUser(user);
-  loadTransactionHistory(user);
+  hydrateStatsFromUser(user._id);
+   loadTransactionHistory(user._id);
 
     $("#openDepositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
     $("#openWithdrawBtn")?.addEventListener("click", () => window.openModal?.("withdrawModal"));
@@ -1523,7 +1523,7 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
   const date = document.getElementById("investmentDate").value;
   const method = document.getElementById("investmentMethod").value;
 
-  const res = await fetch(`/api/user/admin/investments`, {
+  const res = await fetch(`${backendUrl}/api/admin/investments`, {
     method: "POST",
     headers: { 
       "Content-Type": "application/json",
