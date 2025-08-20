@@ -1,3 +1,67 @@
+// admin.js
+// ----------------------
+// Utility: get admin headers
+function adminAuthHeaders() {
+  const token = localStorage.getItem("adminToken"); // save token after login
+  if (!token) {
+    alert("No admin token found. Please log in again.");
+    window.location.href = "admin-login.html"; // redirect to login page
+    return {};
+  }
+  return {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`
+  };
+}
+
+// ----------------------
+// Load investments into Admin Dashboard
+async function loadInvestments() {
+  try {
+    const res = await fetch("http://localhost:5000/api/admin/investments", {
+      method: "GET",
+      headers: adminAuthHeaders()
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to load investments");
+
+    const table = document.getElementById("investmentTableBody");
+    table.innerHTML = "";
+
+    data.forEach((inv) => {
+      const row = document.createElement("tr");
+
+      row.innerHTML = `
+        <td>${inv.user?.email || "Unknown"}</td>
+        <td>${inv.amount}</td>
+        <td>${inv.method}</td>
+        <td>${new Date(inv.date).toLocaleString()}</td>
+        <td>${inv.status}</td>
+      `;
+
+      table.appendChild(row);
+    });
+
+  } catch (err) {
+    console.error("Error loading investments:", err);
+    alert("Could not load investments. Check console for details.");
+  }
+}
+
+// ----------------------
+// Call this when admin dashboard loads
+window.addEventListener("DOMContentLoaded", () => {
+  loadInvestments();
+});
+
+
+
+
+
+
+
+
 document.addEventListener("DOMContentLoaded", () => {
   const storedUser = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");

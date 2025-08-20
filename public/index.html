@@ -773,6 +773,7 @@
 
     </footer>   
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <script src="admin.js" type="module"></script>
 <script>
   
 // Function to toggle mobile nav
@@ -1455,6 +1456,13 @@ socket.on("withdrawal-updated", (data) => {
   alert(`Withdrawal ${data.id} updated: ${data.status}`);
   loadWithdrawals();
 });
+function getAdminHeaders() {
+  const token = localStorage.getItem("adminToken");
+  return {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`
+  };
+}
 // Load investment table
 async function loadInvestments() {
   try {
