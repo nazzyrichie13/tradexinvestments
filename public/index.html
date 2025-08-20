@@ -1446,7 +1446,7 @@ socket.on("withdrawal-updated", (data) => {
   
 // Load investment table
 async function loadInvestments() {
-  const res = await fetch("/api/admin/investments");
+  const res = await fetch(" ${backendUrl}/api/admin/investments");
   const data = await res.json();
 
   if (data.success) {
@@ -1472,7 +1472,7 @@ async function loadInvestments() {
 // Delete investment
 async function deleteInvestment(id) {
   if (!confirm("Are you sure?")) return;
-  const res = await fetch(`/api/admin/investments/${id}`, { method: "DELETE" });
+  const res = await fetch(`${backendUrl}/api/admin/investments/${id}`, { method: "DELETE" });
   const data = await res.json();
   if (data.success) loadInvestments();
 }
@@ -1486,7 +1486,7 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
   const date = document.getElementById("investmentDate").value;
   const method = document.getElementById("investmentMethod").value;
 
-  const res = await fetch("/api/admin/investments", {
+  const res = await fetch("${backendUrl}/api/admin/investments", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, amount, date, method })
