@@ -1136,8 +1136,8 @@ $("#DepositBtn")?.addEventListener("click", () => {
 
     $("#dashboardCard")?.classList.remove("hidden");
      
-  hydrateStatsFromUser(user)
-  loadTransactionHistory(userId)
+  hydrateStatsFromUser(user);
+  loadTransactionHistory(user);
 
     $("#openDepositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
     $("#openWithdrawBtn")?.addEventListener("click", () => window.openModal?.("withdrawModal"));
