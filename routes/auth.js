@@ -373,23 +373,35 @@ router.post("/api/admin/investments", async (req, res) => {
   try {
     const { email, amount, date, method } = req.body;
 
+    // Validate inputs
+    if (!email || !amount || !date || !method) {
+      return res.status(400).json({ success: false, message: "All fields are required" });
+    }
+
     // Find user by email
     const user = await User.findOne({ email });
-    if (!user) return res.json({ success: false, message: "User not found" });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
 
-    // Create investment
+    // Create new investment
     const investment = new Investment({
       user: user._id,
       amount,
-      date,
-      method
+      paymentDate: date, 
+      method,
     });
+
     await investment.save();
 
-    res.json({ success: true, investment });
+    res.json({
+      success: true,
+      message: "Investment saved successfully",
+      investment,
+    });
   } catch (err) {
-    console.error(err);
-    res.json({ success: false, message: "Server error" });
+    console.error("Error saving investment:", err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
