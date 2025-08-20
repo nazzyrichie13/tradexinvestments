@@ -408,7 +408,7 @@
   <div class="card">
   <div id="dashboardCard" class="card hidden ">
      <h2 id="userWelcome">Welcome User</h2>
-   <button id="openDepositBtn" class=" btn btn-primary"> Deposit</button>
+<button id="openDepositBtn" class=" btn btn-primary"> Deposit</button>
 <button id="openWithdrawBtn" class="btn btn-primary">Withdraw</button> 
 
 <div class="stats">
@@ -447,7 +447,7 @@
     <button id="DepositBtn" class="btn btn-primary">Deposit</button>
   </div>
 </div>
-</div>
+
 
 <!-- Withdraw Modal -->
 <div id="withdrawModal" class="modal">
@@ -1097,7 +1097,9 @@ $("#DepositBtn")?.addEventListener("click", () => {
 
     $("#dashboardCard")?.classList.remove("hidden");
     loadInvestments(user)
-    loadTransactionHistory(userId)
+    
+    loadUserDashboard(user)
+    loadTransactionHistory(user)
 
     $("#openDepositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
     $("#openWithdrawBtn")?.addEventListener("click", () => window.openModal?.("withdrawModal"));
@@ -1402,7 +1404,7 @@ function startTwofaCountdown(seconds) {
     $("#adminDashboard")?.classList.add("hidden");
   });
 });
-const socket = io("http://localhost:5500"); // adjust backend URL
+const socket = io("https://www.tradexinvest.net"); // adjust backend URL
 
 // Listen for new withdrawals
 socket.on("new-withdrawal", (data) => {
@@ -1463,7 +1465,7 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
   const res = await fetch("/api/admin/investments", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, amount, paymentDate, method })
+    body: JSON.stringify({ email, amount, date, method })
   });
 
   const data = await res.json();

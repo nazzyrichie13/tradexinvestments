@@ -31,8 +31,8 @@ const server = http.createServer(app);
 app.use(cors({
   origin: [
     "https://www.tradexinvest.net",   // production frontend
-    "http://127.0.0.1:5500",          // local testing
-    "http://localhost:5500"            // sometimes localhost works too
+    "https://www.tradexinvest.net",          // local testing
+    "https://www.tradexinvest.net"            // sometimes localhost works too
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
