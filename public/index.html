@@ -362,8 +362,8 @@
   </div>
 <div class="grid">
   <div class="card">
-  <div id="dashboardCard">
-   <button id="openDepositBtn" class="btn btn-primary">Deposit</button>
+  <div id="dashboardCard" class="card hidden ">
+   <button id="openDepositBtn" class=" btn btn-primary"> Deposit</button>
 <button id="openWithdrawBtn" class="btn btn-primary">Withdraw</button> 
 
 <div class="stats">
@@ -921,17 +921,6 @@ function openModal(id) {
   });
 
 // Hydrate user stats into the dashboard
-function hydrateStatsFromUser(user) {
-  if (!user) return;
-
-  const inv = user.investment || {};
-
-  $("#statBalance").textContent = fmtMoney(inv.balance || 0);
-  $("#statProfit").textContent = fmtMoney(inv.profit || 0);
-  $("#statInterest").textContent = fmtMoney(inv.interest || 0);
-
-  $("#welcomeName").textContent = `Welcome ${user.name || "User"}`;
-}
 
   // ---------- Load Transactions ----------
   function loadTransactions(user) {
@@ -1014,12 +1003,22 @@ $("#DepositBtn")?.addEventListener("click", () => {
   function showUserDashboard(user) {
     const dashboardCard = $("#dashboardCard");
   
+    
     if (!user) return;
-    dashboardCard.innerHTML = ""; // clear previous
-  const welcomeMsg = document.createElement("h2");
-  welcomeMsg.textContent = `Welcome, ${user.name}!`;
-  dashboardCard.prepend(welcomeMsg);
-  dashboardCard.style.display = "block"; // show dashboard
+  const inv = user.investment || {};
+
+  // ✅ make sure these IDs exist in your HTML
+  const balanceEl = $("#statBalance");
+  const profitEl = $("#statProfit");
+  const interestEl = $("#statInterest");
+  const welcomeEl = $("#userWelcome");
+
+  if (balanceEl) balanceEl.textContent = fmtMoney(inv.balance || 0);
+  if (profitEl) profitEl.textContent = fmtMoney(inv.profit || 0);
+  if (interestEl) interestEl.textContent = fmtMoney(inv.interest || 0);
+  if (welcomeEl) welcomeEl.textContent = `Welcome ${user.name || "User"}`;
+
+  $("#dashboardCard").style.display = "block";
 
 
 
@@ -1028,8 +1027,8 @@ $("#DepositBtn")?.addEventListener("click", () => {
     window.closeModal?.("twoFAModal");
 
     $("#dashboardCard")?.classList.remove("hidden");
-    hydrateStatsFromUser(user);
-    loadTransactions(user);
+    loadTransactions(user) 
+    
 
     $("#depositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
     $("#withdrawBtn")?.addEventListener("click", () => window.openModal?.("withdrawModal"));
