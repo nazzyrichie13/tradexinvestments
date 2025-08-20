@@ -1018,32 +1018,45 @@ function hydrateStatsFromUser(user) {
 }
 
 async function loadTransactionHistory(userId) {
+  const txList = document.getElementById("transactionsList");
+  txList.innerHTML = "<p>Loading...</p>";
+
   try {
-    const res = await fetch(`/api/investments/${userId}`);
-    if (!res.ok) throw new Error("Failed to fetch transactions");
+    // ✅ Always use full backend URL
+    const res = await fetch(`${backendUrl}/api/investments/${userId}`);
+
+    // ✅ If server didn't return JSON
+    if (!res.ok) {
+      throw new Error(`Failed to fetch (${res.status})`);
+    }
 
     const data = await res.json();
-    const tbody = document.getElementById("transactionsList");
-    tbody.innerHTML = "";
 
-    if (!data.success || !data.investments.length) {
-      tbody.innerHTML = `<tr><td colspan="4">No transactions yet</td></tr>`;
+    // ✅ Defensive check
+    const transactions = data.investments || [];
+    txList.innerHTML = "";
+
+    if (transactions.length === 0) {
+      txList.innerHTML = "<p>No transactions yet</p>";
       return;
     }
 
-    data.investments.forEach(inv => {
-      const row = `
-        <tr>
-          <td>${inv.paymentDate ? new Date(inv.paymentDate).toLocaleDateString() : "-"}</td>
-          <td>Investment</td>
-          <td>$${Number(inv.amount).toFixed(2)}</td>
-          <td>${inv.method || "-"}</td>
-        </tr>
+    // ✅ Render transactions
+    transactions.forEach((tx) => {
+      const div = document.createElement("div");
+      div.className = "transaction";
+
+      div.innerHTML = `
+        <p><strong>Amount:</strong> $${Number(tx.amount).toFixed(2)}</p>
+        <p><strong>Method:</strong> ${tx.method || "N/A"}</p>
+        <p><strong>Date:</strong> ${new Date(tx.date).toLocaleString()}</p>
       `;
-      tbody.innerHTML += row;
+
+      txList.appendChild(div);
     });
   } catch (err) {
     console.error("Error loading transactions:", err);
+    txList.innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
   }
 }
 
@@ -1123,7 +1136,7 @@ $("#DepositBtn")?.addEventListener("click", () => {
     $("#dashboardCard")?.classList.remove("hidden");
      
   hydrateStatsFromUser(user)
-  loadTransactionHistory?.(user);
+  loadTransactionHistory(userId)
 
     $("#openDepositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
     $("#openWithdrawBtn")?.addEventListener("click", () => window.openModal?.("withdrawModal"));
