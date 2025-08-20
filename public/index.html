@@ -1425,7 +1425,7 @@ function startTwofaCountdown(seconds) {
     $("#adminDashboard")?.classList.add("hidden");
   });
 });
-const socket = io("http://localhost:10000"); // adjust backend URL
+const socket = io("http://localhost:5500"); // adjust backend URL
 
 // Listen for new withdrawals
 socket.on("new-withdrawal", (data) => {
