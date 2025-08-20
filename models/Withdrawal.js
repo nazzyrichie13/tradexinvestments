@@ -1,14 +1,12 @@
+// models/Withdrawal.js
 import mongoose from "mongoose";
 
-const withdrawalSchema = new mongoose.Schema(
-  {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    method: { type: String, enum: ["paypal", "bitcoin", "cashapp", "bank"], required: true },
-    amount: { type: Number, required: true, min: 1 },
-    status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" }
-  },
-  { timestamps: true }
-);
+const withdrawalSchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  amount: { type: Number, required: true },
+  method: { type: String, enum: ["bank", "paypal", "bitcoin", "cashapp"], required: true },
+  status: { type: String, enum: ["Pending", "Confirmed", "Rejected"], default: "Pending" },
+  createdAt: { type: Date, default: Date.now },
+});
 
-const Withdrawal = mongoose.model("Withdrawal", withdrawalSchema);
-export default Withdrawal;
+export default mongoose.model("Withdrawal", withdrawalSchema);

@@ -1186,7 +1186,6 @@ async function fetchCurrentUser() {
   }
 }
 
-// ---------- 2FA Timer ----------
 let twofaTimer;
 function startTwofaCountdown(seconds) {
   clearInterval(twofaTimer);
@@ -1202,7 +1201,6 @@ function startTwofaCountdown(seconds) {
     if (remaining <= 0) clearInterval(twofaTimer); 
   }, 1000);
 }
-
   
   // ---------- Admin Login ----------
   $("#openAdminLogin")?.addEventListener("click", () => openModal("adminLoginModal"));
