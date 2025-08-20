@@ -363,6 +363,7 @@
 <div class="grid">
   <div class="card">
   <div id="dashboardCard" class="card hidden ">
+     <h2 id="welcomeName">Welcome User</h2>
    <button id="openDepositBtn" class=" btn btn-primary"> Deposit</button>
 <button id="openWithdrawBtn" class="btn btn-primary">Withdraw</button> 
 
@@ -371,7 +372,6 @@
     <p>Balance: <span id="statBalance">0.00</span> USD</p>
     <p>Profit: <span id="statProfit">0.00</span> USD</p>
     <p>Interest: <span id="statInterest">0.00</span> USD</p>
-    <h2> <span id="welcomeName">guest</span></h2>
     
   </div>
 
@@ -1030,8 +1030,8 @@ $("#DepositBtn")?.addEventListener("click", () => {
     loadTransactions(user) 
     
 
-    $("#depositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
-    $("#withdrawBtn")?.addEventListener("click", () => window.openModal?.("withdrawModal"));
+    $("#openDepositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
+    $("#openWithdrawBtn")?.addEventListener("click", () => window.openModal?.("withdrawModal"));
 
     $("#openLogin")?.classList.add("hidden");
     $("#openSignup")?.classList.add("hidden");
