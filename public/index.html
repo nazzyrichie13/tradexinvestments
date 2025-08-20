@@ -1442,37 +1442,46 @@ socket.on("withdrawal-updated", (data) => {
   alert(`Withdrawal ${data.id} updated: ${data.status}`);
   loadWithdrawals();
 });
-
-  
 // Load investment table
 async function loadInvestments() {
-  const res = await fetch(" ${backendUrl}/api/admin/investments");
-  const data = await res.json();
+  try {
+    const res = await fetch(`${backendUrl}/api/admin/investments`, {
+      headers: adminAuthHeaders()
+    });
+    const data = await res.json();
 
-  if (data.success) {
     const tbody = document.getElementById("investmentTableBody");
     tbody.innerHTML = "";
 
-    data.investments.forEach(inv => {
-      tbody.innerHTML += `
-        <tr>
-          <td>${inv.user?.email || "Unknown"}</td>
-          <td>$${inv.amount.toFixed(2)}</td>
-          <td>${new Date(inv.date).toLocaleDateString()}</td>
-          <td>${inv.method}</td>
-          <td>
-            <button onclick="deleteInvestment('${inv._id}')">Delete</button>
-          </td>
-        </tr>
-      `;
-    });
+    if (data.success && data.investments.length > 0) {
+      data.investments.forEach(inv => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${inv.user?.email || "Unknown"}</td>
+            <td>$${inv.amount.toFixed(2)}</td>
+            <td>${new Date(inv.date).toLocaleDateString()}</td>
+            <td>${inv.method}</td>
+            <td>
+              <button onclick="deleteInvestment('${inv._id}')">Delete</button>
+            </td>
+          </tr>
+        `;
+      });
+    } else {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No investments found</td></tr>`;
+    }
+  } catch (err) {
+    console.error("Error loading investments:", err);
   }
 }
 
 // Delete investment
 async function deleteInvestment(id) {
   if (!confirm("Are you sure?")) return;
-  const res = await fetch(`${backendUrl}/api/admin/investments/${id}`, { method: "DELETE" });
+  const res = await fetch(`${backendUrl}/api/admin/investments/${id}`, {
+    method: "DELETE",
+    headers: adminAuthHeaders()
+  });
   const data = await res.json();
   if (data.success) loadInvestments();
 }
@@ -1486,23 +1495,25 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
   const date = document.getElementById("investmentDate").value;
   const method = document.getElementById("investmentMethod").value;
 
-  const res = await fetch("${backendUrl}/api/admin/investments", {
+  const res = await fetch(`${backendUrl}/api/admin/investments`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { 
+      "Content-Type": "application/json",
+      ...adminAuthHeaders()
+    },
     body: JSON.stringify({ email, amount, date, method })
   });
 
   const data = await res.json();
   if (data.success) {
     alert("Investment added!");
-    loadInvestments(); // reload table
+    loadInvestments();
   } else {
     alert("Failed to add investment: " + data.message);
   }
 });
 
 </script>
-
   
 </body>
 </html>
