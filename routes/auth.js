@@ -98,19 +98,23 @@ router.post("/user-login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ success: false, message: "Invalid email or password" });
 
-    // Check if terms are accepted first
+    // Step 1: Check terms first
     if (!user.acceptedTerms) {
-      // Do NOT generate 2FA yet
       const tempToken = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "10m" });
       return res.json({
         success: true,
         requiresTerms: true,
-        requires2FA: false, // 2FA not yet required
+        requires2FA: false,
         tempToken,
+        user: {
+          name: user.name,
+          email: user.email,
+          acceptedTerms: user.acceptedTerms
+        }
       });
     }
 
-    // Generate 2FA secret if missing
+    // Step 2: Check 2FA
     if (!user.twoFASecret) {
       const secret = speakeasy.generateSecret({ length: 20 });
       user.twoFASecret = secret.base32;
@@ -129,11 +133,16 @@ router.post("/user-login", async (req, res) => {
 
     const tempToken = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "10m" });
 
-    res.json({
+    return res.json({
       success: true,
       requiresTerms: false,
       requires2FA: true,
       tempToken,
+      user: {
+        name: user.name,
+        email: user.email,
+        acceptedTerms: user.acceptedTerms
+      }
     });
 
   } catch (err) {
@@ -141,7 +150,6 @@ router.post("/user-login", async (req, res) => {
     res.status(500).json({ success: false, message: "Server error during login" });
   }
 });
-
 
 // Accept terms
 router.post("/accept-terms", async (req, res) => {

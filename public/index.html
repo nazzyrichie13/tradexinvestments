@@ -1073,26 +1073,34 @@ if (loginBtn) loginBtn.addEventListener("click", async () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password })
     });
+
     const data = await res.json();
-    if (data.success && data.user) {
-  showUserDashboard(data.user);
-}
+
+    // ❌ Handle errors first
     if (!res.ok || !data.success) throw new Error(data.message || "Login failed");
 
-    
-
+    // Terms acceptance required
     if (data.requiresTerms) {
-  localStorage.setItem("tempToken", data.tempToken);
-  openModal("termsModal");
-  closeModal("twoFAModal");
-  return;
-}
-if (data.requires2FA) {
-  localStorage.setItem("tempToken", data.tempToken);
-  $("#twoFAModal").style.display = "block";
-  return;
-}
+      localStorage.setItem("tempToken", data.tempToken);
+      openModal("termsModal");
+      closeModal("twoFAModal");
+      return;
+    }
 
+    // 2FA required
+    if (data.requires2FA) {
+      localStorage.setItem("tempToken", data.tempToken);
+      $("#twoFAModal").style.display = "block";
+      startTwofaCountdown(300);
+      return;
+    }
+
+    // No terms or 2FA needed (rare case)
+    if (data.user) {
+      localStorage.setItem("jwtToken", data.token);
+      localStorage.setItem("currentUser", JSON.stringify(data.user));
+      showUserDashboard(data.user);
+    }
 
   } catch (err) {
     console.error(err);
@@ -1100,7 +1108,6 @@ if (data.requires2FA) {
   }
 });
 
-// ---------- Accept Terms ----------
 // ---------- Accept Terms ----------
 document.addEventListener("click", async (e) => {
   if (e.target.id === "acceptTermsBtn") {
@@ -1114,14 +1121,14 @@ document.addEventListener("click", async (e) => {
           "Content-Type": "application/json", 
           "Authorization": `Bearer ${tempToken}` 
         },
-        body: JSON.stringify({ accepted: true })
       });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || "Could not accept terms");
-closeModal("termsModal");
-openModal("twoFAModal");
-startTwofaCountdown(300);
- alert("Terms accepted. Please enter 2FA code.");
+
+      closeModal("termsModal");
+      openModal("twoFAModal");
+      startTwofaCountdown(300);
+      alert("Terms accepted. Please enter 2FA code.");
 
     } catch (err) { 
       console.error(err); 
@@ -1129,7 +1136,6 @@ startTwofaCountdown(300);
     }
   }
 });
-
 
 // ---------- Verify 2FA ----------
 const verify2Btn = $("#verify2FABtn");
@@ -1139,20 +1145,22 @@ if (verify2Btn) verify2Btn.addEventListener("click", async () => {
   if (!code || !tempToken) return alert("Enter 2FA code.");
 
   try {
-   const res = await fetch(`${backendUrl}/api/auth/verify-2fa`, {
+    const res = await fetch(`${backendUrl}/api/auth/verify-2fa`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code, tempToken })   //
+      body: JSON.stringify({ code, tempToken })
     });
+
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.message || "Invalid 2FA code");
 
-    localStorage.setItem("jwtToken", data.authToken);  // ✅ backend sends authToken, not token
+    // ✅ Final auth token and user
+    localStorage.setItem("jwtToken", data.authToken);
     localStorage.setItem("currentUser", JSON.stringify(data.user));
     localStorage.removeItem("tempToken");
-closeModal("twoFAModal");
-    const user = await fetchCurrentUser();
-    showUserDashboard(user); // Show dashboard **only after terms & 2FA**
+
+    closeModal("twoFAModal");
+    showUserDashboard(data.user);
 
   } catch (err) { 
     console.error(err); 
@@ -1169,7 +1177,7 @@ async function fetchCurrentUser() {
       headers: { "Authorization": `Bearer ${token}` }
     });
     if (!res.ok) return null;
-    const user = await res.json();
+    const { user } = await res.json();
     localStorage.setItem("currentUser", JSON.stringify(user));
     return user;
   } catch (err) {
@@ -1182,8 +1190,7 @@ async function fetchCurrentUser() {
 let twofaTimer;
 function startTwofaCountdown(seconds) {
   clearInterval(twofaTimer);
-  const display = $("#countdown"); // fixed ID
-
+  const display = $("#countdown");
   let remaining = seconds;
   const updateDisplay = () => { 
     if (display) display.textContent = `${String(Math.floor(remaining / 60)).padStart(2,"0")}:${String(remaining % 60).padStart(2,"0")}`; 
@@ -1195,8 +1202,6 @@ function startTwofaCountdown(seconds) {
     if (remaining <= 0) clearInterval(twofaTimer); 
   }, 1000);
 }
-
-
 
   
   // ---------- Admin Login ----------
