@@ -1073,13 +1073,11 @@ if (loginBtn) loginBtn.addEventListener("click", async () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password })
     });
-
     const data = await res.json();
 
-    // ❌ Handle errors first
     if (!res.ok || !data.success) throw new Error(data.message || "Login failed");
 
-    // Terms acceptance required
+    // Terms required first
     if (data.requiresTerms) {
       localStorage.setItem("tempToken", data.tempToken);
       openModal("termsModal");
@@ -1090,17 +1088,13 @@ if (loginBtn) loginBtn.addEventListener("click", async () => {
     // 2FA required
     if (data.requires2FA) {
       localStorage.setItem("tempToken", data.tempToken);
-      $("#twoFAModal").style.display = "block";
-      startTwofaCountdown(300);
+      openModal("twoFAModal");
       return;
     }
 
-    // No terms or 2FA needed (rare case)
-    if (data.user) {
-      localStorage.setItem("jwtToken", data.token);
-      localStorage.setItem("currentUser", JSON.stringify(data.user));
-      showUserDashboard(data.user);
-    }
+    // If login has full data (no terms/2FA), fetch latest user
+    const user = await fetchCurrentUser();
+    if (user) showUserDashboard(user);
 
   } catch (err) {
     console.error(err);
@@ -1108,7 +1102,7 @@ if (loginBtn) loginBtn.addEventListener("click", async () => {
   }
 });
 
-// ---------- Accept Terms ----------
+// Accept Terms
 document.addEventListener("click", async (e) => {
   if (e.target.id === "acceptTermsBtn") {
     const tempToken = localStorage.getItem("tempToken");
@@ -1118,9 +1112,9 @@ document.addEventListener("click", async (e) => {
       const res = await fetch(`${backendUrl}/api/auth/accept-terms`, {
         method: "POST",
         headers: { 
-          "Content-Type": "application/json", 
-          "Authorization": `Bearer ${tempToken}` 
-        },
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${tempToken}`
+        }
       });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || "Could not accept terms");
@@ -1130,14 +1124,14 @@ document.addEventListener("click", async (e) => {
       startTwofaCountdown(300);
       alert("Terms accepted. Please enter 2FA code.");
 
-    } catch (err) { 
-      console.error(err); 
-      alert(err.message); 
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
     }
   }
 });
 
-// ---------- Verify 2FA ----------
+// Verify 2FA
 const verify2Btn = $("#verify2FABtn");
 if (verify2Btn) verify2Btn.addEventListener("click", async () => {
   const code = $("#twofaCode")?.value;
@@ -1150,36 +1144,42 @@ if (verify2Btn) verify2Btn.addEventListener("click", async () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code, tempToken })
     });
-
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.message || "Invalid 2FA code");
 
-    // ✅ Final auth token and user
     localStorage.setItem("jwtToken", data.authToken);
-    localStorage.setItem("currentUser", JSON.stringify(data.user));
     localStorage.removeItem("tempToken");
 
-    closeModal("twoFAModal");
-    showUserDashboard(data.user);
+    // ✅ Fetch latest user from backend
+    const user = await fetchCurrentUser();
+    if (user) showUserDashboard(user);
 
-  } catch (err) { 
-    console.error(err); 
-    alert(err.message); 
+    closeModal("twoFAModal");
+
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
   }
 });
 
-// ---------- Fetch Current User ----------
+// Fetch latest user
 async function fetchCurrentUser() {
   const token = localStorage.getItem("jwtToken");
   if (!token) return null;
+
   try {
     const res = await fetch(`${backendUrl}/api/auth/current-user`, {
       headers: { "Authorization": `Bearer ${token}` }
     });
     if (!res.ok) return null;
-    const { user } = await res.json();
-    localStorage.setItem("currentUser", JSON.stringify(user));
-    return user;
+
+    const result = await res.json();
+    if (result.success) {
+      localStorage.setItem("currentUser", JSON.stringify(result.user));
+      return result.user;
+    }
+    return null;
+
   } catch (err) {
     console.error("Failed to fetch current user:", err);
     return null;
