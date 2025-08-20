@@ -761,8 +761,10 @@
       </div>
       
 
-    </footer>
+    </footer>   
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 <script>
+  
 // Function to toggle mobile nav
 function toggleMobileNav() {
   const mobileMenu = document.getElementById("mobileMenu");
@@ -1112,8 +1114,8 @@ $("#DepositBtn")?.addEventListener("click", () => {
     window.closeModal?.("twoFAModal");
 
     $("#dashboardCard")?.classList.remove("hidden");
-    loadTransactions(user) 
     
+    loadTransactions(data.user);
 
     $("#openDepositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
     $("#openWithdrawBtn")?.addEventListener("click", () => window.openModal?.("withdrawModal"));
