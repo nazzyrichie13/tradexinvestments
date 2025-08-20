@@ -1486,7 +1486,7 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
   const res = await fetch("/api/admin/investments", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, amount, date, method })
+    body: JSON.stringify({ email, amount, paymentDate, method })
   });
 
   const data = await res.json();

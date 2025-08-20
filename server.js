@@ -57,6 +57,7 @@ app.use("/api/admin", adminRoutes);
 const io = new Server(server, {
   cors: {
     origin: "https://www.tradexinvest.net",
+    transports: ["websocket"],
     methods: ["GET", "POST"]
   }
 });
