@@ -314,26 +314,6 @@ router.put("/user/:id/investment", requireAdmin, async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to update investment" });
   }
 });
-router.post("/add-investment", async (req, res) => {
-  try {
-    const { userId, amount, method, paymentDate } = req.body;
-
-    // Create investment record
-    const investment = new Investment({
-      user: userId,
-      amount,
-      method,
-      paymentDate: new Date(paymentDate),
-    });
-    await investment.save();
-
-    
-
-    res.json({ success: true, message: "Investment added successfully", investment });
-  } catch (err) {
-    res.status(500).json({ success: false, message: "Error adding investment", error: err.message });
-  }
-});
 
 // Get withdrawals (admin)
 // GET all withdrawals (admin only)
@@ -388,24 +368,51 @@ router.put("/admin/withdrawals/:id/:action", requireAdmin, async (req, res) => {
 });
 
 // POST /api/admin/investments/:userId
-router.post("/investments/:userId", async (req, res) => {
+// Add investment by email
+app.post("/api/admin/investments", async (req, res) => {
   try {
-    const { userId } = req.params;
-    const { amount, date, method } = req.body;
+    const { email, amount, date, method } = req.body;
 
-    const newInvestment = new Investment({
-      userId,
+    // Find user by email
+    const user = await User.findOne({ email });
+    if (!user) return res.json({ success: false, message: "User not found" });
+
+    // Create investment
+    const investment = new Investment({
+      user: user._id,
       amount,
-      date: date ? new Date(date) : new Date(),
+      date,
       method
     });
+    await investment.save();
 
-    await newInvestment.save();
-    res.json({ success: true, investment: newInvestment });
+    res.json({ success: true, investment });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.json({ success: false, message: "Server error" });
   }
 });
+
+// Fetch investments with user info
+app.get("/api/admin/investments", async (req, res) => {
+  try {
+    const investments = await Investment.find().populate("user", "email");
+    res.json({ success: true, investments });
+  } catch (err) {
+    res.json({ success: false, message: "Failed to fetch investments" });
+  }
+});
+
+// Delete investment
+app.delete("/api/admin/investments/:id", async (req, res) => {
+  try {
+    await Investment.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.json({ success: false, message: "Delete failed" });
+  }
+});
+
 
 
 export default router;
