@@ -1513,6 +1513,7 @@ async function deleteInvestment(id) {
   if (data.success) loadInvestments();
 }
 
+
 // Handle adding investment
 document.getElementById("addInvestmentForm").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -1534,6 +1535,7 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
   const data = await res.json();
   if (data.success) {
     alert("Investment added!");
+    
     loadInvestments();
   } else {
     alert("Failed to add investment: " + data.message);
