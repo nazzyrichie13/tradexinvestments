@@ -23,7 +23,6 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
 
 
 
@@ -55,6 +54,27 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/withdrawals", withdrawalRoutes);
 app.use("/api/admin", adminRoutes);
 
+const io = new Server(server, {
+  cors: {
+    origin: "http://127.0.0.1:5500",
+    methods: ["GET", "POST"]
+  }
+});
+
+io.on("connection", (socket) => {
+  console.log("A user connected:", socket.id);
+
+  // Example: receive a message from frontend
+  socket.on("sendMessage", (data) => {
+    console.log("Message received:", data);
+    // Broadcast to everyone
+    io.emit("receiveMessage", data);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+  });
+});
 
 // Start server after MongoDB connection
 // Start server after MongoDB connection
