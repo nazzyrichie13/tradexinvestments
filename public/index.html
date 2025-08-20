@@ -1523,7 +1523,7 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
   const date = document.getElementById("investmentDate").value;
   const method = document.getElementById("investmentMethod").value;
 
-  const res = await fetch(`${backendUrl}/api/admin/investments`, {
+  const res = await fetch(`/api/admin/investments`, {
     method: "POST",
     headers: { 
       "Content-Type": "application/json",
