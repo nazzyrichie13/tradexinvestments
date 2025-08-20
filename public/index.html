@@ -343,11 +343,7 @@
       <tbody id="adminWdBody"></tbody>
     </table>
   </div>
-</div>
-
-
-<!-- Admin Transactions Table -->
-<div id="adminTransactions" class="card">
+  <div id="adminTransactions" class="card">
   <h3>All Transactions</h3>
   <table>
     <thead>
@@ -365,7 +361,7 @@
 <h3>Manage User Investments</h3>
 
 <!-- Add Investment Form -->
-<form id="addInvestmentForm">
+<form id="addInvestmentForm" class="card">
   <select id="investmentUser">
     <!-- Dynamically load all users here -->
     <option value="123">User 1 (email@example.com)</option>
@@ -384,7 +380,7 @@
 </form>
 
 <hr />
-<tr>
+<tr class="modal hidden">
   <td>User Name</td>
   <td>User Email</td>
   <td>
@@ -417,6 +413,11 @@
     <!-- Filled dynamically -->
   </tbody>
 </table>
+</div>
+
+
+<!-- Admin Transactions Table -->
+
 
 
 <!-- ================= Edit User Modal ================= -->
@@ -454,7 +455,7 @@
     <div id="transactionsList"></div>
   </div>
   <!-- Investment History Section -->
-<table id="transactionHistory">
+<table id="transactionHistory"  class="transactions" >
   <thead>
     <tr>
       <th>Date</th>
