@@ -369,7 +369,7 @@ router.put("/admin/withdrawals/:id/:action", requireAdmin, async (req, res) => {
 
 // POST /api/admin/investments/:userId
 // Add investment by email
-app.post("/api/admin/investments", async (req, res) => {
+router.post("/api/admin/investments", async (req, res) => {
   try {
     const { email, amount, date, method } = req.body;
 
