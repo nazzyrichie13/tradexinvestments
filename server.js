@@ -32,13 +32,14 @@ const io = new Server(server, { cors: { origin: "*" } });
 app.use(cors({
   origin: [
     "https://www.tradexinvest.net",   // production frontend
-    "http://127.0.0.1:5500",          // local testing
-    "http://localhost:5500"            // sometimes localhost works too
+    "http://127.0.0.1:10000",          // local testing
+    "http://localhost:10000"            // sometimes localhost works too
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
 }));
+app.set("io", io);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));

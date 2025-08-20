@@ -240,21 +240,36 @@ router.post("/admin-login", async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
-router.post("/", requireAuth, async (req, res) => {
+router.post("/withdrawals", requireAuth, async (req, res) => {
   try {
     const { amount, method } = req.body;
-    if (!amount || amount <= 0) return res.status(400).json({ success: false, message: "Invalid amount" });
+    if (!amount || !method) return res.status(400).json({ success: false, message: "Invalid input" });
 
-    const user = await User.findById(req.userId);
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
-
-    // Optional: check if user has enough balance
-    if (user.investment.balance < amount) {
-      return res.status(400).json({ success: false, message: "Insufficient balance" });
-    }
-
-    const withdrawal = new Withdrawal({ user: user._id, amount, method });
+    const withdrawal = new Withdrawal({
+      user: req.userId,
+      amount,
+      method,
+      status: "Pending",
+    });
     await withdrawal.save();
+
+    // Send real-time notification to admin
+    const io = req.app.get("io");
+    io.emit("new-withdrawal", {
+      id: withdrawal._id,
+      user: req.userId,
+      amount,
+      method,
+      status: "Pending",
+    });
+
+    // Send email to admin
+    await transporter.sendMail({
+      from: `"TradexInvest" <${process.env.EMAIL_USER}>`,
+      to: process.env.ADMIN_EMAIL, // your admin email
+      subject: "New Withdrawal Request",
+      text: `User requested a withdrawal: $${amount} via ${method}.`,
+    });
 
     res.json({ success: true, withdrawal });
   } catch (err) {
@@ -262,6 +277,7 @@ router.post("/", requireAuth, async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to create withdrawal" });
   }
 });
+
 
 
 // Get user's withdrawals
@@ -351,6 +367,25 @@ router.put("/admin/withdrawals/:id/confirm", requireAdmin, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Failed to confirm withdrawal" });
+  }
+});
+// PUT /admin/withdrawals/:id/reject
+router.put("/admin/withdrawals/:id/reject", requireAdmin, async (req, res) => {
+  try {
+    const withdrawal = await Withdrawal.findById(req.params.id);
+    if (!withdrawal) return res.status(404).json({ success: false, message: "Withdrawal not found" });
+
+    if (withdrawal.status !== "Pending") {
+      return res.status(400).json({ success: false, message: "Withdrawal already processed" });
+    }
+
+    withdrawal.status = "Rejected";
+    await withdrawal.save();
+
+    res.json({ success: true, withdrawal });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to reject withdrawal" });
   }
 });
 

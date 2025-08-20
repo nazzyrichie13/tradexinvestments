@@ -1333,7 +1333,20 @@ function startTwofaCountdown(seconds) {
     $("#adminDashboard")?.classList.add("hidden");
   });
 });
+const socket = io("http://localhost:10000"); // adjust backend URL
 
+// Listen for new withdrawals
+socket.on("new-withdrawal", (data) => {
+  alert(`New withdrawal request: $${data.amount} via ${data.method}`);
+  // Optionally refresh your table
+  loadWithdrawals();
+});
+
+// Listen for updates (approved/rejected)
+socket.on("withdrawal-updated", (data) => {
+  alert(`Withdrawal ${data.id} updated: ${data.status}`);
+  loadWithdrawals();
+});
 
 </script>
 
