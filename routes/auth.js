@@ -310,25 +310,46 @@ router.put("/user/:id/investment", requireAdmin, async (req, res) => {
 });
 
 // Get withdrawals (admin)
+// GET all withdrawals (admin only)
 router.get("/admin/withdrawals", requireAdmin, async (req, res) => {
   try {
-    const withdrawals = await Withdrawal.find().populate("user", "name email");
+    const withdrawals = await Withdrawal.find()
+      .populate("user", "name email") // get user name/email
+      .sort({ createdAt: -1 });
+
     res.json({ success: true, withdrawals });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ success: false, message: "Failed to fetch withdrawals" });
   }
 });
 
-// Confirm withdrawal (admin)
+
+// PUT /admin/withdrawals/:id/confirm
 router.put("/admin/withdrawals/:id/confirm", requireAdmin, async (req, res) => {
   try {
-    const withdrawal = await Withdrawal.findByIdAndUpdate(
-      req.params.id,
-      { status: "Confirmed" },
-      { new: true }
-    );
+    const withdrawal = await Withdrawal.findById(req.params.id).populate("user");
+    if (!withdrawal) return res.status(404).json({ success: false, message: "Withdrawal not found" });
+
+    if (withdrawal.status !== "Pending") {
+      return res.status(400).json({ success: false, message: "Withdrawal already processed" });
+    }
+
+    // Deduct from user balance
+    const user = withdrawal.user;
+    if (user.investment.balance < withdrawal.amount) {
+      return res.status(400).json({ success: false, message: "User has insufficient balance" });
+    }
+
+    user.investment.balance -= withdrawal.amount;
+    await user.save();
+
+    withdrawal.status = "Confirmed";
+    await withdrawal.save();
+
     res.json({ success: true, withdrawal });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ success: false, message: "Failed to confirm withdrawal" });
   }
 });
