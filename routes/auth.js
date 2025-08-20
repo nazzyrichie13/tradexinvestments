@@ -240,6 +240,40 @@ router.post("/admin-login", async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+router.post("/", requireAuth, async (req, res) => {
+  try {
+    const { amount, method } = req.body;
+    if (!amount || amount <= 0) return res.status(400).json({ success: false, message: "Invalid amount" });
+
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    // Optional: check if user has enough balance
+    if (user.investment.balance < amount) {
+      return res.status(400).json({ success: false, message: "Insufficient balance" });
+    }
+
+    const withdrawal = new Withdrawal({ user: user._id, amount, method });
+    await withdrawal.save();
+
+    res.json({ success: true, withdrawal });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to create withdrawal" });
+  }
+});
+
+
+// Get user's withdrawals
+router.get("/", requireAuth, async (req, res) => {
+  try {
+    const withdrawals = await Withdrawal.find({ user: req.userId }).sort({ createdAt: -1 });
+    res.json({ success: true, withdrawals });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to fetch withdrawals" });
+  }
+});
 
 // Get all users (admin)
 router.get("/admin/users", requireAdmin, async (req, res) => {
