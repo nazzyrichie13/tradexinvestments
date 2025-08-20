@@ -371,24 +371,21 @@ router.put("/admin/withdrawals/:id/:action", requireAdmin, async (req, res) => {
 // Add investment by email
 router.post("/api/admin/investments", async (req, res) => {
   try {
-    const { email, amount, paymentDate, method } = req.body;
+    const { email, amount, date, method } = req.body;
 
-    // Validate inputs
     if (!email || !amount || !date || !method) {
       return res.status(400).json({ success: false, message: "All fields are required" });
     }
 
-    // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Create new investment
     const investment = new Investment({
       user: user._id,
       amount,
-      paymentDate, 
+      paymentDate: date,   // ✅ correct
       method,
     });
 

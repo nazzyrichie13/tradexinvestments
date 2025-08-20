@@ -993,56 +993,33 @@ async function loadUserDashboard(userId) {
   }
 }
 async function loadTransactionHistory(userId) {
-  const res = await fetch(`/api/investments/${userId}`);
-  const data = await res.json();
+  try {
+    const res = await fetch(`/api/investments/${userId}`);
+    if (!res.ok) throw new Error("Failed to fetch transactions");
 
-  if (data.success) {
+    const data = await res.json();
     const tbody = document.getElementById("transactionsList");
     tbody.innerHTML = "";
+
+    if (!data.success || !data.investments.length) {
+      tbody.innerHTML = `<tr><td colspan="4">No transactions yet</td></tr>`;
+      return;
+    }
 
     data.investments.forEach(inv => {
       const row = `
         <tr>
-          <td>${new Date(inv.paymentDate).toLocaleDateString()}</td>
+          <td>${inv.paymentDate ? new Date(inv.paymentDate).toLocaleDateString() : "-"}</td>
           <td>Investment</td>
-          <td>$${inv.amount.toFixed(2)}</td>
-          <td>${inv.method}</td>
+          <td>$${Number(inv.amount).toFixed(2)}</td>
+          <td>${inv.method || "-"}</td>
         </tr>
       `;
       tbody.innerHTML += row;
     });
+  } catch (err) {
+    console.error("Error loading transactions:", err);
   }
-}
-
-  // ---------- Load Transactions ----------
-  function loadTransactions(user) {
-  const txList = $("#transactionsList");
-  txList.innerHTML = "";
-
-  const transactions = user.transactions || [];
-
-  if (transactions.length === 0) {
-    txList.innerHTML = "<p>No transactions yet</p>";
-    return;
-  }
-
-  transactions.forEach((tx) => {
-    let statusClass = "";
-    if (tx.status.toLowerCase() === "success") statusClass = "status-success";
-    else if (tx.status.toLowerCase() === "pending") statusClass = "status-pending";
-    else statusClass = "status-failed";
-
-    const item = document.createElement("div");
-    item.className = "transaction-item";
-    item.innerHTML = `
-      <p><strong>Type:</strong> ${tx.type}</p>
-      <p><strong>Amount:</strong> $${fmtMoney(tx.amount)}</p>
-      <p><strong>Status:</strong> <span class="${statusClass}">${tx.status}</span></p>
-      <p><strong>Date:</strong> ${fmtDate(tx.date)}</p>
-      <hr>
-    `;
-    txList.appendChild(item);
-  });
 }
 
   // ---------- Withdraw ----------
@@ -1120,7 +1097,7 @@ $("#DepositBtn")?.addEventListener("click", () => {
 
     $("#dashboardCard")?.classList.remove("hidden");
     loadInvestments(user)
-    loadTransactions( user);
+    loadTransactionHistory(userId)
 
     $("#openDepositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
     $("#openWithdrawBtn")?.addEventListener("click", () => window.openModal?.("withdrawModal"));
