@@ -394,7 +394,7 @@ router.post("/api/admin/investments", async (req, res) => {
 });
 
 // Fetch investments with user info
-app.get("/api/admin/investments", async (req, res) => {
+router.get("/api/admin/investments", async (req, res) => {
   try {
     const investments = await Investment.find().populate("user", "email");
     res.json({ success: true, investments });
@@ -404,7 +404,7 @@ app.get("/api/admin/investments", async (req, res) => {
 });
 
 // Delete investment
-app.delete("/api/admin/investments/:id", async (req, res) => {
+router.delete("/api/admin/investments/:id", async (req, res) => {
   try {
     await Investment.findByIdAndDelete(req.params.id);
     res.json({ success: true });
