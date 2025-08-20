@@ -1,14 +1,11 @@
 import mongoose from "mongoose";
 
-const investmentSchema = new mongoose.Schema(
-  {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    principal: { type: Number, required: true },
-    profit: { type: Number, default: 0 },
-    status: { type: String, enum: ["active", "closed"], default: "active" }
-  },
-  { timestamps: true }
-);
+const investmentSchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  amount: { type: Number, required: true },
+  method: { type: String, required: true }, // e.g. "Bank Transfer", "Bitcoin", "PayPal"
+  paymentDate: { type: Date, required: true }, // admin can backdate manually
+  createdAt: { type: Date, default: Date.now },
+});
 
-const Investment = mongoose.model("Investment", investmentSchema);
-export default Investment;
+export default mongoose.model("Investment", investmentSchema);

@@ -345,6 +345,80 @@
   </div>
 </div>
 
+
+<!-- Admin Transactions Table -->
+<div id="adminTransactions" class="card">
+  <h3>All Transactions</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Type</th>
+        <th>Amount</th>
+        <th>Method</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody id="transactionsTableBody"></tbody>
+  </table>
+</div>
+<h3>Manage User Investments</h3>
+
+<!-- Add Investment Form -->
+<form id="addInvestmentForm">
+  <select id="investmentUser">
+    <!-- Dynamically load all users here -->
+    <option value="123">User 1 (email@example.com)</option>
+    <option value="456">User 2 (another@example.com)</option>
+  </select>
+
+  <input type="number" id="investmentAmount" placeholder="Amount (USD)" required />
+  <input type="date" id="investmentDate" required />
+  <select id="investmentMethod" required>
+    <option value="Bank">Bank</option>
+    <option value="Crypto">Crypto</option>
+    <option value="PayPal">PayPal</option>
+  </select>
+
+  <button type="submit">Add Investment</button>
+</form>
+
+<hr />
+<tr>
+  <td>User Name</td>
+  <td>User Email</td>
+  <td>
+    <form onsubmit="createInvestment(event, 'USER_ID')">
+      <input type="number" placeholder="Amount" id="amount-USER_ID" required />
+      <input type="date" id="date-USER_ID" required />
+      <select id="method-USER_ID" required>
+        <option value="Bank">Bank</option>
+        <option value="PayPal">PayPal</option>
+        <option value="Crypto">Crypto</option>
+      </select>
+      <button type="submit">Add Investment</button>
+    </form>
+  </td>
+</tr>
+
+
+<!-- Investments Table -->
+<table>
+  <thead>
+    <tr>
+      <th>User</th>
+      <th>Amount</th>
+      <th>Date of Payment</th>
+      <th>Method</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody id="investmentTableBody">
+    <!-- Filled dynamically -->
+  </tbody>
+</table>
+
+
 <!-- ================= Edit User Modal ================= -->
 <div id="updateUserForm" class="modal hidden">
   <div class="modal-content">
@@ -372,13 +446,27 @@
     <p>Balance: <span id="statBalance">0.00</span> USD</p>
     <p>Profit: <span id="statProfit">0.00</span> USD</p>
     <p>Interest: <span id="statInterest">0.00</span> USD</p>
-    
+      <li>Investment Amount: <span id="statInvestment">$0</span>USD</li> 
   </div>
 
   <div class="transactions">
     <h3>Transaction History</h3>
     <div id="transactionsList"></div>
   </div>
+  <!-- Investment History Section -->
+<table id="transactionHistory">
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Type</th>
+      <th>Amount</th>
+      <th>Method</th>
+    </tr>
+  </thead>
+  <tbody id="transactionsList"></tbody>
+</table>
+
+
 <!-- Deposit Modal -->
 <div id="depositModal" class="modal">
   <h3>Deposit</h3>
@@ -921,6 +1009,36 @@ function openModal(id) {
   });
 
 // Hydrate user stats into the dashboard
+async function loadUserDashboard(userId) {
+  const res = await fetch(`/api/investments/${userId}`);
+  const data = await res.json();
+
+  if (data.success) {
+    const totalInvestment = data.investments.reduce((sum, inv) => sum + inv.amount, 0);
+    document.getElementById("statInvestment").innerText = `$${totalInvestment.toFixed(2)}`;
+  }
+}
+async function loadTransactionHistory(userId) {
+  const res = await fetch(`/api/investments/${userId}`);
+  const data = await res.json();
+
+  if (data.success) {
+    const tbody = document.getElementById("transactionsList");
+    tbody.innerHTML = "";
+
+    data.investments.forEach(inv => {
+      const row = `
+        <tr>
+          <td>${new Date(inv.paymentDate).toLocaleDateString()}</td>
+          <td>Investment</td>
+          <td>$${inv.amount.toFixed(2)}</td>
+          <td>${inv.method}</td>
+        </tr>
+      `;
+      tbody.innerHTML += row;
+    });
+  }
+}
 
   // ---------- Load Transactions ----------
   function loadTransactions(user) {
@@ -1347,6 +1465,83 @@ socket.on("withdrawal-updated", (data) => {
   alert(`Withdrawal ${data.id} updated: ${data.status}`);
   loadWithdrawals();
 });
+// Handle adding investment
+document.getElementById("addInvestmentForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const userId = document.getElementById("investmentUser").value;
+  const amount = document.getElementById("investmentAmount").value;
+  const date = document.getElementById("investmentDate").value;
+  const method = document.getElementById("investmentMethod").value;
+
+  const res = await fetch("/api/admin/investments", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, amount, date, method })
+  });
+
+  const data = await res.json();
+  if (data.success) {
+    alert("Investment added!");
+    loadInvestments(); // reload table
+  } else {
+    alert("Failed to add investment: " + data.message);
+  }
+});
+
+// Load investment table
+async function loadInvestments() {
+  const res = await fetch("/api/admin/investments");
+  const data = await res.json();
+
+  if (data.success) {
+    const tbody = document.getElementById("investmentTableBody");
+    tbody.innerHTML = "";
+
+    data.investments.forEach(inv => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${inv.user?.email || "Unknown"}</td>
+          <td>$${inv.amount.toFixed(2)}</td>
+          <td>${new Date(inv.date).toLocaleDateString()}</td>
+          <td>${inv.method}</td>
+          <td>
+            <button onclick="deleteInvestment('${inv._id}')">Delete</button>
+          </td>
+        </tr>
+      `;
+    });
+  }
+}
+
+// Delete investment
+async function deleteInvestment(id) {
+  if (!confirm("Are you sure?")) return;
+  const res = await fetch(`/api/admin/investments/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (data.success) loadInvestments();
+}
+async function createInvestment(event, userId) {
+  event.preventDefault();
+
+  const amount = document.getElementById(`amount-${userId}`).value;
+  const date = document.getElementById(`date-${userId}`).value;
+  const method = document.getElementById(`method-${userId}`).value;
+
+  const res = await fetch(`/api/admin/investments/${userId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ amount, date, method })
+  });
+
+  const data = await res.json();
+  if (data.success) {
+    alert("Investment added!");
+    location.reload(); // refresh table
+  } else {
+    alert("Error: " + data.message);
+  }
+}
 
 </script>
 

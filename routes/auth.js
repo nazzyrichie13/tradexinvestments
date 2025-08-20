@@ -280,16 +280,6 @@ router.post("/withdrawals", requireAuth, async (req, res) => {
 
 
 
-// Get user's withdrawals
-router.get("/", requireAuth, async (req, res) => {
-  try {
-    const withdrawals = await Withdrawal.find({ user: req.userId }).sort({ createdAt: -1 });
-    res.json({ success: true, withdrawals });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Failed to fetch withdrawals" });
-  }
-});
 
 // Get all users (admin)
 router.get("/admin/users", requireAdmin, async (req, res) => {
@@ -324,6 +314,26 @@ router.put("/user/:id/investment", requireAdmin, async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to update investment" });
   }
 });
+router.post("/add-investment", async (req, res) => {
+  try {
+    const { userId, amount, method, paymentDate } = req.body;
+
+    // Create investment record
+    const investment = new Investment({
+      user: userId,
+      amount,
+      method,
+      paymentDate: new Date(paymentDate),
+    });
+    await investment.save();
+
+    
+
+    res.json({ success: true, message: "Investment added successfully", investment });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Error adding investment", error: err.message });
+  }
+});
 
 // Get withdrawals (admin)
 // GET all withdrawals (admin only)
@@ -341,52 +351,61 @@ router.get("/admin/withdrawals", requireAdmin, async (req, res) => {
 });
 
 
-// PUT /admin/withdrawals/:id/confirm
-router.put("/admin/withdrawals/:id/confirm", requireAdmin, async (req, res) => {
+router.put("/admin/withdrawals/:id/:action", requireAdmin, async (req, res) => {
   try {
-    const withdrawal = await Withdrawal.findById(req.params.id).populate("user");
-    if (!withdrawal) return res.status(404).json({ success: false, message: "Withdrawal not found" });
+    const { id, action } = req.params; // action = confirm or reject
+    const withdrawal = await Withdrawal.findById(id).populate("user"); // populate user
 
-    if (withdrawal.status !== "Pending") {
-      return res.status(400).json({ success: false, message: "Withdrawal already processed" });
+    if (!withdrawal) 
+      return res.status(404).json({ success: false, message: "Withdrawal not found" });
+
+    // If admin is confirming, check user balance
+    if (action === "confirm") {
+      const user = withdrawal.user;
+      if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+      if ((user.investment?.balance || 0) < withdrawal.amount) {
+        return res.status(400).json({ success: false, message: "User has insufficient balance" });
+      }
+
+      // Deduct balance
+      user.investment.balance -= withdrawal.amount;
+      await user.save();
     }
 
-    // Deduct from user balance
-    const user = withdrawal.user;
-    if (user.investment.balance < withdrawal.amount) {
-      return res.status(400).json({ success: false, message: "User has insufficient balance" });
-    }
-
-    user.investment.balance -= withdrawal.amount;
-    await user.save();
-
-    withdrawal.status = "Confirmed";
+    withdrawal.status = action === "confirm" ? "Confirmed" : "Rejected";
     await withdrawal.save();
+
+    // Notify frontend in real-time
+    const io = req.app.get("io");
+    io.emit("withdrawal-updated", { id: withdrawal._id, status: withdrawal.status });
 
     res.json({ success: true, withdrawal });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: "Failed to confirm withdrawal" });
+    res.status(500).json({ success: false, message: "Failed to update withdrawal" });
   }
 });
-// PUT /admin/withdrawals/:id/reject
-router.put("/admin/withdrawals/:id/reject", requireAdmin, async (req, res) => {
+
+// POST /api/admin/investments/:userId
+router.post("/investments/:userId", async (req, res) => {
   try {
-    const withdrawal = await Withdrawal.findById(req.params.id);
-    if (!withdrawal) return res.status(404).json({ success: false, message: "Withdrawal not found" });
+    const { userId } = req.params;
+    const { amount, date, method } = req.body;
 
-    if (withdrawal.status !== "Pending") {
-      return res.status(400).json({ success: false, message: "Withdrawal already processed" });
-    }
+    const newInvestment = new Investment({
+      userId,
+      amount,
+      date: date ? new Date(date) : new Date(),
+      method
+    });
 
-    withdrawal.status = "Rejected";
-    await withdrawal.save();
-
-    res.json({ success: true, withdrawal });
+    await newInvestment.save();
+    res.json({ success: true, investment: newInvestment });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Failed to reject withdrawal" });
+    res.status(500).json({ success: false, message: err.message });
   }
 });
+
 
 export default router;
