@@ -371,7 +371,7 @@ router.put("/admin/withdrawals/:id/:action", requireAdmin, async (req, res) => {
 // Add investment by email
 router.post("/api/admin/investments", async (req, res) => {
   try {
-    const { email, amount, date, method } = req.body;
+    const { email, amount, paymentDate, method } = req.body;
 
     // Validate inputs
     if (!email || !amount || !date || !method) {
@@ -388,7 +388,7 @@ router.post("/api/admin/investments", async (req, res) => {
     const investment = new Investment({
       user: user._id,
       amount,
-      paymentDate: date, 
+      paymentDate, 
       method,
     });
 
