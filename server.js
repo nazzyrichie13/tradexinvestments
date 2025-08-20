@@ -38,7 +38,7 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
 }));
-app.set("io", io);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -60,7 +60,7 @@ const io = new Server(server, {
     methods: ["GET", "POST"]
   }
 });
-
+app.set("io", io);
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
 
