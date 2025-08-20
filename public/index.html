@@ -1018,13 +1018,13 @@ function hydrateStatsFromUser(user) {
   });
 }
 
-async function loadTransactionHistory(userId) {
+async function loadTransactionHistory(user) {
   const txList = document.getElementById("transactionsList");
   txList.innerHTML = "<p>Loading...</p>";
 
   try {
     // ✅ Always use full backend URL
-    const res = await fetch(`${backendUrl}/api/investments/${userId}`);
+    const res = await fetch(`${backendUrl}/api/investments/${user}`);
 
     // ✅ If server didn't return JSON
     if (!res.ok) {
