@@ -1292,10 +1292,8 @@ async function fetchCurrentUser() {
 
   try {
     const res = await fetch(`${backendUrl}/api/auth/current-user`, {
-       headers: {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${token}`
-  }
+       headers: {"Authorization": `Bearer ${token}`  }
+
     });
     if (!res.ok) return null;
 
@@ -1562,7 +1560,7 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
 
   try {
     const token = localStorage.getItem("jwtToken"); // ✅ match login storage
-const res = await fetch(`${backendUrl}/api/admin/user/${email}/investment`, {
+const res = await fetch(`${backendUrl}/api/user/${encodeURIComponent(email)}/investment`, {
   method: "PUT",
   headers: {
     "Content-Type": "application/json",
