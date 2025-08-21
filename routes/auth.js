@@ -417,11 +417,12 @@ router.put("/user/:email/investment", requireAdmin, async (req, res) => {
 
     // Validation
     if (!amount || !method || !date) {
-      return res.status(400).json({
-        success: false,
-        message: "Amount and method are required"
-      });
-    }
+  return res.status(400).json({
+    success: false,
+    message: "Amount, method, and date are required"
+  });
+}
+
 
     // Find user
     const user = await User.findOne({ email: req.params.email });
@@ -434,10 +435,11 @@ router.put("/user/:email/investment", requireAdmin, async (req, res) => {
 
     // Push new investment
     user.investments.push({
-      amount,
-      method,
-      date: date || Date.now() // ✅ if no date is sent, fallback to current time
-    });
+  amount,
+  method,
+  date: date || Date.now()
+});
+
 
     await user.save();
 

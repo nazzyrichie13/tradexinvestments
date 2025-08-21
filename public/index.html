@@ -374,14 +374,13 @@
 <form id="addInvestmentForm">
   <input id="investmentEmail" placeholder="User Email" required />
   <input id="investmentAmount" type="number" placeholder="Amount" required />
-  <label for="investmentMethod">Method:</label>
 <select id="investmentMethod">
   <option value="Bank Transfer">Bank Transfer</option>
   <option value="PayPal">PayPal</option>
   <option value="Bitcoin">Bitcoin</option>
   <option value="CashApp">CashApp</option>
 </select>
-<input id="investmentDate" type="date" required />
+<input id="investmentDate"  type="date" required />
   <button type="submit">Add Investment</button>
 </form>
 
@@ -1566,6 +1565,8 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
   const amount = parseFloat(document.getElementById("investmentAmount").value);
   const method = document.getElementById("investmentMethod").value;
   const date = document.getElementById("investmentDate").value;
+
+  console.log("amount:", amount, "method:", method, "date:", date);
 
   if (!email || !amount || !method || !date) {
     return alert("All fields are required.");
