@@ -1017,49 +1017,25 @@ function hydrateStatsFromUser(user) {
     `;
   });
 }
-
-async function loadTransactionHistory(user) {
-  const txList = document.getElementById("transactionsList");
-  txList.innerHTML = "<p>Loading...</p>";
-
-  try {
-    // ✅ Always use full backend URL
-    const res = await fetch(`/api/investments/${user}`);
-
-    // ✅ If server didn't return JSON
-    if (!res.ok) {
-      throw new Error(`Failed to fetch (${res.status})`);
-    }
-
-    const data = await res.json();
-
-    // ✅ Defensive check
-    const transactions = data.investments || [];
-    txList.innerHTML = "";
-
-    if (transactions.length === 0) {
-      txList.innerHTML = "<p>No transactions yet</p>";
-      return;
-    }
-
-    // ✅ Render transactions
-    transactions.forEach((tx) => {
-      const div = document.createElement("div");
-      div.className = "transaction";
-
-      div.innerHTML = `
-        <p><strong>Amount:</strong> $${Number(tx.amount).toFixed(2)}</p>
-        <p><strong>Method:</strong> ${tx.method || "N/A"}</p>
-        <p><strong>Date:</strong> ${new Date(tx.date).toLocaleString()}</p>
-      `;
-
-      txList.appendChild(div);
-    });
-  } catch (err) {
-    console.error("Error loading transactions:", err);
-    txList.innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
-  }
-}
+ async function loadTransactions() { const tbody = $("#txTable tbody");
+  if (!tbody) return; tbody.innerHTML = <tr><td colspan="4">Loading...</td></tr>;
+   try { const res = await fetch(${backendUrl}/api/transactions/my, 
+   { headers: authHeaders() }); 
+   const data = await res.json(); 
+   if (!res.ok) throw new Error(data.message || "Failed to load transactions"); 
+   let txs = Array.isArray(data.transactions) ? data.transactions : (data && data._id ? [data] : []); 
+   if (!txs.length) { tbody.innerHTML = <tr><td colspan="4">No transactions yet.</td></tr>;
+    return;
+   } 
+   tbody.innerHTML = txs 
+   .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) 
+   .map(tx => <tr> 
+    <td>${fmtDate(tx.createdAt)}</td> 
+    <td>${(tx.type || "").toUpperCase()}</td> 
+    <td>$${fmtMoney(tx.amount)}</td> 
+    <td>${(tx.status || "pending").toUpperCase()}</td> 
+    </tr>).join(""); } catch (e) { tbody.innerHTML = <tr>
+    <td colspan="4">Error: ${e.message || "No transactions yet."}</td></tr>; } }
 
   // ---------- Withdraw ----------
 $("#WithdrawBtn")?.addEventListener("click", async () => {
@@ -1138,7 +1114,9 @@ $("#DepositBtn")?.addEventListener("click", () => {
     $("#dashboardCard")?.classList.remove("hidden");
      
   hydrateStatsFromUser(user._id);
-   loadTransactionHistory();
+   
+  hydrateStatsFromUser(user._id);
+   loadTransactions()
 
     $("#openDepositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
     $("#openWithdrawBtn")?.addEventListener("click", () => window.openModal?.("withdrawModal"));
