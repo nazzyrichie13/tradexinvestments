@@ -1566,7 +1566,7 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
   const method = document.getElementById("investmentMethod").value;
   const date = document.getElementById("investmentDate").value;
 
-  console.log("amount:", amount, "method:", method, "date:", date);
+  console.log("email:",email, "amount:", amount, "method:", method, "date:", date);
 
   if (!email || !amount || !method || !date) {
     return alert("All fields are required.");
@@ -1579,7 +1579,7 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
       ...adminAuthHeaders(),
       "Content-Type": "application/json"
       },
-      body: JSON.stringify({  amount, method, date })
+      body: JSON.stringify({ email, amount, method, date })
   // ✅ use collected values
     });
 
