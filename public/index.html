@@ -1576,12 +1576,14 @@ const res = await fetch(`${backendUrl}/api/user/${encodeURIComponent(email)}/inv
   body: JSON.stringify({ amount: 500, method: "Bank Transfer" })
 });
 
-const data = await res.json();
-if (!res.ok) throw new Error(data.message || "Failed to add investment");
 
-console.log("✅ Investment added:", data);
+    const data = await res.json();   // ✅ define before using
+
+    if (!res.ok) throw new Error(data.message || "Failed to add investment");
 
     alert(`Investment added for ${email}: $${amount}`);
+    console.log("✅ Investment added:", data);
+
     loadInvestments(); // reload admin table
 
   } catch (err) {
