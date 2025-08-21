@@ -1116,6 +1116,7 @@ $("#DepositBtn")?.addEventListener("click", () => {
   const inv = user.investment || {};
 
   // ✅ make sure these IDs exist in your HTML
+  
   const balanceEl = $("#statBalance");
   const profitEl = $("#statProfit");
   const interestEl = $("#statInterest");
@@ -1137,7 +1138,7 @@ $("#DepositBtn")?.addEventListener("click", () => {
     $("#dashboardCard")?.classList.remove("hidden");
      
   hydrateStatsFromUser(user._id);
-   loadTransactionHistory(user._id);
+   loadTransactionHistory();
 
     $("#openDepositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
     $("#openWithdrawBtn")?.addEventListener("click", () => window.openModal?.("withdrawModal"));
