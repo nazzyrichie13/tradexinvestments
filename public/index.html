@@ -374,13 +374,14 @@
 <form id="addInvestmentForm">
   <input id="investmentEmail" placeholder="User Email" required />
   <input id="investmentAmount" type="number" placeholder="Amount" required />
-  <input id="investmentDate" type="date" required />
-  <select id="investmentMethod">
-    <option>Bank Transfer</option>
-    <option>PayPal</option>
-    <option>Bitcoin</option>
-    <option>CashApp</option>
-  </select>
+  <label for="investmentMethod">Method:</label>
+<select id="investmentMethod">
+  <option value="Bank Transfer">Bank Transfer</option>
+  <option value="PayPal">PayPal</option>
+  <option value="Bitcoin">Bitcoin</option>
+  <option value="CashApp">CashApp</option>
+</select>
+<input id="investmentDate" type="date" required />
   <button type="submit">Add Investment</button>
 </form>
 
