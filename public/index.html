@@ -1572,10 +1572,7 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
     const token = localStorage.getItem("jwtToken"); // ✅ match login storage
 const res = await fetch(`${backendUrl}/api/user/${encodeURIComponent(email)}/investment`, {
   method: "PUT",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${localStorage.getItem("token")}`
-  },
+  headers: adminAuthHeaders(),
   body: JSON.stringify({ amount: 500, method: "Bank Transfer" })
 });
 
