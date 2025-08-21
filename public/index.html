@@ -1447,6 +1447,22 @@ function startTwofaCountdown(seconds) {
     $("#adminDashboard")?.classList.add("hidden");
   });
 });
+document.querySelectorAll("[data-tab='withdrawalsTab']").forEach(btn => {
+  btn.addEventListener("click", async () => {
+    // Show withdrawals table section (if hidden)
+    const withdrawalsSection = document.getElementById("withdrawalsSection");
+    if (withdrawalsSection) withdrawalsSection.classList.remove("hidden");
+
+    // Optionally hide other admin sections
+    document.querySelectorAll(".adminTab").forEach(section => {
+      if (section.id !== "withdrawalsSection") section.classList.add("hidden");
+    });
+
+    // Load the withdrawals from backend
+    await loadWithdrawals();
+  });
+});
+
 const socket = io("https://www.tradexinvest.net"); // adjust backend URL
 
 // Listen for new withdrawals
@@ -1477,7 +1493,10 @@ async function loadInvestments() {
   try {
     const res = await fetch(`/api/admin/investments`, {
        
-      headers: adminAuthHeaders()
+        headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("adminToken")}`
+      },
        
     });
     const data = await res.json();
@@ -1536,15 +1555,17 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
   ];
 
   try {
-    const res = await fetch(`${backendUrl}/api/admin/${email}/investment`, {
+    const res = await fetch(`${backendUrl}/api/admin/investments`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${localStorage.getItem("adminToken")}`
       },
-      body: JSON.stringify({ email, investments: newInvestment }),
+      body: JSON.stringify({ email, amount, date, method   }),
     });
-
+// Debug the response
+    const text = await res.text(); // get raw response
+    console.log("Server raw response:", text);
     const data = await res.json();
     console.log("Investment response:", data);
 
