@@ -412,13 +412,16 @@ router.delete("/api/admin/investments/:id", async (req, res) => {
 // ✅ Add Investment to a User
 // ✅ Admin adds investment for user
 router.put("/user/:email/investment", requireAdmin, async (req, res) => {
+  console.log("REQ BODY:", req.body);
+console.log("REQ PARAMS:", req.params);
+
   try {
     const { amount, method, date } = req.body;
     console.log("Backend received:", req.body)
     const { email } = req.params;   // <-- take email from params
 
     // 🔎 Validate required fields
-    if (!email || !amount || !method || !date) {
+    if (  !amount || !method || !date) {
       return res.status(400).json({ 
         success: false, 
         message: "Missing fields" 
