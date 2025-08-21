@@ -380,7 +380,7 @@ router.delete("/api/admin/investments/:id", async (req, res) => {
 // =====================
 // Get User Investments
 // =====================
-router.post("/api/admin/investments", async (req, res) => {
+router.post("/user/:id/investments", async (req, res) => {
   try {
     const { email, amount, method, date } = req.body;
 
