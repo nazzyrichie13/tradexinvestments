@@ -1292,7 +1292,10 @@ async function fetchCurrentUser() {
 
   try {
     const res = await fetch(`${backendUrl}/api/auth/current-user`, {
-      headers: { "Authorization": `Bearer ${token}` }
+       headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`
+  }
     });
     if (!res.ok) return null;
 
@@ -1558,15 +1561,15 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
   if (!email || !amount || !date || !method) return alert("All fields are required.");
 
   try {
-    const token = localStorage.getItem("authToken");
-    const res = await fetch(`${backendUrl}/api/admin/user/${email}/investment`, {
-      method: "PUT",
-      headers: {
+    const token = localStorage.getItem("jwtToken"); // ✅ match login storage
+const res = await fetch(`${backendUrl}/api/admin/user/${email}/investment`, {
+  method: "PUT",
+  headers: {
     "Content-Type": "application/json",
-    "Authorization": `Bearer ${token}` // ⚠ key part
+    "Authorization": `Bearer ${token}` // send real token
   },
-      body: JSON.stringify({ amount, date, method })
-    });
+  body: JSON.stringify({ amount, date, method })
+});
 
     const data = await res.json();
     console.log("Investment response:", data);
