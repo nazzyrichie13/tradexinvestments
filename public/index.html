@@ -1024,7 +1024,7 @@ async function loadTransactionHistory(user) {
 
   try {
     // ✅ Always use full backend URL
-    const res = await fetch(`${backendUrl}/api/investments/${user}`);
+    const res = await fetch(`/api/investments/${user}`);
 
     // ✅ If server didn't return JSON
     if (!res.ok) {
@@ -1471,7 +1471,7 @@ function adminAuthHeaders() {
 // Load investment table
 async function loadInvestments() {
   try {
-    const res = await fetch(`${backendUrl}/api/admin/investments`, {
+    const res = await fetch(`/api/admin/investments`, {
        
       headers: adminAuthHeaders()
        
@@ -1524,7 +1524,7 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
   const date = document.getElementById("investmentDate").value;
   const method = document.getElementById("investmentMethod").value;
 
-  const res = await fetch(`${backendUrl}/api/admin/investments`, {
+  const res = await fetch(`/api/admin/investments`, {
     method: "POST",
     headers: { 
       "Content-Type": "application/json",
