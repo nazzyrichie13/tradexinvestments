@@ -397,7 +397,7 @@ router.delete("/api/admin/investments/:id", async (req, res) => {
 // Get User Investments
 // =====================
 // Add new investments to a user
-router.put("/investments", requireAdmin, async (req, res) => {
+router.put("/user/:id/investment", requireAdmin, async (req, res) => {
   const { email, investments } = req.body;
 
   if (!email || !investments || !Array.isArray(investments)) {

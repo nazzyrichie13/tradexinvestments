@@ -1536,7 +1536,7 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
   ];
 
   try {
-    const res = await fetch(`${backendUrl}/api/admin/investments`, {
+    const res = await fetch(`${backendUrl}/api/admin/user/${email}/investment`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
