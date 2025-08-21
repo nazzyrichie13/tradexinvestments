@@ -1559,11 +1559,11 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
 
   try {
     const token = localStorage.getItem("adminToken");
-    const res = await fetch(`${backendUrl}/api/user/${email}/investment`, {
+    const res = await fetch(`${backendUrl}/api/admin/user/${email}/investment`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        headers: { "Authorization": `Bearer ${token}` }
+        headers:  adminAuthHeaders() 
       },
       body: JSON.stringify({ amount, date, method })
     });
