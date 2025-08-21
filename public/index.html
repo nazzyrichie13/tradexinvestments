@@ -1563,10 +1563,10 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
 
   const email = document.getElementById("investmentEmail").value.trim();
   const amount = parseFloat(document.getElementById("investmentAmount").value);
-  const date = document.getElementById("investmentDate").value;
   const method = document.getElementById("investmentMethod").value;
+  const date = document.getElementById("investmentDate").value;
 
-  if (!email || !amount || !date || !method) {
+  if (!email || !amount || !method || !date) {
     return alert("All fields are required.");
   }
 
@@ -1574,7 +1574,7 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
     const res = await fetch(`${backendUrl}/api/user/${encodeURIComponent(email)}/investment`, {
       method: "PUT",
       headers: adminAuthHeaders(),
-      body: JSON.stringify({ amount, date, method })   // ✅ use collected values
+      body: JSON.stringify({ amount, method, date })   // ✅ use collected values
     });
 
     const data = await res.json();

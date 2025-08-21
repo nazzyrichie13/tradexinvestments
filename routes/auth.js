@@ -416,7 +416,7 @@ router.put("/user/:email/investment", requireAdmin, async (req, res) => {
     const { amount, method, date } = req.body;
 
     // Validation
-    if (!amount || !method) {
+    if (!amount || !method || !date) {
       return res.status(400).json({
         success: false,
         message: "Amount and method are required"
