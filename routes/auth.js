@@ -13,23 +13,28 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "super_secret_jwt_key";
 
 // Later use the same one:
-const decoded = jwt.verify(token, JWT_SECRET);
+
 
 
 
 function requireAdmin(req, res, next) {
-  const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "7d" });
-res.json({ success: true, token });
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ success: false, message: "No token provided" });
+  }
+
+  const token = authHeader.split(" ")[1];
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    req.admin = decoded;
+    req.admin = decoded; // attach decoded payload
     next();
   } catch (err) {
     console.error("JWT verify failed:", err.message);
     return res.status(401).json({ success: false, message: "Invalid token" });
   }
 }
+
 export const requireAuth = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   console.log("Authorization header:", authHeader); // 🔥 log here
