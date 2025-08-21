@@ -1569,15 +1569,13 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
   if (!email || !amount || !date || !method) return alert("All fields are required.");
 
   try {
-    const token = localStorage.setItem("adminToken", data.token); // ✅ match login storage
-const res = await fetch(`${backendUrl}/api/user/${encodeURIComponent(email)}/investment`, {
-  method: "PUT",
-  headers: adminAuthHeaders(),
-  body: JSON.stringify({ amount: 500, method: "Bank Transfer" })
-});
+    const res = await fetch(`${backendUrl}/api/user/${encodeURIComponent(email)}/investment`, {
+      method: "PUT",
+      headers: adminAuthHeaders(),
+      body: JSON.stringify({ amount, method, date })
+    });
 
-
-    const data = await res.json();   // ✅ define before using
+    const data = await res.json();   // ✅ define AFTER fetch
 
     if (!res.ok) throw new Error(data.message || "Failed to add investment");
 
@@ -1585,7 +1583,6 @@ const res = await fetch(`${backendUrl}/api/user/${encodeURIComponent(email)}/inv
     console.log("✅ Investment added:", data);
 
     loadInvestments(); // reload admin table
-
   } catch (err) {
     console.error("Error adding investment:", err);
     alert("Error adding investment: " + err.message);
