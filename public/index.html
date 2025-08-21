@@ -1569,7 +1569,7 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
   if (!email || !amount || !date || !method) return alert("All fields are required.");
 
   try {
-    const token = localStorage.getItem("jwtToken"); // ✅ match login storage
+    const token = localStorage.setItem("adminToken", data.token); // ✅ match login storage
 const res = await fetch(`${backendUrl}/api/user/${encodeURIComponent(email)}/investment`, {
   method: "PUT",
   headers: adminAuthHeaders(),
