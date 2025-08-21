@@ -1360,6 +1360,7 @@ function startTwofaCountdown(seconds) {
 
       tbody.innerHTML = users.map(u => `
         <tr>
+          <td>${u._id}</td>
           <td>${u.name}</td>
           <td>${u.email}</td>
           <td><input type="number" data-id="${u._id}" data-field="balance" value="${u.investment?.balance || 0}"></td>
