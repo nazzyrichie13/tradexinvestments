@@ -357,38 +357,6 @@ router.put("/admin/withdrawals/:id/:action", requireAdmin, async (req, res) => {
 
 // POST /api/admin/investments/:userId
 // Add investment by email
-router.post("/api/admin/investments", async (req, res) => {
-  try {
-    const { email, amount, date, method } = req.body;
-
-    if (!email || !amount || !date || !method) {
-      return res.status(400).json({ success: false, message: "All fields are required" });
-    }
-
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
-
-    const investment = new Investment({
-      user: user._id,
-      amount,
-      paymentDate: date,   // ✅ correct
-      method,
-    });
-
-    await investment.save();
-
-    res.json({
-      success: true,
-      message: "Investment saved successfully",
-      investment,
-    });
-  } catch (err) {
-    console.error("Error saving investment:", err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-});
 
 // Fetch investments with user info
 router.get("/api/admin/investments", async (req, res) => {
