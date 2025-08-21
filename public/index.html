@@ -1519,7 +1519,6 @@ async function deleteInvestment(id) {
 }
 
 
-// Handle adding investment
 document.getElementById("addInvestmentForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -1528,9 +1527,10 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
   const date = document.getElementById("investmentDate").value;
   const method = document.getElementById("investmentMethod").value;
 
-  if (!email || !amount || !date || !method) return alert("All fields are required");
+  if (!email || !amount || !date || !method) {
+    return alert("All fields are required.");
+  }
 
-  // Prepare as an array with a single investment object
   const newInvestment = [
     { amount, date, method, createdAt: new Date().toISOString() }
   ];
@@ -1538,18 +1538,22 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
   try {
     const res = await fetch(`${backendUrl}/api/admin/investments`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("adminToken")}`
+      },
       body: JSON.stringify({ email, investments: newInvestment }),
     });
 
     const data = await res.json();
+    console.log("Investment response:", data);
 
     if (data.success) {
       alert(`Investment added for ${email}: $${amount}`);
       loadInvestments(); // reload admin table
       if (data.user?._id) loadTransaction(data.user._id); // reload user's transactions
     } else {
-      alert("Failed to add investment: " + data.message);
+      alert("Failed to add investment: " + (data.message || "Unknown error"));
     }
   } catch (err) {
     console.error("Error adding investment:", err);
