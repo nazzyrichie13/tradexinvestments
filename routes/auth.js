@@ -12,14 +12,14 @@ import transporter from "../utils/mailer.js";
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "super_secret_jwt_key";
 
-// =========================
-// Middleware
-// =========================
+// Later use the same one:
+const decoded = jwt.verify(token, JWT_SECRET);
+
 
 
 function requireAdmin(req, res, next) {
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(403).json({ success: false, message: "No token provided" });
+  const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "7d" });
+res.json({ success: true, token });
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
@@ -32,20 +32,26 @@ function requireAdmin(req, res, next) {
 }
 export const requireAuth = async (req, res, next) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ success: false, message: "No token provided" });
+  console.log("Authorization header:", authHeader); // 🔥 log here
 
-  const token = authHeader.split(" ")[1];
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ success: false, message: "No token provided" });
+  }
+
+  const token = authHeader.split(" ")[1]; // clean raw token
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
     const user = await User.findById(decoded.id);
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    req.user = user; // attach user to request
+    req.user = user;
     next();
   } catch (err) {
-    res.status(401).json({ success: false, message: "Invalid token" });
+    console.error("JWT verify failed:", err.message);
+    return res.status(401).json({ success: false, message: "Invalid token" });
   }
 };
+
 
 // =========================
 // USER ROUTES
