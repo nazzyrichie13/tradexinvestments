@@ -409,16 +409,30 @@ router.delete("/api/admin/investments/:id", async (req, res) => {
 // =====================
 // Add new investments to a user
 // POST or PUT /api/admin/user/:email/investment
-router.get("/user/:email/investments", requireAdmin, async (req, res) => {
+// ✅ Add Investment to a User
+router.put("/user/:email/investment", requireAdmin, async (req, res) => {
   try {
-    const user = await User.findOne({ email: req.params.email }).select("investments name email");
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    const { amount, method } = req.body;
 
-    res.json({ success: true, investments: user.investments });
+    if (!amount || !method) {
+      return res.status(400).json({ success: false, message: "Amount and method are required" });
+    }
+
+    const user = await User.findOne({ email: req.params.email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Push new investment
+    user.investments.push({ amount, method });
+    await user.save();
+
+    res.json({ success: true, message: "Investment added", investments: user.investments });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Failed to fetch investments" });
+    console.error("Error adding investment:", err);
+    res.status(500).json({ success: false, message: "Failed to add investment" });
   }
 });
+
 
 export default router;

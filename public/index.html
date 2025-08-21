@@ -1570,19 +1570,19 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
 
   try {
     const token = localStorage.getItem("jwtToken"); // ✅ match login storage
-const res = await fetch(`${backendUrl}/api/user/${encodeURIComponent(email)}/investment`, {
+const res = await fetch(`${backendUrl}/api/user/${encodeURIComponent(userEmail)}/investment`, {
   method: "PUT",
   headers: {
     "Content-Type": "application/json",
-    "Authorization": `Bearer ${token}` // send real token
+    "Authorization": `Bearer ${localStorage.getItem("token")}`
   },
-  body: JSON.stringify({ amount, date, method })
+  body: JSON.stringify({ amount: 500, method: "Bank Transfer" })
 });
 
-    const data = await res.json();
-    console.log("Investment response:", data);
+const data = await res.json();
+if (!res.ok) throw new Error(data.message || "Failed to add investment");
 
-    if (!res.ok || !data.success) throw new Error(data.error || "Failed to add investment");
+console.log("✅ Investment added:", data);
 
     alert(`Investment added for ${email}: $${amount}`);
     loadInvestments(); // reload admin table
