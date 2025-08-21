@@ -1566,16 +1566,18 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
   const date = document.getElementById("investmentDate").value;
   const method = document.getElementById("investmentMethod").value;
 
-  if (!email || !amount || !date || !method) return alert("All fields are required.");
+  if (!email || !amount || !date || !method) {
+    return alert("All fields are required.");
+  }
 
   try {
     const res = await fetch(`${backendUrl}/api/user/${encodeURIComponent(email)}/investment`, {
       method: "PUT",
       headers: adminAuthHeaders(),
-      body: JSON.stringify({ amount, method, date })
+      body: JSON.stringify({ amount, date, method })   // ✅ use collected values
     });
 
-    const data = await res.json();   // ✅ define AFTER fetch
+    const data = await res.json();
 
     if (!res.ok) throw new Error(data.message || "Failed to add investment");
 
