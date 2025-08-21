@@ -413,8 +413,9 @@ router.delete("/api/admin/investments/:id", async (req, res) => {
 // ✅ Admin adds investment for user
 router.put("/user/:email/investment", requireAdmin, async (req, res) => {
   try {
-    const { email, amount, method, date } = req.body;
-
+    const { amount, method, date } = req.body;
+    console.log("Backend received:", req.body)
+    const { email } = req.params;   // <-- take email from params
 
     // 🔎 Validate required fields
     if (!email || !amount || !method || !date) {
@@ -458,5 +459,6 @@ router.put("/user/:email/investment", requireAdmin, async (req, res) => {
     });
   }
 });
+
 
 export default router;
