@@ -411,7 +411,7 @@ router.delete("/api/admin/investments/:id", async (req, res) => {
 // POST or PUT /api/admin/user/:email/investment
 // ✅ Add Investment to a User
 // ✅ Admin adds investment for user
-router.put("/user/:email/investment", requireAdmin, async (req, res) => {
+router.put("/admin/user/:email/investment", requireAdmin, async (req, res) => {
   console.log("REQ BODY:", req.body);
 console.log("REQ PARAMS:", req.params);
 
