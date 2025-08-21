@@ -414,6 +414,7 @@ router.delete("/api/admin/investments/:id", async (req, res) => {
 router.put("/user/:email/investment", requireAdmin, async (req, res) => {
   try {
     const { amount, method, date } = req.body;
+   console.log("Incoming body:", req.body);
 
     // Validation
     if (!amount || !method || !date) {
