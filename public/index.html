@@ -1202,7 +1202,9 @@ if (loginBtn) loginBtn.addEventListener("click", async () => {
       body: JSON.stringify({ email, password })
     });
     const data = await res.json();
-
+    if (data.token) {
+    localStorage.setItem("token", data.token);
+    }
     if (!res.ok || !data.success) throw new Error(data.message || "Login failed");
 
     // Terms required first
