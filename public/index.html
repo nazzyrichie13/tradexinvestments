@@ -1558,13 +1558,13 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
   if (!email || !amount || !date || !method) return alert("All fields are required.");
 
   try {
-    const token = localStorage.getItem("adminToken");
+    const token = localStorage.getItem("authToken");
     const res = await fetch(`${backendUrl}/api/admin/user/${email}/investment`, {
       method: "PUT",
       headers: {
-        "Content-Type": "application/json",
-        headers:  adminAuthHeaders() 
-      },
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}` // ⚠ key part
+  },
       body: JSON.stringify({ amount, date, method })
     });
 
