@@ -398,31 +398,35 @@ router.delete("/api/admin/investments/:id", async (req, res) => {
 // =====================
 // Add new investments to a user
 router.put("/user/:id/investment", requireAdmin, async (req, res) => {
-  const { email, investments } = req.body;
+   try {
+    const { email, amount, date, method } = req.body;
 
-  if (!email || !investments || !Array.isArray(investments)) {
-    return res.status(400).json({ success: false, message: "Invalid request. Must include email and an array of investments." });
-  }
+    if (!email || !amount || !date || !method) {
+      return res.status(400).json({ error: "Missing fields" });
+    }
 
-  try {
+    // Find user by email
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-    user.investments = user.investments || [];
-    user.investments.push(...investments);
+    // Push new investment object
+    const newInvestment = {
+      amount: parseFloat(amount),
+      date: new Date(date),
+      method,
+      createdAt: new Date()
+    };
+    user.investments.push(newInvestment);
 
-    // Optionally update user totals
-    user.investment.balance = (user.investment.balance || 0) + investments.reduce((sum, inv) => sum + inv.amount, 0);
-    // Update profit / interest as needed
-    user.investment.profit = (user.investment.profit || 0) + investments.reduce((sum, inv) => sum + (inv.profit || 0), 0);
-    user.investment.interest = (user.investment.interest || 0) + investments.reduce((sum, inv) => sum + (inv.interest || 0), 0);
+    // Update totals
+    user.investment.balance += newInvestment.amount;
 
     await user.save();
 
-    res.json({ success: true, user });
+    res.json({ success: true, user, investment: newInvestment });
   } catch (err) {
-    console.error("Failed to add investment:", err);
-    res.status(500).json({ success: false, message: "Failed to add investment" });
+    console.error(err);
+    res.status(500).json({ error: "Failed to add investment" });
   }
 });
 export default router;
