@@ -236,6 +236,12 @@
 .status-success { color: green; font-weight: bold; }
 .status-pending { color: orange; font-weight: bold; }
 .status-failed { color: red; font-weight: bold; }
+.tab-content {
+  display: none;
+}
+.tab-content.active {
+  display: block;
+}
 
   </style>
 </head>
@@ -312,9 +318,9 @@
 
   <!-- Tabs -->
   <div class="tabs">
-    <button data-tab="usersTab" class="btn active">Users</button>
-    <button data-tab="withdrawalsTab" class="btn">Withdrawals</button>
-  </div>
+  <button data-tab="usersTab" class="btn active">Users</button>
+  <button data-tab="withdrawalsTab" class="btn">Withdrawals</button>
+</div>
   
 
 
@@ -331,18 +337,25 @@
     </table>
   </div>
 
-  <!-- Withdrawals Tab -->
-  <div id="withdrawalsTable" class="hidden">
-    <h3>Manage Withdrawals</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>User</th><th>Method</th><th>Amount</th><th>Status</th><th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="adminWdBody"></tbody>
-    </table>
-  </div>
+
+
+<div id="withdrawalsTab" class="tab-content" style="display:none;">
+  <h2>Withdrawals</h2>
+  <table id="withdrawalsTable">
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Method</th>
+        <th>Amount</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Filled by JS loadWithdrawals() -->
+    </tbody>
+  </table>
+</div>
   <div id="adminTransactions" class="card">
   <h3>All Transactions</h3>
   <table>
@@ -385,15 +398,7 @@
     <tbody id="investmentTableBody"></tbody>
   </table>
 </div>
-  <div id="withdrawalsSection"  class="modal hidden">
-    <table >
-<tbody class="withdrawalsTable tbody">
-
-</tbody>
-    </table>
-
-
-  </div>
+   
 
 
 
@@ -1292,7 +1297,10 @@ async function fetchCurrentUser() {
 
   try {
     const res = await fetch(`${backendUrl}/api/auth/current-user`, {
-       headers: {"Authorization": `Bearer ${token}`  }
+       headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`
+  },
 
     });
     if (!res.ok) return null;
