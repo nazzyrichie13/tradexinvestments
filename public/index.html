@@ -1006,43 +1006,32 @@ function openModal(id) {
 function hydrateStatsFromUser(user) {
   if (!user) return;
 
-  // ---- Investment Stat ----
   const investments = user.investments || [];
+
+  // ---- Total Investment ----
   const totalInvestment = investments.reduce((sum, inv) => sum + (inv.amount || 0), 0);
   const statInvestmentEl = document.getElementById("statInvestment");
-  if (statInvestmentEl) {
-    statInvestmentEl.innerText = `$${totalInvestment.toFixed(2)}`;
-  }
+  if (statInvestmentEl) statInvestmentEl.innerText = `$${totalInvestment.toFixed(2)}`;
 
-  // ---- Transactions List ----
+  // ---- Transaction List ----
   const txList = document.getElementById("transactionsList");
   if (!txList) return;
-
-  txList.innerHTML = ""; // clear previous list
+  txList.innerHTML = "";
 
   if (investments.length === 0) {
     txList.innerHTML = "<p>No transactions yet</p>";
     return;
   }
 
-  // Append each transaction
-  investments.forEach(inv => {
+  // Show newest first
+  investments.slice().reverse().forEach(inv => {
     const txItem = document.createElement("div");
     txItem.className = "transaction-item";
-
-    const amountSpan = document.createElement("span");
-    amountSpan.className = "tx-amount";
-    amountSpan.innerText = `$${(inv.amount || 0).toFixed(2)}`;
-
-    const methodSpan = document.createElement("span");
-    methodSpan.className = "tx-method";
-    methodSpan.innerText = inv.method || "N/A";
-
-    const dateSpan = document.createElement("span");
-    dateSpan.className = "tx-date";
-    dateSpan.innerText = new Date(inv.date).toLocaleDateString();
-
-    txItem.append(amountSpan, methodSpan, dateSpan);
+    txItem.innerHTML = `
+      <span class="tx-amount">$${(inv.amount || 0).toFixed(2)}</span>
+      <span class="tx-method">${inv.method || "N/A"}</span>
+      <span class="tx-date">${new Date(inv.date).toLocaleDateString()}</span>
+    `;
     txList.appendChild(txItem);
   });
 }
