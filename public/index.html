@@ -1558,12 +1558,12 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
   if (!email || !amount || !date || !method) return alert("All fields are required.");
 
   try {
-    const token = localStorage.getItem("authToken");
+    const token = localStorage.getItem("jwtToken");
     const res = await fetch(`${backendUrl}/user/${email}/investment`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
+        headers: { "Authorization": `Bearer ${token}` }
       },
       body: JSON.stringify({ amount, date, method })
     });
