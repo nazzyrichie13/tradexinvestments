@@ -14,7 +14,6 @@ import contactRoutes from "./routes/contact.js";
 import withdrawalRoutes from "./routes/withdrawals.js";
 import User from "./models/User.js";
 
-
 dotenv.config();
 
 // Fix __dirname
@@ -46,7 +45,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get("/", (req, res) => res.send("TradexInvest backend is running"));
 
 // API routes
-
+app.use(authRoutes);
 app.use("/api", authRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
