@@ -15,19 +15,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "super_secret_jwt_key";
 // =========================
 // Middleware
 // =========================
-function requireAuth(req, res, next) {
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(401).json({ success: false, message: "No token provided" });
 
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.userId = decoded.id;
-    next();
-  } catch (err) {
-    console.error("JWT verify failed:", err.message);
-    return res.status(401).json({ success: false, message: "Invalid token" });
-  }
-}
 
 function requireAdmin(req, res, next) {
   const token = req.headers.authorization?.split(" ")[1];
@@ -421,7 +409,37 @@ router.delete("/api/admin/investments/:id", async (req, res) => {
     res.json({ success: false, message: "Delete failed" });
   }
 });
+// =====================
+// Get User Investments
+// =====================
+router.post("/api/admin/investments", async (req, res) => {
+  try {
+    const { email, amount, method, date } = req.body;
 
+    // ✅ Find user by email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
 
+    // ✅ Create new investment object
+    const newInvestment = {
+      amount: Number(amount),
+      method,
+      date: date || new Date(),
+    };
 
+    // ✅ Add investment to user's investments array
+    user.investments = user.investments || [];
+    user.investments.push(newInvestment);
+
+    // ✅ Save user
+    await user.save();
+
+    res.json({ success: true, message: "Investment added", investment: newInvestment });
+  } catch (err) {
+    console.error("Error adding investment:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
 export default router;

@@ -1524,24 +1524,27 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
   const date = document.getElementById("investmentDate").value;
   const method = document.getElementById("investmentMethod").value;
 
-  const res = await fetch(`/api/admin/investments`, {
-    method: "POST",
-    headers: { 
-      "Content-Type": "application/json",
-      ...adminAuthHeaders()
-    },
-    body: JSON.stringify({ email, amount, date, method })
-  });
+  try {
+    const res = await fetch(`${backendUrl}/api/admin/investments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, amount, date, method }),
+    });
 
-  const data = await res.json();
-  if (data.success) {
-    alert("Investment added!");
-    
-    loadInvestments();
-  } else {
-    alert("Failed to add investment: " + data.message);
+    const data = await res.json();
+
+    if (data.success) {
+      alert(`Investment added for ${email}: $${amount}`);
+      loadInvestments(); // reload admin table
+      loadTransactionHistory(user._id); // reload user's transaction list
+    } else {
+      alert("Failed to add investment: " + data.message);
+    }
+  } catch (err) {
+    console.error("Error adding investment:", err);
   }
 });
+
 
 </script>
   
