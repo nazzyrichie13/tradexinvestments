@@ -413,20 +413,19 @@ router.delete("/api/admin/investments/:id", async (req, res) => {
 // ✅ Admin adds investment for user
 router.put("/user/:email/investment", requireAdmin, async (req, res) => {
   try {
+    const { email } = req.params;
     const { amount, method, date } = req.body;
-   console.log("Incoming body:", req.body);
 
-    // Validation
-    if (!amount || !method || !date) {
-  return res.status(400).json({
-    success: false,
-    message: "Amount, method, and date are required"
-  });
-}
+    // 🔎 Validate required fields
+    if (!email || !amount || !method || !date) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Missing fields" 
+      });
+    }
 
-
-    // Find user
-    const user = await User.findOne({ email: req.params.email });
+    // 🔎 Find user by email
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -434,21 +433,23 @@ router.put("/user/:email/investment", requireAdmin, async (req, res) => {
       });
     }
 
-    // Push new investment
+    // ➕ Add new investment
     user.investments.push({
-  amount,
-  method,
-  date: date || Date.now()
-});
+      amount,
+      method,
+      date: date || Date.now()
+    });
 
-
+    // 💾 Save user
     await user.save();
 
+    // ✅ Success response
     res.json({
       success: true,
       message: "Investment added successfully",
       investments: user.investments
     });
+
   } catch (err) {
     console.error("Error adding investment:", err);
     res.status(500).json({
