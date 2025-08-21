@@ -372,7 +372,7 @@
   </table>
 </div>
 <form id="addInvestmentForm">
-  <input id="investmentUserId" type="hidden" /> <!-- Admin will select a user and store their ID here -->
+  <input id="investmentUserId"  /> <!-- Admin will select a user and store their ID here -->
   <input id="investmentAmount" type="number" placeholder="Amount" required />
   <select id="investmentMethod">
     <option value="Bank Transfer">Bank Transfer</option>
@@ -385,20 +385,18 @@
 </form>
 
 
-<div onload="loadInvestments()">
-  <table>
-    <thead>
-      <tr>
-        <th>User Email</th>
-        <th>Amount</th>
-        <th>Date</th>
-        <th>Method</th>
-        <th>Action</th>
+<table id="investmentsTable">
+  <thead>
+    <tr>
+      <th>Amount</th>
+      <th>Method</th>
+      <th>Date</th>
       </tr>
-    </thead>
-    <tbody id="investmentTableBody"></tbody>
-  </table>
-</div>
+  </thead>
+  <tbody id="investmentsBody">
+    <!-- Investments will be loaded here -->
+  </tbody>
+</table>
    
 
 
