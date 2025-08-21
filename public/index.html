@@ -1570,7 +1570,7 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
 
   try {
     const token = localStorage.getItem("jwtToken"); // ✅ match login storage
-const res = await fetch(`${backendUrl}/api/user/${encodeURIComponent(userEmail)}/investment`, {
+const res = await fetch(`${backendUrl}/api/user/${encodeURIComponent(email)}/investment`, {
   method: "PUT",
   headers: {
     "Content-Type": "application/json",
