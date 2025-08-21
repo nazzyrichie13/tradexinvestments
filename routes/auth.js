@@ -83,7 +83,7 @@ router.post("/register", async (req, res) => {
 // Get current user
 router.get("/current-user", requireAuth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select("-password");
+    const user = await User.findById(req.user._id).select("-password");
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
     res.json({ success: true, user });
   } catch (err) {
@@ -397,36 +397,17 @@ router.delete("/api/admin/investments/:id", async (req, res) => {
 // Get User Investments
 // =====================
 // Add new investments to a user
-router.put("/admin/investment", requireAdmin, async (req, res) => {
-   try {
-    const { email, amount, date, method } = req.body;
+// POST or PUT /api/admin/user/:email/investment
+router.get("/user/:email/investments", requireAdmin, async (req, res) => {
+  try {
+    const user = await User.findOne({ email: req.params.email }).select("investments name email");
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    if (!email || !amount || !date || !method) {
-      return res.status(400).json({ error: "Missing fields" });
-    }
-
-    // Find user by email
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    // Push new investment object
-    const newInvestment = {
-      amount: parseFloat(amount),
-      date: new Date(date),
-      method,
-      createdAt: new Date()
-    };
-    user.investments.push(newInvestment);
-
-    // Update totals
-    user.investment.balance += newInvestment.amount;
-
-    await user.save();
-
-    res.json({ success: true, user, investment: newInvestment });
+    res.json({ success: true, investments: user.investments });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Failed to add investment" });
+    res.status(500).json({ success: false, message: "Failed to fetch investments" });
   }
 });
+
 export default router;

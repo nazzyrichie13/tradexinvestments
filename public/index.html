@@ -371,7 +371,7 @@
   <button type="submit">Add Investment</button>
 </form>
 
-<body onload="loadInvestments()">
+<div onload="loadInvestments()">
   <table>
     <thead>
       <tr>
@@ -384,9 +384,18 @@
     </thead>
     <tbody id="investmentTableBody"></tbody>
   </table>
+</div>
+  <div id="withdrawalsSection"  class="modal hidden">
+    <table >
+<tbody class="withdrawalsTable tbody">
 
-  <script src="admin.js"></script>
-</body>
+</tbody>
+    </table>
+
+
+  </div>
+
+
 
 
 
@@ -1408,7 +1417,7 @@ function startTwofaCountdown(seconds) {
     }
   });
 
-  async function loadWithdrawals() {
+window.loadWithdrawals =  async function loadWithdrawals() {
     try {
       const token = localStorage.getItem("adminToken");
       if (!token) return alert("You must log in as admin first!");
@@ -1489,7 +1498,7 @@ function adminAuthHeaders() {
   };
 }
 // Load investment table
-async function loadInvestments() {
+ async function loadInvestments() {
   try {
     const res = await fetch(`/api/admin/investments`, {
        
@@ -1546,39 +1555,30 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
   const date = document.getElementById("investmentDate").value;
   const method = document.getElementById("investmentMethod").value;
 
-  if (!email || !amount || !date || !method) {
-    return alert("All fields are required.");
-  }
-
-  const newInvestment = [
-    { amount, date, method,  }
-  ];
+  if (!email || !amount || !date || !method) return alert("All fields are required.");
 
   try {
-    const res = await fetch(`${backendUrl}/api/admin/investments`, {
+    const token = localStorage.getItem("authToken");
+    const res = await fetch(`${backendUrl}/user/${email}/investment`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem("adminToken")}`
+        "Authorization": `Bearer ${token}`
       },
-      body: JSON.stringify({ email, amount, date, method   }),
+      body: JSON.stringify({ amount, date, method })
     });
-// Debug the response
-    const text = await res.text(); // get raw response
-    console.log("Server raw response:", text);
+
     const data = await res.json();
     console.log("Investment response:", data);
 
-    if (data.success) {
-      alert(`Investment added for ${email}: $${amount}`);
-      loadInvestments(); // reload admin table
-      if (data.user?._id) loadTransaction(data.user._id); // reload user's transactions
-    } else {
-      alert("Failed to add investment: " + (data.message || "Unknown error"));
-    }
+    if (!res.ok || !data.success) throw new Error(data.error || "Failed to add investment");
+
+    alert(`Investment added for ${email}: $${amount}`);
+    loadInvestments(); // reload admin table
+
   } catch (err) {
     console.error("Error adding investment:", err);
-    alert("Something went wrong while adding investment");
+    alert("Error adding investment: " + err.message);
   }
 });
 
