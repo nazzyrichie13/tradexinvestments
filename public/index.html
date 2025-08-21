@@ -434,7 +434,7 @@
     <p>Balance: <span id="statBalance">0.00</span> USD</p>
     <p>Profit: <span id="statProfit">0.00</span> USD</p>
     <p>Interest: <span id="statInterest">0.00</span> USD</p>
-      <li>Invested Amount: <span id="statInvestment">$0</span>USD</li> 
+      <p>Invested Amount: <span id="statInvestment">$0</span>USD</p> 
   </div>
 
   <div class="transactions">
@@ -1008,28 +1008,45 @@ function hydrateStatsFromUser(user) {
 
   // ---- Investment Stat ----
   const investments = user.investments || [];
-  const totalInvestment = investments.reduce((sum, inv) => sum + inv.amount, 0);
-  document.getElementById("statInvestment").innerText = `$${totalInvestment.toFixed(2)}`;
+  const totalInvestment = investments.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+  const statInvestmentEl = document.getElementById("statInvestment");
+  if (statInvestmentEl) {
+    statInvestmentEl.innerText = `$${totalInvestment.toFixed(2)}`;
+  }
 
   // ---- Transactions List ----
   const txList = document.getElementById("transactionsList");
-  txList.innerHTML = "";
+  if (!txList) return;
+
+  txList.innerHTML = ""; // clear previous list
 
   if (investments.length === 0) {
     txList.innerHTML = "<p>No transactions yet</p>";
     return;
   }
 
+  // Append each transaction
   investments.forEach(inv => {
-    txList.innerHTML += `
-      <div class="transaction-item">
-        <span class="tx-amount">$${inv.amount.toFixed(2)}</span>
-        <span class="tx-method">${inv.method}</span>
-        <span class="tx-date">${new Date(inv.date).toLocaleDateString()}</span>
-      </div>
-    `;
+    const txItem = document.createElement("div");
+    txItem.className = "transaction-item";
+
+    const amountSpan = document.createElement("span");
+    amountSpan.className = "tx-amount";
+    amountSpan.innerText = `$${(inv.amount || 0).toFixed(2)}`;
+
+    const methodSpan = document.createElement("span");
+    methodSpan.className = "tx-method";
+    methodSpan.innerText = inv.method || "N/A";
+
+    const dateSpan = document.createElement("span");
+    dateSpan.className = "tx-date";
+    dateSpan.innerText = new Date(inv.date).toLocaleDateString();
+
+    txItem.append(amountSpan, methodSpan, dateSpan);
+    txList.appendChild(txItem);
   });
 }
+
 async function loadTransactions() {
   const tbody = document.querySelector("#txTable tbody");
   if (!tbody) return;
