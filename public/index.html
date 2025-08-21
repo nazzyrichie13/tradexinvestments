@@ -1017,28 +1017,54 @@ function hydrateStatsFromUser(user) {
     `;
   });
 }
- async function loadTransactions() { const tbody = $("#txTable tbody");
-  if (!tbody) return; tbody.innerHTML = <tr><td colspan="4">Loading...</td></tr>;
-   try { const res = await fetch(${backendUrl}/api/transactions/my, 
-   { headers: authHeaders() }); 
-   const data = await res.json(); 
-   if (!res.ok) throw new Error(data.message || "Failed to load transactions"); 
-   let txs = Array.isArray(data.transactions) ? data.transactions : (data && data._id ? [data] : []); 
-   if (!txs.length) { tbody.innerHTML = <tr><td colspan="4">No transactions yet.</td></tr>;
-    return;
-   } 
-   tbody.innerHTML = txs 
-   .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) 
-   .map(tx => <tr> 
-    <td>${fmtDate(tx.createdAt)}</td> 
-    <td>${(tx.type || "").toUpperCase()}</td> 
-    <td>$${fmtMoney(tx.amount)}</td> 
-    <td>${(tx.status || "pending").toUpperCase()}</td> 
-    </tr>).join(""); } catch (e) { tbody.innerHTML = <tr>
-    <td colspan="4">Error: ${e.message || "No transactions yet."}</td></tr>; } }
+async function loadTransactions() {
+  const tbody = document.querySelector("#txTable tbody");
+  if (!tbody) return;
 
-  // ---------- Withdraw ----------
-$("#WithdrawBtn")?.addEventListener("click", async () => {
+  tbody.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
+
+  try {
+    const res = await fetch(`${backendUrl}/api/transactions/my`, {
+      headers: authHeaders()
+    });
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.message || "Failed to load transactions");
+
+    // Normalize transactions array
+    let txs = [];
+    if (Array.isArray(data.transactions)) {
+      txs = data.transactions;
+    } else if (data && data._id) {
+      txs = [data];
+    }
+
+    if (txs.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4">No transactions yet.</td></tr>`;
+      return;
+    }
+
+    // Sort by latest first and map to table rows
+    tbody.innerHTML = txs
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .map(tx => `
+        <tr>
+          <td>${fmtDate(tx.createdAt)}</td>
+          <td>${(tx.type || "").toUpperCase()}</td>
+          <td>$${fmtMoney(tx.amount)}</td>
+          <td>${(tx.status || "pending").toUpperCase()}</td>
+        </tr>
+      `).join("");
+
+  } catch (err) {
+    console.error("Failed to load transactions:", err);
+    tbody.innerHTML = `<tr><td colspan="4">Error: ${err.message || "Could not load transactions"}</td></tr>`;
+  }
+}
+
+  
+
+  $("#WithdrawBtn")?.addEventListener("click", async () => {
   const amount = parseFloat($("#withdrawAmount").value);
   const method = $("#withdrawMethod").value;
 
@@ -1118,7 +1144,7 @@ $("#DepositBtn")?.addEventListener("click", () => {
   hydrateStatsFromUser(user._id);
    loadTransactions()
 
-    $("#openDepositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
+  $("#openDepositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
     $("#openWithdrawBtn")?.addEventListener("click", () => window.openModal?.("withdrawModal"));
 
     $("#openLogin")?.classList.add("hidden");
@@ -1497,16 +1523,23 @@ async function deleteInvestment(id) {
 document.getElementById("addInvestmentForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const email = document.getElementById("investmentEmail").value;
-  const amount = document.getElementById("investmentAmount").value;
+  const email = document.getElementById("investmentEmail").value.trim();
+  const amount = parseFloat(document.getElementById("investmentAmount").value);
   const date = document.getElementById("investmentDate").value;
   const method = document.getElementById("investmentMethod").value;
 
+  if (!email || !amount || !date || !method) return alert("All fields are required");
+
+  // Prepare as an array with a single investment object
+  const newInvestment = [
+    { amount, date, method, createdAt: new Date().toISOString() }
+  ];
+
   try {
     const res = await fetch(`${backendUrl}/api/admin/investments`, {
-      method: "POST",
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, amount, date, method }),
+      body: JSON.stringify({ email, investments: newInvestment }),
     });
 
     const data = await res.json();
@@ -1514,15 +1547,15 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
     if (data.success) {
       alert(`Investment added for ${email}: $${amount}`);
       loadInvestments(); // reload admin table
-      loadTransactionHistory(user._id); // reload user's transaction list
+      if (data.user?._id) loadTransaction(data.user._id); // reload user's transactions
     } else {
       alert("Failed to add investment: " + data.message);
     }
   } catch (err) {
     console.error("Error adding investment:", err);
+    alert("Something went wrong while adding investment");
   }
 });
-
 
 </script>
   
