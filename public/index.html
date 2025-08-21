@@ -372,17 +372,18 @@
   </table>
 </div>
 <form id="addInvestmentForm">
-  <input id="investmentEmail" placeholder="User Email" required />
+  <input id="investmentUserId" type="hidden" /> <!-- Admin will select a user and store their ID here -->
   <input id="investmentAmount" type="number" placeholder="Amount" required />
-<select id="investmentMethod">
-  <option value="Bank Transfer">Bank Transfer</option>
-  <option value="PayPal">PayPal</option>
-  <option value="Bitcoin">Bitcoin</option>
-  <option value="CashApp">CashApp</option>
-</select>
-<input id="investmentDate"  type="date" required />
+  <select id="investmentMethod">
+    <option value="Bank Transfer">Bank Transfer</option>
+    <option value="PayPal">PayPal</option>
+    <option value="Bitcoin">Bitcoin</option>
+    <option value="CashApp">CashApp</option>
+  </select>
+  <input id="investmentDate" type="date" required />
   <button type="submit">Add Investment</button>
 </form>
+
 
 <div onload="loadInvestments()">
   <table>
@@ -1153,7 +1154,7 @@ $("#DepositBtn")?.addEventListener("click", () => {
 
     $("#dashboardCard")?.classList.remove("hidden");
      
-  hydrateStatsFromUser(user._id);
+
    
   hydrateStatsFromUser(user._id);
    loadTransactions()
@@ -1509,38 +1510,26 @@ function adminAuthHeaders() {
   };
 }
 // Load investment table
- async function loadInvestments() {
+async function loadInvestments(userId) {
   try {
-    const res = await fetch(`/api/admin/investments`, {
-       
-        headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem("adminToken")}`
-      },
-       
+    const res = await fetch(`${backendUrl}/user/${userId}/investments`, {
+      headers: adminAuthHeaders()
     });
     const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to fetch investments");
 
-    const tbody = document.getElementById("investmentTableBody");
+    const tbody = document.getElementById("investmentsBody");
     tbody.innerHTML = "";
 
-    if (data.success && data.investments.length > 0) {
-      data.investments.forEach(inv => {
-        tbody.innerHTML += `
-          <tr>
-            <td>${inv.user?.email || "Unknown"}</td>
-            <td>$${inv.amount.toFixed(2)}</td>
-            <td>${new Date(inv.date).toLocaleDateString()}</td>
-            <td>${inv.method}</td>
-            <td>
-              <button onclick="deleteInvestment('${inv._id}')">Delete</button>
-            </td>
-          </tr>
-        `;
-      });
-    } else {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No investments found</td></tr>`;
-    }
+    data.investments.forEach(inv => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${inv.amount}</td>
+        <td>${inv.method}</td>
+        <td>${new Date(inv.date).toLocaleDateString()}</td>
+      `;
+      tbody.appendChild(tr);
+    });
   } catch (err) {
     console.error("Error loading investments:", err);
   }
@@ -1558,41 +1547,36 @@ async function deleteInvestment(id) {
 }
 
 
+// Add investment
 document.getElementById("addInvestmentForm").addEventListener("submit", async (e) => {
   e.preventDefault();
-
-  const email = document.getElementById("investmentEmail").value.trim();
+  
+  const userId = document.getElementById("investmentUserId").value;
   const amount = parseFloat(document.getElementById("investmentAmount").value);
   const method = document.getElementById("investmentMethod").value;
   const date = document.getElementById("investmentDate").value;
 
-  console.log("email:",email, "amount:", amount, "method:", method, "date:", date);
-
-  if ( !amount || !method || !date) {
+  if (!userId || !amount || !method || !date) {
     return alert("All fields are required.");
   }
 
   try {
-    const res = await fetch(`${backendUrl}/api/admin/user/investment`, {
-  method: "PUT",
-  headers: { ...adminAuthHeaders(),"Content-Type": "application/json" },
-  body: JSON.stringify({ amount, method, date })
-}); 
+    const res = await fetch(`${backendUrl}/api/admin/user/${userId}/investment`, {
+      method: "PUT",
+      headers: adminAuthHeaders(),
+      body: JSON.stringify({ amount, method, date })
+    });
 
     const data = await res.json();
-
     if (!res.ok) throw new Error(data.message || "Failed to add investment");
 
-    alert(`Investment added for ${email}: $${amount}`);
-    console.log("✅ Investment added:", data);
-
-    loadInvestments(); // reload admin table
+    alert(`Investment added: $${amount}`);
+    loadInvestments(userId); // Reload table
   } catch (err) {
     console.error("Error adding investment:", err);
     alert("Error adding investment: " + err.message);
   }
 });
-
 </script>
   
 </body>

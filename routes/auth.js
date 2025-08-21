@@ -411,57 +411,30 @@ router.delete("/api/admin/investments/:id", async (req, res) => {
 // POST or PUT /api/admin/user/:email/investment
 // ✅ Add Investment to a User
 // ✅ Admin adds investment for user
-router.put("/admin/user/investment", requireAdmin, async (req, res) => {
-  console.log("REQ BODY:", req.body);
-console.log("REQ PARAMS:", req.params);
-
+// ✅ Admin adds investment for a user
+// PUT /api/admin/user/:id/investment
+router.put("/admin/user/:id/investment", requireAdmin, async (req, res) => {
   try {
+    const { id } = req.params;
     const { amount, method, date } = req.body;
-    console.log("Backend received:", req.body)
-    const { email } = req.params;   // <-- take email from params
 
-    // 🔎 Validate required fields
-    if (  !amount || !method || !date) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Missing fields" 
-      });
+    if (!amount || !method || !date) {
+      return res.status(400).json({ success: false, message: "Missing fields" });
     }
 
-    // 🔎 Find user by email
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      });
-    }
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    // ➕ Add new investment
-    user.investments.push({
-      amount,
-      method,
-      date: date || Date.now()
-    });
-
-    // 💾 Save user
+    user.investments.push({ amount, method, date: date || Date.now() });
     await user.save();
 
-    // ✅ Success response
-    res.json({
-      success: true,
-      message: "Investment added successfully",
-      investments: user.investments
-    });
-
+    res.json({ success: true, message: "Investment added", investments: user.investments });
   } catch (err) {
     console.error("Error adding investment:", err);
-    res.status(500).json({
-      success: false,
-      message: "Failed to add investment"
-    });
+    res.status(500).json({ success: false, message: "Failed to add investment" });
   }
 });
+
 
 
 export default router;
