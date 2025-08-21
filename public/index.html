@@ -1003,38 +1003,7 @@ function openModal(id) {
 
 // Hydrate user stats into the dashboard
 // When user logs in, hydrate dashboard from DB data
-function hydrateStatsFromUser(user) {
-  if (!user) return;
 
-  const investments = user.investments || [];
-
-  // ---- Total Investment ----
-  const totalInvestment = investments.reduce((sum, inv) => sum + (inv.amount || 0), 0);
-  const statInvestmentEl = document.getElementById("statInvestment");
-  if (statInvestmentEl) statInvestmentEl.innerText = `$${totalInvestment.toFixed(2)}`;
-
-  // ---- Transaction List ----
-  const txList = document.getElementById("transactionsList");
-  if (!txList) return;
-  txList.innerHTML = "";
-
-  if (investments.length === 0) {
-    txList.innerHTML = "<p>No transactions yet</p>";
-    return;
-  }
-
-  // Show newest first
-  investments.slice().reverse().forEach(inv => {
-    const txItem = document.createElement("div");
-    txItem.className = "transaction-item";
-    txItem.innerHTML = `
-      <span class="tx-amount">$${(inv.amount || 0).toFixed(2)}</span>
-      <span class="tx-method">${inv.method || "N/A"}</span>
-      <span class="tx-date">${new Date(inv.date).toLocaleDateString()}</span>
-    `;
-    txList.appendChild(txItem);
-  });
-}
 
 async function loadTransactions() {
   const tbody = document.querySelector("#txTable tbody");
@@ -1162,7 +1131,7 @@ $("#DepositBtn")?.addEventListener("click", () => {
    
    hydrateStatsFromUser(user);
     // You can also load the investments table if you want
-    loadInvestments(userId);
+    
    loadTransactions()
 
   $("#openDepositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
@@ -1517,36 +1486,79 @@ function adminAuthHeaders() {
 }
 // Load investment table
 // Load investment table and update dashboard stats
+// Load user investments and update dashboard
 async function loadInvestments(userId) {
   try {
+    // Fetch investments from backend
     const res = await fetch(`${backendUrl}/user/${userId}/investments`, {
       headers: adminAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to fetch investments");
 
-    // ----- Update Investment Table -----
+    const investments = data.investments || [];
+
+    // ----- Update dashboard stats and transaction history -----
+    hydrateStatsFromUser({ investments });
+
+    // ----- Update investments table -----
     const tbody = document.getElementById("investmentsBody");
+    if (!tbody) return;
     tbody.innerHTML = "";
 
-    data.investments.forEach(inv => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>$${inv.amount.toFixed(2)}</td>
-        <td>${inv.method}</td>
-        <td>${new Date(inv.date).toLocaleDateString()}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-
-    // ----- Update Dashboard Stats -----
-    // Here we pass a user-like object with investments
-    hydrateStatsFromUser({ investments: data.investments });
+    if (investments.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="3">No investments yet</td></tr>`;
+    } else {
+      investments.slice().reverse().forEach(inv => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>$${(inv.amount || 0).toFixed(2)}</td>
+          <td>${inv.method || "N/A"}</td>
+          <td>${new Date(inv.date).toLocaleDateString()}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
 
   } catch (err) {
     console.error("Error loading investments:", err);
   }
 }
+
+// Function to update dashboard totals and transactions
+function hydrateStatsFromUser(user) {
+  if (!user) return;
+
+  const investments = user.investments || [];
+
+  // ----- Total Investment -----
+  const totalInvestment = investments.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+  const statInvestmentEl = document.getElementById("statInvestment");
+  if (statInvestmentEl) statInvestmentEl.innerText = `$${totalInvestment.toFixed(2)}`;
+
+  // ----- Transaction History -----
+  const txList = document.getElementById("transactionsList");
+  if (!txList) return;
+  txList.innerHTML = "";
+
+  if (investments.length === 0) {
+    txList.innerHTML = "<p>No transactions yet</p>";
+    return;
+  }
+
+  // Show newest transactions first
+  investments.slice().reverse().forEach(inv => {
+    const txItem = document.createElement("div");
+    txItem.className = "transaction-item";
+    txItem.innerHTML = `
+      <span class="tx-amount">$${(inv.amount || 0).toFixed(2)}</span>
+      <span class="tx-method">${inv.method || "N/A"}</span>
+      <span class="tx-date">${new Date(inv.date).toLocaleDateString()}</span>
+    `;
+    txList.appendChild(txItem);
+  });
+}
+
 
 // Delete investment
 async function deleteInvestment(id) {
