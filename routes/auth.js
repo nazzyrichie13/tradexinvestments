@@ -410,29 +410,49 @@ router.delete("/api/admin/investments/:id", async (req, res) => {
 // Add new investments to a user
 // POST or PUT /api/admin/user/:email/investment
 // ✅ Add Investment to a User
+// ✅ Admin adds investment for user
 router.put("/user/:email/investment", requireAdmin, async (req, res) => {
   try {
-    const { amount, method } = req.body;
+    const { amount, method, date } = req.body;
 
+    // Validation
     if (!amount || !method) {
-      return res.status(400).json({ success: false, message: "Amount and method are required" });
+      return res.status(400).json({
+        success: false,
+        message: "Amount and method are required"
+      });
     }
 
+    // Find user
     const user = await User.findOne({ email: req.params.email });
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
     }
 
     // Push new investment
-    user.investments.push({ amount, method });
+    user.investments.push({
+      amount,
+      method,
+      date: date || Date.now() // ✅ if no date is sent, fallback to current time
+    });
+
     await user.save();
 
-    res.json({ success: true, message: "Investment added", investments: user.investments });
+    res.json({
+      success: true,
+      message: "Investment added successfully",
+      investments: user.investments
+    });
   } catch (err) {
     console.error("Error adding investment:", err);
-    res.status(500).json({ success: false, message: "Failed to add investment" });
+    res.status(500).json({
+      success: false,
+      message: "Failed to add investment"
+    });
   }
 });
-
 
 export default router;
