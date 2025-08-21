@@ -399,7 +399,7 @@ router.post("/user/:id/investments", async (req, res) => {
 
     // ✅ Add investment to user's investments array
     user.investments = user.investments || [];
-    user.investments.push(newInvestment);
+    user.investments.push({ amount, method, date });
 
     // ✅ Save user
     await user.save();
