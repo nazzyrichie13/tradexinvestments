@@ -1171,7 +1171,9 @@ $("#DepositBtn")?.addEventListener("click", () => {
      
 
    
-  hydrateStatsFromUser(user._id);
+   hydrateStatsFromUser(user);
+    // You can also load the investments table if you want
+    loadInvestments(userId);
    loadTransactions()
 
   $("#openDepositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
@@ -1525,6 +1527,7 @@ function adminAuthHeaders() {
   };
 }
 // Load investment table
+// Load investment table and update dashboard stats
 async function loadInvestments(userId) {
   try {
     const res = await fetch(`${backendUrl}/user/${userId}/investments`, {
@@ -1533,18 +1536,24 @@ async function loadInvestments(userId) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to fetch investments");
 
+    // ----- Update Investment Table -----
     const tbody = document.getElementById("investmentsBody");
     tbody.innerHTML = "";
 
     data.investments.forEach(inv => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${inv.amount}</td>
+        <td>$${inv.amount.toFixed(2)}</td>
         <td>${inv.method}</td>
         <td>${new Date(inv.date).toLocaleDateString()}</td>
       `;
       tbody.appendChild(tr);
     });
+
+    // ----- Update Dashboard Stats -----
+    // Here we pass a user-like object with investments
+    hydrateStatsFromUser({ investments: data.investments });
+
   } catch (err) {
     console.error("Error loading investments:", err);
   }
