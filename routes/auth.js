@@ -313,27 +313,31 @@ router.get("/admin/users", requireAdmin, async (req, res) => {
 });
 
 // Update user investment (admin)
-router.put("/user/:id/investment", requireAdmin, async (req, res) => {
+router.put("/admin/user/:id/portfolio", requireAdmin, async (req, res) => {
   try {
+    // Log incoming request to debug
     console.log("Incoming body:", req.body);
 
     const { id } = req.params;
-    const { balance, interest, profit } = req.body;
+    const { balance, profit, interest } = req.body;
 
-    if (balance == null || interest == null || profit == null)
+    if (balance == null || profit == null || interest == null) {
       return res.status(400).json({ success: false, message: "Missing fields" });
+    }
 
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
+    // Update investment
     user.investment.balance = balance;
-    user.investment.interest = interest;
     user.investment.profit = profit;
+    user.investment.interest = interest;
+
     await user.save();
 
     res.json({ success: true, user });
   } catch (err) {
-    console.error(err);
+    console.error("Update investment error:", err);
     res.status(500).json({ success: false, message: "Failed to update investment" });
   }
 });
