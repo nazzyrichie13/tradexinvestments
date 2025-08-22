@@ -1412,16 +1412,16 @@ document.addEventListener("click", async (e) => {
 
   const id = e.target.dataset.id;
   const row = e.target.closest("tr");
+  if (!row) return alert("Error: row not found");
 
-  // Get inputs safely
-  const balanceInput = row.querySelector('input[data-field="balance"]');
-  const profitInput = row.querySelector('input[data-field="profit"]');
-  const interestInput = row.querySelector('input[data-field="interest"]');
+  // Search for inputs anywhere inside the row
+  const balanceInput = row.querySelector('[data-field="balance"]');
+  const profitInput = row.querySelector('[data-field="profit"]');
+  const interestInput = row.querySelector('[data-field="interest"]');
 
   if (!balanceInput || !profitInput || !interestInput) {
     console.error("Missing input elements in row:", row);
-    alert("Error: input fields not found. Check layout on this screen.");
-    return;
+    return alert("Error: input fields not found in this row");
   }
 
   // Convert to numbers safely
@@ -1429,7 +1429,7 @@ document.addEventListener("click", async (e) => {
   const profit = parseFloat(profitInput.value) || 0;
   const interest = parseFloat(interestInput.value) || 0;
 
-  console.log("Submitting:", { balance, profit, interest });
+  console.log("Submitting investment:", { balance, profit, interest });
 
   try {
     const res = await fetch(`${backendUrl}/api/admin/user/${id}/investment`, {
@@ -1442,7 +1442,6 @@ document.addEventListener("click", async (e) => {
     });
 
     const data = await res.json();
-
     if (!res.ok || !data.success) throw new Error(data.message || "Update failed");
 
     alert("User investment updated!");
@@ -1451,7 +1450,6 @@ document.addEventListener("click", async (e) => {
     console.error(err);
     alert("Error: " + err.message);
   }
-
 
   // ---- Approve / Reject Withdrawal ----
   if (e.target.classList.contains("approveWd") || e.target.classList.contains("rejectWd")) {
