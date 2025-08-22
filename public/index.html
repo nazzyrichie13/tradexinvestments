@@ -1438,10 +1438,7 @@ document.addEventListener("click", async (e) => {
   try {
     const res = await fetch(`${backendUrl}/api/admin/user/${id}/investment`, {
       method: "PUT",
-      headers: {
-        ...adminAuthHeaders(),
-        "Content-Type": "application/json",
-      },
+      headers : adminAuthHeaders(),
       body: JSON.stringify({ balance, profit, interest }),
     });
 
