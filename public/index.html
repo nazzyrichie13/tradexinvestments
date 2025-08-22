@@ -1160,13 +1160,13 @@ $("#DepositBtn")?.addEventListener("click", () => {
      
 
    
-   hydrateStatsFromUser(user);
-    // You can also load the investments table if you want
-    loadInvestments(userId);
-   loadTransactions()
-
+   
   $("#openDepositBtn")?.addEventListener("click", () => window.openModal?.("depositModal"));
     $("#openWithdrawBtn")?.addEventListener("click", () => window.openModal?.("withdrawModal"));
+hydrateStatsFromUser(user);
+    // You can also load the investments table if you want
+    loadInvestments({user_id});
+   loadTransactions()
 
     $("#openLogin")?.classList.add("hidden");
     $("#openSignup")?.classList.add("hidden");
@@ -1384,13 +1384,14 @@ function startTwofaCountdown(seconds) {
     if (!tbody) return;
     tbody.innerHTML = `<tr><td colspan="6">Loading...</td></tr>`;
     try {
-      const res = await fetch(`${backendUrl}/api/admin/users`, { headers: adminAuthHeaders() });
+      const res = await fetch(`${backendUrl}/api/admin/users`,{ headers: adminAuthHeaders() });
       const data = await res.json();
       const users = data.users || data;
       if (!Array.isArray(users)) throw new Error("Invalid users response");
 
       tbody.innerHTML = users.map(u => `
         <tr>
+          <td>${u._id}<td>
           <td>${u.name}</td>
           <td>${u.email}</td>
           <td><input type="number" data-id="${u._id}" data-field="balance" value="${u.investment?.balance || 0}"></td>
