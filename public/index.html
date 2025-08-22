@@ -334,7 +334,7 @@ input[data-field="balance"] {
     <table>
       <thead>
         <tr>
-          <th>Name</th><th>Email</th><th>Balance</th><th>Profit</th><th>Interest</th><th>Actions</th>
+         <th>use-id</th> <th>Name</th><th>Email</th><th>Balance</th><th>Profit</th><th>Interest</th><th>Actions</th>
         </tr>
       </thead>
       <tbody id="adminUsersBody"></tbody>
@@ -1423,12 +1423,9 @@ document.addEventListener("click", async (e) => {
 
     try {
       const res = await fetch(`${backendUrl}/api/admin/user/${id}/investment`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({ balance, profit, interest }),
+  method: "PUT",
+  headers: adminAuthHeaders(),
+  body: JSON.stringify({ balance, profit, interest }),
       });
 
       const data = await res.json();

@@ -232,6 +232,12 @@ router.post("/verify-2fa", async (req, res) => {
 // =========================
 // ADMIN ROUTES
 // =========================
+function adminAuthHeaders() {
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+  };
+}
 
 // Admin login
 router.post("/admin-login", async (req, res) => {
@@ -309,6 +315,8 @@ router.get("/admin/users", requireAdmin, async (req, res) => {
 // Update user investment (admin)
 router.put("/user/:id/investment", requireAdmin, async (req, res) => {
   try {
+    console.log("Incoming body:", req.body);
+
     const { id } = req.params;
     const { balance, interest, profit } = req.body;
 
