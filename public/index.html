@@ -1408,34 +1408,50 @@ function startTwofaCountdown(seconds) {
 
 // Combine ALL click logic into ONE listener
 document.addEventListener("click", async (e) => {
-  // ---- Save User Investment ----
-  if (e.target.classList.contains("adminSave")) {
-    const id = e.target.dataset.id;
-    const row = e.target.closest("tr");
+  if (!e.target.classList.contains("adminSave")) return;
 
-    const balance = parseFloat(row.querySelector('input[data-field="balance"]').value) || 0;
-    const profit = parseFloat(row.querySelector('input[data-field="profit"]').value) || 0;
-    const interest = parseFloat(row.querySelector('input[data-field="interest"]').value) || 0;
+  const id = e.target.dataset.id;
+  const row = e.target.closest("tr");
 
-    try {
-      const res = await fetch(`${backendUrl}/api/admin/user/${id}/investment`, {
-        method: "PUT",
-        headers: {
-    ...adminAuthHeaders(),
-    "Content-Type": "application/json"   // 👈 add this
-  },
-        body: JSON.stringify({ balance, profit, interest })
-      });
+  // Get inputs safely
+  const balanceInput = row.querySelector('input[data-field="balance"]');
+  const profitInput = row.querySelector('input[data-field="profit"]');
+  const interestInput = row.querySelector('input[data-field="interest"]');
 
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message || "Update failed");
-
-      alert("User investment updated!");
-      await loadAdminUsers(); // wait for refresh
-    } catch (err) {
-      alert("Error: " + err.message);
-    }
+  if (!balanceInput || !profitInput || !interestInput) {
+    console.error("Missing input elements in row:", row);
+    alert("Error: input fields not found. Check layout on this screen.");
+    return;
   }
+
+  // Convert to numbers safely
+  const balance = parseFloat(balanceInput.value) || 0;
+  const profit = parseFloat(profitInput.value) || 0;
+  const interest = parseFloat(interestInput.value) || 0;
+
+  console.log("Submitting:", { balance, profit, interest });
+
+  try {
+    const res = await fetch(`${backendUrl}/api/admin/user/${id}/investment`, {
+      method: "PUT",
+      headers: {
+        ...adminAuthHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ balance, profit, interest }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success) throw new Error(data.message || "Update failed");
+
+    alert("User investment updated!");
+    await loadAdminUsers(); // refresh table
+  } catch (err) {
+    console.error(err);
+    alert("Error: " + err.message);
+  }
+
 
   // ---- Approve / Reject Withdrawal ----
   if (e.target.classList.contains("approveWd") || e.target.classList.contains("rejectWd")) {
