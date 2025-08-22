@@ -1432,7 +1432,7 @@ document.addEventListener("click", async (e) => {
     const interest = parseFloat(row.querySelector('input[data-field="interest"]')?.value) || 0;
 
     try {
-      const res = await fetch(`${backendUrl}/api/admin/user/${id}/investment`, {
+      const res = await fetch(`${backendUrl}/api/admin/user/${id}/portfolio`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
