@@ -1177,7 +1177,7 @@ $("#DepositBtn")?.addEventListener("click", () => {
     $("#openWithdrawBtn")?.addEventListener("click", () => window.openModal?.("withdrawModal"));
 hydrateStatsFromUser(user);
     // You can also load the investments table if you want
-    loadInvestments({user_id});
+    loadInvestments({user});
    loadTransactions()
 
     $("#openLogin")?.classList.add("hidden");
