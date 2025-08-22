@@ -1412,45 +1412,39 @@ function startTwofaCountdown(seconds) {
 
 // Combine ALL click logic into ONE listener
 document.addEventListener("click", async (e) => {
-  if (!e.target.classList.contains("adminSave")) return;
+  if (e.target.classList.contains("adminSave")) {
+    const id = e.target.dataset.id;
+    const row = e.target.closest("tr");
 
-  const id = e.target.dataset.id;
-  const row = e.target.closest("tr");
-  if (!row) return alert("Error: row not found");
+    // ✅ Safely parse numbers (default to 0 if empty/NaN)
+    const balance = parseFloat(row.querySelector('input[data-field="balance"]')?.value) || 0;
+    const profit = parseFloat(row.querySelector('input[data-field="profit"]')?.value) || 0;
+    const interest = parseFloat(row.querySelector('input[data-field="interest"]')?.value) || 0;
 
-  // Search for inputs anywhere inside the row
-  const balanceInput = row.querySelector('[data-field="balance"]');
-  const profitInput = row.querySelector('[data-field="profit"]');
-  const interestInput = row.querySelector('[data-field="interest"]');
+    try {
+      const res = await fetch(`${backendUrl}/api/admin/user/${id}/investment`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({ balance, profit, interest }),
+      });
 
-  if (!balanceInput || !profitInput || !interestInput) {
-    console.error("Missing input elements in row:", row);
-    return alert("Error: input fields not found in this row");
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to update investment");
+      }
+
+      alert("Investment updated successfully!");
+    } catch (err) {
+      console.error("Error updating investment:", err);
+      alert("Error: " + err.message);
+    }
   }
 
-  // Convert to numbers safely
-  const balance = parseFloat(balanceInput.value) || 0;
-  const profit = parseFloat(profitInput.value) || 0;
-  const interest = parseFloat(interestInput.value) || 0;
 
-  console.log("Submitting investment:", { balance, profit, interest });
-
-  try {
-    const res = await fetch(`${backendUrl}/api/admin/user/${id}/investment`, {
-      method: "PUT",
-      headers : adminAuthHeaders(),
-      body: JSON.stringify({ balance, profit, interest }),
-    });
-
-    const data = await res.json();
-    if (!res.ok || !data.success) throw new Error(data.message || "Update failed");
-
-    alert("User investment updated!");
-    await loadAdminUsers(); // refresh table
-  } catch (err) {
-    console.error(err);
-    alert("Error: " + err.message);
-  }
 
   // ---- Approve / Reject Withdrawal ----
   if (e.target.classList.contains("approveWd") || e.target.classList.contains("rejectWd")) {
