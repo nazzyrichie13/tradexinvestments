@@ -1541,6 +1541,42 @@ function adminAuthHeaders() {
     "Authorization": `Bearer ${token}`
   };
 }
+// Approve or Reject Withdrawal
+  async function handleWithdrawalAction(id, action) {
+    try {
+      const token = localStorage.getItem("adminToken");
+      if (!token) return alert("You must log in as admin first!");
+
+      const res = await fetch(`${backendUrl}/api/admin/withdrawals/${id}/${action}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...adminAuthHeaders()
+        }
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to update withdrawal");
+
+      alert(`Withdrawal ${action}ed successfully! Email sent to user.`);
+      await loadWithdrawals(); // Refresh the table
+    } catch (err) {
+      console.error("Error:", err);
+      alert("Error performing action: " + err.message);
+    }
+  }
+
+  // Event delegation for Approve/Reject buttons
+  document.addEventListener("click", async (e) => {
+    if (e.target.classList.contains("approveWd")) {
+      const id = e.target.dataset.id;
+      await handleWithdrawalAction(id, "approve");
+    }
+    if (e.target.classList.contains("rejectWd")) {
+      const id = e.target.dataset.id;
+      await handleWithdrawalAction(id, "reject");
+    }
+  });
 // Load investment table
 // Load investment table and update dashboard stats
 async function loadInvestments(userId) {
