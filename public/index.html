@@ -1377,67 +1377,9 @@ function startTwofaCountdown(seconds) {
     $("#adminDashboard")?.classList.remove("hidden");
     loadAdminUsers();
     loadWithdrawals();
-  };
-
-  
-   
-
-window.loadWithdrawals =  async function loadWithdrawals() {
-    try {
-      const token = localStorage.getItem("adminToken");
-      if (!token) return alert("You must log in as admin first!");
-      const tbody = document.querySelector("#withdrawalsTable tbody");
-      if (!tbody) return console.error("No table found with ID 'withdrawalsTable'");
-      const res = await fetch(`${backendUrl}/api/admin/withdrawals`, { headers: adminAuthHeaders() });
-      const data = await res.json();
-      const withdrawals = data.withdrawals || data;
-      tbody.innerHTML = "";
-
-      if (!withdrawals || withdrawals.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No withdrawals yet</td></tr>`;
-        return;
-      }
-
-      withdrawals.forEach(w => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${w.user?.name || "Unknown"}</td>
-          <td>${w.method}</td>
-          <td>${w.amount}</td>
-          <td>${w.status}</td>
-          <td>
-            <button class="approveWd" data-id="${w._id}">Approve</button>
-            <button class="rejectWd" data-id="${w._id}">Reject</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-    } catch (err) { console.error("Error loading withdrawals:", err); }
   }
 
-  $("#logoutAdmin")?.addEventListener("click", () => {
-    localStorage.removeItem("adminToken"); localStorage.removeItem("currentAdmin");
-    $("#adminDashboard")?.classList.add("hidden");
-  });
-
-document.querySelectorAll("[data-tab='withdrawalsTab']").forEach(btn => {
-  btn.addEventListener("click", async () => {
-    // Show withdrawals table section (if hidden)
-    const withdrawalsSection = document.getElementById("withdrawalsSection");
-    if (withdrawalsSection) withdrawalsSection.classList.remove("hidden");
-
-    // Optionally hide other admin sections
-    document.querySelectorAll(".adminTab").forEach(section => {
-      if (section.id !== "withdrawalsSection") section.classList.add("hidden");
-    });
-
-    // Load the withdrawals from backend
-    await loadWithdrawals();
-  });
-});
-
-async function loadAdminUsers() {
+  async function loadAdminUsers() {
   const tbody = document.getElementById("adminUsersBody");
   if (!tbody) return;
   tbody.innerHTML = `<tr><td colspan="7">Loading...</td></tr>`;
@@ -1514,6 +1456,60 @@ document.addEventListener("click", async (e) => {
   }
 });
 
+window.loadWithdrawals =  async function loadWithdrawals() {
+    try {
+      const token = localStorage.getItem("adminToken");
+      if (!token) return alert("You must log in as admin first!");
+      const tbody = document.querySelector("#withdrawalsTable tbody");
+      if (!tbody) return console.error("No table found with ID 'withdrawalsTable'");
+      const res = await fetch(`${backendUrl}/api/admin/withdrawals`, { headers: adminAuthHeaders() });
+      const data = await res.json();
+      const withdrawals = data.withdrawals || data;
+      tbody.innerHTML = "";
+
+      if (!withdrawals || withdrawals.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No withdrawals yet</td></tr>`;
+        return;
+      }
+
+      withdrawals.forEach(w => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${w.user?.name || "Unknown"}</td>
+          <td>${w.method}</td>
+          <td>${w.amount}</td>
+          <td>${w.status}</td>
+          <td>
+            <button class="approveWd" data-id="${w._id}">Approve</button>
+            <button class="rejectWd" data-id="${w._id}">Reject</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+    } catch (err) { console.error("Error loading withdrawals:", err); }
+  }
+
+  $("#logoutAdmin")?.addEventListener("click", () => {
+    localStorage.removeItem("adminToken"); localStorage.removeItem("currentAdmin");
+    $("#adminDashboard")?.classList.add("hidden");
+  });
+});
+document.querySelectorAll("[data-tab='withdrawalsTab']").forEach(btn => {
+  btn.addEventListener("click", async () => {
+    // Show withdrawals table section (if hidden)
+    const withdrawalsSection = document.getElementById("withdrawalsSection");
+    if (withdrawalsSection) withdrawalsSection.classList.remove("hidden");
+
+    // Optionally hide other admin sections
+    document.querySelectorAll(".adminTab").forEach(section => {
+      if (section.id !== "withdrawalsSection") section.classList.add("hidden");
+    });
+
+    // Load the withdrawals from backend
+    await loadWithdrawals();
+  });
+});
 
 const socket = io("https://www.tradexinvest.net"); // adjust backend URL
 
@@ -1614,7 +1610,7 @@ document.getElementById("addInvestmentForm").addEventListener("submit", async (e
     console.error("Error adding investment:", err);
     alert("Error adding investment: " + err.message);
   }
-});})
+});
 </script>
   
 </body>
