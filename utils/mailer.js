@@ -3,24 +3,26 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
+    user: process.env.EMAIL_USER, // must be full Gmail
+    pass: process.env.EMAIL_PASS  // must be Gmail App Password
   }
 });
 
 transporter.verify((error) => {
   if (error) {
-    console.error('Error configuring mailer:', error);
+    console.error("Error configuring mailer:", error);
   } else {
-    console.log('Mailer is ready to send messages');
+    console.log("Mailer is ready to send messages");
   }
 });
 
 export const send2FACode = async (toEmail, code) => {
   await transporter.sendMail({
-    from: `"support@tradexinvest.net" <${process.env.SMTP_USER}>`,
+    from: process.env.EMAIL_USER, // must be the same Gmail user
     to: toEmail,
     subject: "Your 2FA Code",
     html: `<p>Your 2FA code is: <strong>${code}</strong></p>`
@@ -29,7 +31,7 @@ export const send2FACode = async (toEmail, code) => {
 
 export const sendMail = async (toEmail, message) => {
   await transporter.sendMail({
-    from: `"support@tradexinvest.net" <${process.env.SMTP_USER}>`,
+    from: process.env.EMAIL_USER,
     to: toEmail,
     subject: "Notification",
     text: message
