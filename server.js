@@ -78,7 +78,7 @@ io.on("connection", (socket) => {
 
 // Start server after MongoDB connection
 // Start server after MongoDB connection
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 8080.;
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
