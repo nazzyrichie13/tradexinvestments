@@ -4,6 +4,7 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import speakeasy from "speakeasy";
+import sgMail from "@sendgrid/mail";
 
 // ✅ Models (PascalCase to match filenames)
 import Admin from "../models/Admin.js";
@@ -13,6 +14,7 @@ import Investment from "../models/Investment.js"; // only if you actually use a 
 
 // ✅ Utils
 import transporter from "../utils/mailer.js";
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "super_secret_jwt_key";
@@ -131,13 +133,16 @@ router.post("/user-login", async (req, res) => {
     const code = speakeasy.totp({ secret: user.twoFASecret, encoding: "base32" });
 
     // Send code via email
-    await transporter.sendMail({
-      from: `"TradexInvest" <${process.env.EMAIL_USER}>`,
-      to: user.email,
-      subject: "Your 2FA Code",
-      text: `Your 2FA code is: ${code}`,
-    });
-
+    
+await sgMail.send({
+  from: {
+    name: "TradexInvest",
+    email: process.env.EMAIL_USER, // must be a verified sender in SendGrid
+  },
+  to: user.email,
+  subject: "Your 2FA Code",
+  text: `Your 2FA code is: ${code}`,
+});
     const tempToken = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "10m" });
     return res.json({
       success: true,
