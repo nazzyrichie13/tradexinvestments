@@ -1,42 +1,43 @@
+
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 dotenv.config();
 
+// Create transporter using SendGrid
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  service: "SendGrid",
   auth: {
-    user: process.env.EMAIL_USER, // must be full Gmail address
-    pass: process.env.EMAIL_PASS  // must be Gmail App Password
+    user: "apikey", // <-- must be literally "apikey"
+    pass: process.env.SENDGRID_API_KEY
   }
 });
 
-// Verify transporter
+// Verify connection
 transporter.verify((error) => {
   if (error) {
     console.error("Error configuring mailer:", error);
   } else {
-    console.log("Mailer is ready to send messages");
+    console.log("Mailer is ready to send emails!");
   }
 });
 
-// Send 2FA code
-export const send2FACode = async (toEmail, code) => {
-  await transporter.sendMail({
-    from: `"Support Team" <${process.env.EMAIL_USER}>`, // must be valid email
-    to: toEmail,
-    subject: "Your 2FA Code",
-    html: `<p>Your 2FA code is: <strong>${code}</strong></p>`
-  });
-};
+// Example function to send email
+export async function sendEmail(to, subject, text) {
+  try {
+    const info = await transporter.sendMail({
+      from: '"Your App" <no-reply@yourdomain.com>', // must be verified sender in SendGrid
+      to,
+      subject,
+      text
+    });
 
-// Generic email
-export const sendMail = async (toEmail, message) => {
-  await transporter.sendMail({
-    from: `"Support Team" <${process.env.EMAIL_USER}>`,
-    to: toEmail,
-    subject: "Notification",
-    text: message
-  });
-};
+    console.log("Email sent:", info.messageId);
+    return info;
+  } catch (err) {
+    console.error("Error sending email:", err);
+    throw err;
+  }
+}
+
 
 export default transporter;
