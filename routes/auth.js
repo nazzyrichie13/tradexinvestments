@@ -375,15 +375,17 @@ router.post("/withdrawals", requireAuth, async (req, res) => {
     });
 
     // Email admin
-    if (process.env.ADMIN_EMAIL) {
-      await transporter.sendMail({
-        from: `"TradexInvest" <${process.env.EMAIL_USER}>`,
+     if (process.env.ADMIN_EMAIL) {
+      await sgMail.send({
+        from: {
+          name: "TradexInvest",
+          email: process.env.EMAIL_USER, // must be verified sender
+        },
         to: process.env.ADMIN_EMAIL,
         subject: "New Withdrawal Request",
-        text: `User requested a withdrawal: $${amount} via ${method}.`,
+        text: `User ${user.email} requested a withdrawal of $${amount} via ${method}.`,
       });
     }
-
     res.json({ success: true, withdrawal });
   } catch (err) {
     console.error(err);
