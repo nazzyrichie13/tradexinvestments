@@ -148,10 +148,14 @@ await sgMail.send({
       tempToken,
       user: { name: user.name, email: user.email, acceptedTerms: user.acceptedTerms },
     });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error during login" });
+  } catch (error) {
+  if (error.response) {
+    console.error("SendGrid error response:");
+    console.error(JSON.stringify(error.response.body, null, 2)); // 👈 shows full details
+  } else {
+    console.error("SendGrid error:", error.message);
   }
+}
 });
 
 // Accept terms
