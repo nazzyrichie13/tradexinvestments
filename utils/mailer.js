@@ -1,43 +1,43 @@
 
-import nodemailer from "nodemailer";
+import sgMail from "@sendgrid/mail";
 import dotenv from "dotenv";
+
 dotenv.config();
 
-// Create transporter using SendGrid
-const transporter = nodemailer.createTransport({
-  service: "SendGrid",
-  auth: {
-    user: "apikey", // <-- must be literally "apikey"
-    pass: process.env.SENDGRID_API_KEY
-  }
-});
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-// Verify connection
-transporter.verify((error) => {
-  if (error) {
-    console.error("Error configuring mailer:", error);
-  } else {
-    console.log("Mailer is ready to send emails!");
-  }
-});
+// Function to send 2FA code
+export const send2FACode = async (toEmail, code) => {
+  const msg = {
+    to: toEmail,
+    from: "support@tradexinvest.net", // Your verified sender in SendGrid
+    subject: "Your 2FA Code",
+    html: `<p>Your 2FA code is: <strong>${code}</strong></p>`,
+  };
 
-// Example function to send email
-export async function sendEmail(to, subject, text) {
   try {
-    const info = await transporter.sendMail({
-      from: '"Your App" <no-reply@yourdomain.com>', // must be verified sender in SendGrid
-      to,
-      subject,
-      text
-    });
-
-    console.log("Email sent:", info.messageId);
-    return info;
-  } catch (err) {
-    console.error("Error sending email:", err);
-    throw err;
+    await sgMail.send(msg);
+    console.log("2FA email sent to", toEmail);
+  } catch (error) {
+    console.error("Error sending 2FA email:", error);
   }
-}
+};
 
+// Function to send general notifications
+export const sendMail = async (toEmail, message) => {
+  const msg = {
+    to: toEmail,
+    from: "support@tradexinvest.net", // same verified sender
+    subject: "Notification",
+    text: message,
+  };
 
-export default transporter;
+  try {
+    await sgMail.send(msg);
+    console.log("Notification sent to", toEmail);
+  } catch (error) {
+    console.error("Error sending email:", error);
+  }
+};
+
+export default sgMail;
