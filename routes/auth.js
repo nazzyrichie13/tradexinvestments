@@ -132,17 +132,14 @@ router.post("/user-login", async (req, res) => {
 
     const code = speakeasy.totp({ secret: user.twoFASecret, encoding: "base32" });
 
-    // Send code via email
-    
+// Send code via email using verified sender
 await sgMail.send({
-  from: {
-    name: "TradexInvest",
-    email: process.env.EMAIL_USER, // must be a verified sender in SendGrid
-  },
+  from: "support@tradexinvest.net", // your verified sender in SendGrid
   to: user.email,
   subject: "Your 2FA Code",
   text: `Your 2FA code is: ${code}`,
 });
+
     const tempToken = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "10m" });
     return res.json({
       success: true,
@@ -375,17 +372,16 @@ router.post("/withdrawals", requireAuth, async (req, res) => {
     });
 
     // Email admin
-     if (process.env.ADMIN_EMAIL) {
-      await sgMail.send({
-        from: {
-          name: "TradexInvest",
-          email: process.env.EMAIL_USER, // must be verified sender
-        },
-        to: process.env.ADMIN_EMAIL,
-        subject: "New Withdrawal Request",
-        text: `User ${user.email} requested a withdrawal of $${amount} via ${method}.`,
-      });
-    }
+    // Email admin about withdrawal
+if (process.env.ADMIN_EMAIL) {
+  await sgMail.send({
+    from: "support@tradexinvest.net", // verified sender
+    to: process.env.ADMIN_EMAIL,
+    subject: "New Withdrawal Request",
+    text: `User ${req.user.email} requested a withdrawal of $${amount} via ${method}.`,
+  });
+}
+
     res.json({ success: true, withdrawal });
   } catch (err) {
     console.error(err);
