@@ -30,7 +30,7 @@ const server = http.createServer(app);
 app.use(cors({
   origin: [
     "https://www.tradexinvest.net",   // production frontend
-    "https://www.tradexinvest.net",          // local testing
+    "http://127.0.0.1:5500",          // local testing
     "https://www.tradexinvest.net"            // sometimes localhost works too
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -78,7 +78,7 @@ io.on("connection", (socket) => {
 
 // Start server after MongoDB connection
 // Start server after MongoDB connection
-const PORT = process.env.PORT || 8080.;
+const PORT = process.env.PORT || 8080;
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
