@@ -1,101 +1,30 @@
 import express from "express";
-import Admin from "../models/Admin.js";
 import User from "../models/User.js";
-import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
-import { requireAdmin } from "../middleware/adminMiddleware.js";
+import { requireAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// =========================
-// Admin Login
-// routes/auth.js
-
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
-
-// ---------- LOGIN ----------
-router.post("/admin-login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const admin = await Admin.findOne({ email: email.toLowerCase() });
-    if (!admin) return res.status(401).json({ success: false, message: "Invalid email or password" });
-
-    const isMatch = await bcrypt.compare(password, admin.password);
-    if (!isMatch) return res.status(401).json({ success: false, message: "Invalid email or password" });
-
-    const token = jwt.sign({ id: admin._id, email: admin.email }, JWT_SECRET, { expiresIn: "1h" });
-
-    res.json({
-      success: true,
-      message: "Admin login successful",
-      token,
-      admin: { id: admin._id, name: admin.name, email: admin.email },
-    });
-  } catch (err) {
-    console.error("Admin login error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-});
-
-// Get all users
-router.get("/admin/users", requireAdmin, async (req, res) => {
-  try {
-    const users = await User.find();
-    res.json({ success: true, users });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch users" });
-  }
-});
-
-router.put("/user/:id/investment", requireAdmin, async (req, res) => {
+// ✅ Notice: no extra "/admin" here
+router.post("/user/:id/investments", requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { balance, interest, profit } = req.body;
+    const { amount, method, date } = req.body;
 
-    if (balance == null || interest == null || profit == null) {
-      return res.status(400).json({ error: "Missing fields" });
+    if (amount == null || !method) {
+      return res.status(400).json({ success: false, message: "Missing fields" });
     }
 
     const user = await User.findById(id);
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    user.investment.balance = balance;
-    user.investment.profit = profit;
-    user.investment.interest = interest;
-
+    user.investments.push({ amount, method, date: date || Date.now() });
     await user.save();
 
-    res.json({ success: true, user });
+    res.json({ success: true, message: "Investment added", investments: user.investments });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to update investment" });
-  }
-});
-
-
-// Get all withdrawals
-router.get("/admin/withdrawals", requireAdmin, async (req, res) => {
-  try {
-    const withdrawals = await Withdrawal.find().populate("user", "name email");
-    res.json({ success: true, withdrawals });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch withdrawals" });
-  }
-});
-
-// Confirm withdrawal
-router.put("/admin/withdrawals/:id/confirm", requireAdmin, async (req, res) => {
-  try {
-    const withdrawal = await Withdrawal.findByIdAndUpdate(
-      req.params.id,
-      { $set: { status: "Confirmed" } },
-      { new: true }
-    );
-    res.json({ success: true, withdrawal });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to confirm withdrawal" });
+    console.error("Add investment error:", err);
+    res.status(500).json({ success: false, message: "Failed to add investment" });
   }
 });
 
 export default router;
-
