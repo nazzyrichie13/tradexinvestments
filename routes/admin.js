@@ -1,6 +1,7 @@
 import express from "express";
 import User from "../models/User.js";
-import { requireAdmin } from "../middleware/auth.js";
+import { verifyToken } from "../routes/auth.js";
+ 
 
 const router = express.Router();
 
