@@ -7,7 +7,7 @@ import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { Server } from 'socket.io';
-import adminRoutes from "./routes/admin.js";  
+// import adminRoutes from "./routes/admin.js";  
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/user.js";
 import contactRoutes from "./routes/contact.js";
@@ -51,7 +51,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/withdrawals", withdrawalRoutes);
-app.use("/api/admin", adminRoutes);
+// app.use("/api/admin", adminRoutes);
 
 const io = new Server(server, {
   cors: {

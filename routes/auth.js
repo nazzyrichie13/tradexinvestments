@@ -279,27 +279,27 @@ router.put("/admin/user/:id/portfolio", requireAdmin, async (req, res) => {
 
 // ✅ Append a new investment record to user's embedded array
 // POST /admin/user/:id/investments
-// router.post("/admin/user/:id/investments", requireAdmin, async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const { amount, method, date } = req.body;
+router.post("/admin/user/:id/investments", requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { amount, method, date } = req.body;
 
-//     if (amount == null || !method) {
-//       return res.status(400).json({ success: false, message: "Missing fields" });
-//     }
+    if (amount == null || !method) {
+      return res.status(400).json({ success: false, message: "Missing fields" });
+    }
 
-//     const user = await User.findById(id);
-//     if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-//     user.investments.push({ amount, method, date: date || Date.now() });
-//     await user.save();
+    user.investments.push({ amount, method, date: date || Date.now() });
+    await user.save();
 
-//     res.json({ success: true, message: "Investment added", investments: user.investments });
-//   } catch (err) {
-//     console.error("Add investment error:", err);
-//     res.status(500).json({ success: false, message: "Failed to add investment" });
-//   }
-// });
+    res.json({ success: true, message: "Investment added", investments: user.investments });
+  } catch (err) {
+    console.error("Add investment error:", err);
+    res.status(500).json({ success: false, message: "Failed to add investment" });
+  }
+});
 
 // Get withdrawals (admin)
 router.get("/admin/withdrawals", requireAdmin, async (req, res) => {
