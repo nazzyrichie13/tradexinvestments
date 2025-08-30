@@ -279,7 +279,7 @@ router.put("/admin/user/:id/portfolio", requireAdmin, async (req, res) => {
 
 // ✅ Append a new investment record to user's embedded array
 // POST /admin/user/:id/investments
-router.post("/admin/user/:id/investments", requireAdmin, async (req, res) => {
+router.post("/admin/user/:id/investment", requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { amount, method, date } = req.body;
