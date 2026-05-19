@@ -7,7 +7,7 @@ import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { Server } from 'socket.io';
-// import adminRoutes from "./routes/admin.js";  
+//  
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/user.js";
 import contactRoutes from "./routes/contact.js";
